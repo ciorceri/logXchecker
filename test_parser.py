@@ -33,7 +33,6 @@ class TestParser(TestCase):
         for (arg,format,singlelogcheck,multilogcheck) in self.testcase_with_success:
             print('testing parser argument:', arg)
             result = self.p.parse(arg)
-            print('result=', result)
             self.assertEqual(result.format, format)
             self.assertEqual(result.singlelogcheck, singlelogcheck)
             self.assertEqual(result.multilogcheck, multilogcheck)
