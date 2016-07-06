@@ -1,5 +1,5 @@
 from unittest import TestCase
-from logXchecker import Parser
+from logXchecker import ArgumentParser
 
 
 class TestParser(TestCase):
@@ -27,7 +27,7 @@ class TestParser(TestCase):
                              )
 
     def setUp(self):
-        self.p = Parser()
+        self.p = ArgumentParser()
 
     def test_parse(self):
         for (arg, exitCode) in self.testcase_with_error_checks:
