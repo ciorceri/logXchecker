@@ -4,18 +4,29 @@ import importlib
 
 
 class ArgumentParser():
+    """
+    Parses the parameters from command line
+    """
 
     def check_format_value(self, arg):
+        """
+        :param arg: specifies log file format (edi, adif, cbr)
+        :return: arg
+        :raise: ArgumentTypeError
+        """
         valid_formats = ('EDI', 'ADIF', 'CABRILLO')
-        arg = arg.upper()
-        if arg in valid_formats:
+        if arg.upper() in valid_formats:
             return arg
         raise argparse.ArgumentTypeError('Format "%s" is an invalid value' % arg)
 
     def check_output_value(self, arg):
+        """
+        :param arg: specifies the output format (text, html, json, yml)
+        :return: arg
+        :raise: ArgumentTypeError
+        """
         valid_output = ('TXT', 'TEXT', 'HTML', 'JSON', 'YML')
-        arg = arg.upper()
-        if arg in valid_output:
+        if arg.upper() in valid_output:
             return arg
         raise argparse.ArgumentTypeError('Output "%s" is an invalid value' % arg)
 
@@ -35,19 +46,46 @@ class ArgumentParser():
 
 
 class Rules(object):
+    """
+    Will read and parse the contest rule files.
+    Rule example: contest date, contest bands, contest categories.
+    Rule file format : https://en.wikipedia.org/wiki/INI_file
+    """
     path = None
 
     def __init__(self, path):
         pass
 
     def read_rules(self, path):
+        """
+        :param path: path to ini rule file
+        :return: ???
+        """
         pass
 
     def validate_rules(self):
+        """
+        :return: ???
+        """
+        pass
+
+
+class Operator(object):
+    """
+    This will keep the info & logs for each ham operator (team)
+    """
+    callsign = None
+    info = {}
+    logs = []
+
+    def __init__(self):
         pass
 
 
 class Log(object):
+    """
+    This will keep a single log information (header + list of LogQso instances)
+    """
     path = None
 
     def __init__(self):
@@ -60,37 +98,58 @@ class Log(object):
         pass
 
     def get_summary(self):
+        """
+        Based on the output format (text, html...) this will output a summary of the log
+        """
         pass
 
 
 class LogQso(object):
+    """
+    This will keep a single QSO
+    """
     qsoFields = {}
 
     def __init__(self):
         pass
 
     def qso_parser(self):
+        """
+        This should parse a qso based on log format
+        """
         pass
 
     def validate_qso(self):
+        """
+        This will validate a parsed qso based on generic rules (simple validation) or based on rules
+        """
         pass
 
 
-def load_module(module_name):
-    module = importlib.import_module(module_name)
+def load_log_format_module(module_name):
+    """
+    :param module_name: path to module who knows to parse & read a specified file format (edi, adif, cbr)
+    :return:
+    """
+    try:
+        module = importlib.import_module(module_name)
+    except ImportError as e:
+        print("ERROR:", e)
+        sys.exit(1)
+    return module
 
-    class Module(module):
-        def __init__(self):
-            pass
+    # class Module(module):
+    #     def __init__(self):
+    #         pass
+    #
+    #     def validate_rules(self):
+    #         pass
 
-        def validate_rules(self):
-            pass
-    return Module
 
 def main():
-    args = ArgumentParser.parse(sys.args)
+    args = ArgumentParser().parse(sys.argv[1:])
     if args.format:
-        module = load_module(args.format)
+        lfmodule = load_log_format_module(args.format)
 
 if __name__ == '__main__':
     main()
