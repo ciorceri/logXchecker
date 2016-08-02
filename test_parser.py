@@ -13,17 +13,21 @@ class TestParser(TestCase):
                                   (['-f=edi', '-o'], 2),
                                   (['-f=edi', '-o=hello'], 2), (['-f=edi', '-ohello'], 2),
                                   (['-f=edi', '-o', 'hello'], 2),
-                                  (['-f=edi', '-slc'], 0),
-                                  (['-f=edi', '--singlelogcheck'], 0),
-                                  (['-f=edi', '-mlc'], 0),
-                                  (['-f=edi', '--multilogcheck'], 0),
+                                  (['-f=edi', '-slc=xxx.edi'], 0),
+                                  (['-f=edi', '-slc', 'xxx.edi'], 0),
+                                  (['-f=edi', '--singlelogcheck=xxx.edi'], 0),
+                                  (['-f=edi', '--singlelogcheck', 'xxx.edi'], 0),
+                                  (['-f=edi', '-mlc=xxx'], 0),
+                                  (['-f=edi', '--multilogcheck=xxx'], 0),
                                   (['-f=edi', '-slc', '-mlc'], 2),
                                   )
-    testcase_with_success = ((['-f=edi'], 'EDI', False, False), (['-fedi'], 'EDI', False, False),
-                             (['-f=edi', '-slc'], 'EDI', True, False),
-                             (['-f=edi', '--singlelogcheck'], 'EDI', True, False),
-                             (['-f=edi', '-mlc'], 'EDI', False, True),
-                             (['-f=edi', '--multilogcheck'], 'EDI', False, True),
+    testcase_with_success = (
+                             (['-f=edi'], 'EDI', False, False),
+                             (['-fedi'], 'EDI', False, False),
+                             (['-f=edi', '-slc=xxx.edi'], 'EDI', 'xxx.edi', False),
+                             (['-f=edi', '--singlelogcheck=xxx.edi'], 'EDI', 'xxx.edi', False),
+                             (['-f=edi', '-mlc=xxx.edi'], 'EDI', False, 'xxx.edi'),
+                             (['-f=edi', '--multilogcheck=xxx.edi'], 'EDI', False, 'xxx.edi'),
                              )
 
     def setUp(self):

@@ -1,7 +1,8 @@
 import sys
+import os
 import argparse
 import importlib
-
+import edi
 
 class ArgumentParser():
     """
@@ -16,7 +17,7 @@ class ArgumentParser():
         """
         valid_formats = ('EDI', 'ADIF', 'CABRILLO')
         if arg.upper() in valid_formats:
-            return arg
+            return arg.upper()
         raise argparse.ArgumentTypeError('Format "%s" is an invalid value' % arg)
 
     def check_output_value(self, arg):
@@ -38,8 +39,8 @@ class ArgumentParser():
         self.parser.add_argument('-o', '--output', type=self.check_output_value, required=False,
                                  help='Output format: text, html, json, yml')
         group = self.parser.add_mutually_exclusive_group()
-        group.add_argument('-slc', '--singlelogcheck', action='store_true', default=False)
-        group.add_argument('-mlc', '--multilogcheck', action='store_true', default=False)
+        group.add_argument('-slc', '--singlelogcheck', type=str, default=False, help='single log check')
+        group.add_argument('-mlc', '--multilogcheck', type=str, default=False, help='multiple log check')
 
     def parse(self, args):
         return self.parser.parse_args(args)
@@ -126,6 +127,7 @@ class LogQso(object):
         pass
 
 
+# This function is not used at this moment since I have support only for 'edi format'
 def load_log_format_module(module_name):
     """
     :param module_name: path to module who knows to parse & read a specified file format (edi, adif, cbr)
@@ -149,7 +151,19 @@ def load_log_format_module(module_name):
 def main():
     args = ArgumentParser().parse(sys.argv[1:])
     if args.format:
-        lfmodule = load_log_format_module(args.format)
+        # lfmodule = load_log_format_module(args.format)
+        lfmodule = edi
+
+    # if 'validate one log'
+    if args.slc:
+        print('Validate log: ', args.slc)
+        if not os.path.isfile(args.slc):
+            raise FileNotFoundError(args.slc)
+        
+    elif args.mlc:
+        print('Validate folder: ', args.mlc)
+        if not os.path.isdir(args.mlc):
+            raise FileNotFoundError(args.mlc)
 
 if __name__ == '__main__':
     main()
