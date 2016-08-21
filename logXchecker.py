@@ -1,8 +1,10 @@
-import sys
-import os
 import argparse
 import importlib
+import os
+import sys
+
 import edi
+
 
 class ArgumentParser():
     """
@@ -46,6 +48,15 @@ class ArgumentParser():
         return self.parser.parse_args(args)
 
 
+class Contest(object):
+    """
+    This is the main contest class which will held an instance of 'Rules' class.
+    It will create a list of instances of 'Operator' class
+    and each 'Operator' instance will have a list of 'Log' class
+    and each 'Log' instance will keep a lot of instances of 'LogQso'
+    """
+
+
 class Rules(object):
     """
     Will read and parse the contest rule files.
@@ -70,8 +81,18 @@ class Rules(object):
         """
         pass
 
+    def _validate_log_name(self):
+        """
+        Based on ...
+        :return:
+        """
+        pass
 
-class Operator(object):
+    def _validate_log_xyz(self):
+        pass
+
+
+class Operator(edi.Operator):
     """
     This will keep the info & logs for each ham operator (team)
     """
@@ -83,7 +104,7 @@ class Operator(object):
         pass
 
 
-class Log(object):
+class Log(edi.Log):
     """
     This will keep a single log information (header + list of LogQso instances)
     """
@@ -105,7 +126,7 @@ class Log(object):
         pass
 
 
-class LogQso(object):
+class LogQso(edi.LogQso):
     """
     This will keep a single QSO
     """
@@ -159,7 +180,7 @@ def main():
         print('Validate log: ', args.slc)
         if not os.path.isfile(args.slc):
             raise FileNotFoundError(args.slc)
-        
+
     elif args.mlc:
         print('Validate folder: ', args.mlc)
         if not os.path.isdir(args.mlc):
@@ -167,4 +188,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
