@@ -62,6 +62,24 @@ CODXC=YO8SSB;KN27OD;133
 
 """
 
+test_valid_qso_lines = [
+    '130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;',
+    '160507;1531;YO7LBX/P;1;59;006;59;016;;KN14QW;76;;;;',
+    '160507;1404;HA6W;1;59;001;59;005;;KN08FB;149;;N;N;',
+]
+
+test_invalid_qso_lines = [
+    ('123456789012345678', 'QSO line is too short'),
+    ('130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;', 'Minimal QSO check didn\'t pass'),
+    ('30803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', 'Medium QSO check didn\'t pass'),
+    ('130803;319;YO5BTZ;;59;001;59;001;;KN16SS;1;;;;', 'Medium QSO check didn\'t pass'),
+    ('130803;1319;YO5BTZ;6;9;001;59;001;;KN16SS;1;;;;', 'Medium QSO check didn\'t pass'),
+    ('130803;1319;YO5BTZ;6;59;1;59;001;;KN16SS;1;;;;', 'Medium QSO check didn\'t pass'),
+    ('130803;1319;YO5BTZ;6;59;00001;59;001;;KN16SS;1;;;;', 'Medium QSO check didn\'t pass'),
+    ('130803;1319;YO5BTZ;6;59;001;9;001;;KN16SS;1;;;;', 'Medium QSO check didn\'t pass'),
+    ('130803;1319;YO5BTZ;6;59;001;59;00001;;KN16SS;1;;;;', 'Medium QSO check didn\'t pass'),
+]
+
 
 class TestEdi(TestCase):
     def test_read_file_content(self):
@@ -82,3 +100,14 @@ class TestEdi(TestCase):
             self.assertEqual('YO5PJB', log.get_field('pcall')[0])
             self.assertNotEqual('yo5pjb', log.get_field('pcall')[0])
             self.assertNotEqual('INVALID_CALLSIGN', log.get_field('PCall')[0])
+
+    def test_valid_qso_line(self):
+        for line in test_valid_qso_lines:
+            self.assertTrue(edi.Log.valid_qso_line(self, line))
+
+        for line,message in test_invalid_qso_lines:
+            try:
+                edi.Log.valid_qso_line(self, line)
+                raise AssertionError("This should fail: " + line)
+            except edi.LogException as e:
+                self.assertEqual(message, e.message)
