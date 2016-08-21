@@ -1,0 +1,10 @@
+language: python
+python:
+    - "3.5"
+script:
+    - "python -m py_compile logXchecker.py"
+    - "python -m py_compile edi.py"
+    - "python -m py_compile test_edi.py"
+    - "python -m py_compile test_parser.py"
+
+
