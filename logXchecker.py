@@ -4,6 +4,7 @@ import os
 import sys
 
 import edi
+import version
 
 
 class ArgumentParser():
@@ -170,6 +171,7 @@ def load_log_format_module(module_name):
 
 
 def main():
+    print(version.__project__,  version.__version__)
     args = ArgumentParser().parse(sys.argv[1:])
     if args.format:
         # lfmodule = load_log_format_module(args.format)
