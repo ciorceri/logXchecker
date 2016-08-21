@@ -59,7 +59,6 @@ CODXC=YO8SSB;KN27OD;133
 130804;0635;YO5CKZ;6;59;013;59;036;;KN27EG;84;;;;
 130804;0642;YO6POK;6;59;014;59;030;;KN27JG;109;;;;
 130804;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;
-
 """
 
 test_valid_qso_lines = [
@@ -70,14 +69,14 @@ test_valid_qso_lines = [
 
 test_invalid_qso_lines = [
     ('123456789012345678', 'QSO line is too short'),
-    ('130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;', 'Minimal QSO check didn\'t pass'),
-    ('30803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', 'Medium QSO check didn\'t pass'),
-    ('130803;319;YO5BTZ;;59;001;59;001;;KN16SS;1;;;;', 'Medium QSO check didn\'t pass'),
-    ('130803;1319;YO5BTZ;6;9;001;59;001;;KN16SS;1;;;;', 'Medium QSO check didn\'t pass'),
-    ('130803;1319;YO5BTZ;6;59;1;59;001;;KN16SS;1;;;;', 'Medium QSO check didn\'t pass'),
-    ('130803;1319;YO5BTZ;6;59;00001;59;001;;KN16SS;1;;;;', 'Medium QSO check didn\'t pass'),
-    ('130803;1319;YO5BTZ;6;59;001;9;001;;KN16SS;1;;;;', 'Medium QSO check didn\'t pass'),
-    ('130803;1319;YO5BTZ;6;59;001;59;00001;;KN16SS;1;;;;', 'Medium QSO check didn\'t pass'),
+    ('130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;', 'Minimal QSO checks didn\'t pass'),
+    ('30803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
+    ('130803;319;YO5BTZ;;59;001;59;001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
+    ('130803;1319;YO5BTZ;6;9;001;59;001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
+    ('130803;1319;YO5BTZ;6;59;1;59;001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
+    ('130803;1319;YO5BTZ;6;59;00001;59;001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
+    ('130803;1319;YO5BTZ;6;59;001;9;001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
+    ('130803;1319;YO5BTZ;6;59;001;59;00001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
 ]
 
 
@@ -103,11 +102,8 @@ class TestEdi(TestCase):
 
     def test_valid_qso_line(self):
         for line in test_valid_qso_lines:
-            self.assertTrue(edi.Log.valid_qso_line(self, line))
+            self.assertIsNone(edi.Log.valid_qso_line(self, line))
 
         for line,message in test_invalid_qso_lines:
-            try:
-                edi.Log.valid_qso_line(self, line)
-                raise AssertionError("This should fail: " + line)
-            except edi.LogException as e:
-                self.assertEqual(message, e.message)
+            ret = edi.Log.valid_qso_line(self, line)
+            self.assertEqual(message, ret)

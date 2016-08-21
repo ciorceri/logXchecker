@@ -1,4 +1,5 @@
 import re
+from collections import namedtuple
 
 regexMinimalQsoCheck = ".*?;.*?;.*?;.*?;.*?;.*?;.*?;.*?;.*?;.*?;.*?;.*?;.*?;.*?;"
 regexMediumQsoCheck = "^\d{6};\d{4};.*?;\d;\d{2,3};\d{2,4};\d{2,3};\d{2,4};.*?;.*?;.*?;.*?;.*?;.*?;"
@@ -30,11 +31,15 @@ class Log(object):
     maidenhead_locator = None
     band = None
     section = None
+    qsos_tuple = namedtuple('qso_tuple', 'line qso')
     qsos = []
+    errors_tuple = namedtuple('errors_tuple', 'line qso error')
+    errors = []  # namedtuple(line number, qso raw line, error message)
 
     def __init__(self, path, checklog=False):
         self.path = path
         self.log_content = self.read_file_content(self.path)
+        qsos = self.get_qsos()
 
     def read_file_content(self, path):
         try:
@@ -58,9 +63,9 @@ class Log(object):
             raise FileNotFoundError("Log content is not available")
 
         value = []
-        fieldU = str(field).upper() + '='
+        _field = str(field).upper() + '='
         for line in self.log_content:
-            if line.upper().startswith(fieldU):
+            if line.upper().startswith(_field):
                 value.append(line.split('=', 1)[1].strip())
         return value or None
 
@@ -74,33 +79,41 @@ class Log(object):
         do_read_qso = False
 
         # read qso lines
-        for line in self.log_content:
+        for (index, line) in enumerate(self.log_content):
             if line.upper().startswith(qso_record_start):
                 do_read_qso = True
+                continue
             if line.upper().startswith(qso_record_end):
                 do_read_qso = False
+                continue
             if do_read_qso:
-                qso_lines.append(line)
+                qso_lines.append((index, line.strip()))
 
-                # validate qso lines
+        # validate qso lines
+        for qso in qso_lines:
+            message = self.valid_qso_line(qso[1])
+            if message is None:
+                self.qsos.append(self.qsos_tuple(line=qso[0], qso=qso[1]))
+            else:
+                self.errors.append(self.errors_tuple(line=qso[0], qso=qso[1], error=message))
 
     def valid_qso_line(self, line):
         """
         This will validate the a line of qso from .edi log
         :param line:
-        :return: True or False
+        :return: None or error message
         """
         qso_min_line_lenght = 40
 
         if len(line) < qso_min_line_lenght:
-            raise LogException('QSO line is too short', line)
+            return 'QSO line is too short'
         res = re.match(regexMinimalQsoCheck, line)
         if not res:
-            raise LogException('Minimal QSO check didn\'t pass', line)
+            return 'Minimal QSO checks didn\'t pass'
         res = re.match(regexMediumQsoCheck, line)
         if not res:
-            raise LogException('Medium QSO check didn\'t pass', line)
-        return True
+            return 'QSO checks didn\'t pass'
+        return None
 
     def dump_summary(self):
         """
@@ -113,7 +126,22 @@ class LogQso(object):
     """
     This will keep a single QSO
     """
-    qsoFields = {}
+    qsoFields = {'date': None,
+                 'hour': None,
+                 'callsign': None,
+                 'mode':None,
+                 'rst_sent':None,
+                 'nr_sent':None,
+                 'rst_recv':None,
+                 'nr_recv':None,
+                 'exchange_recv':None,
+                 'wwl_recv':None,
+                 'points':None,
+                 'new_exchange': None,
+                 'new_wwl': None,
+                 'new_dxcc': None,
+                 'duplicate_qso': None,
+                 }
 
     def __init__(self):
         pass
