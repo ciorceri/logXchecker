@@ -47,18 +47,6 @@ CODXC=YO8SSB;KN27OD;133
 130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;
 130803;1321;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;
 130803;1322;YO5TP;6;59;003;59;002;;KN16SS;1;;;;
-130803;1335;YO5CRQ/M;6;59;004;59;006;;KN17WP;100;;;;
-130803;1337;YO5CKZ;6;59;005;59;007;;KN27EG;84;;;;
-130803;1438;YO8SSB;6;59;006;59;016;;KN27OD;133;;;;
-130803;1438;YO5OO;6;59;007;59;004;;KN16RS;6;;;;
-130803;1446;YO6PVT;6;59;008;59;012;;KN16TR;7;;;;
-130803;1459;YO6POK;6;59;009;59;015;;KN27JG;109;;;;
-130804;0632;YO5TP;6;59;010;59;018;;KN16SS;1;;;;
-130804;0632;YO5OO;6;59;011;59;011;;KN16RS;6;;;;
-130804;0635;YO5PLP/P;6;59;012;59;031;;KN27HM;116;;;;
-130804;0635;YO5CKZ;6;59;013;59;036;;KN27EG;84;;;;
-130804;0642;YO6POK;6;59;014;59;030;;KN27JG;109;;;;
-130804;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;
 """
 
 test_valid_qso_lines = [
@@ -77,6 +65,12 @@ test_invalid_qso_lines = [
     ('130803;1319;YO5BTZ;6;59;00001;59;001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
     ('130803;1319;YO5BTZ;6;59;001;9;001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
     ('130803;1319;YO5BTZ;6;59;001;59;00001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
+]
+
+test_qsos_4_get_qsos = [
+    (41, '130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;'),
+    (42, '130803;1321;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;'),
+    (43, '130803;1322;YO5TP;6;59;003;59;002;;KN16SS;1;;;;')
 ]
 
 
@@ -107,3 +101,17 @@ class TestEdi(TestCase):
         for line,message in test_invalid_qso_lines:
             ret = edi.Log.valid_qso_line(self, line)
             self.assertEqual(message, ret)
+
+    def test_get_qsos(self):
+        mo = mock_open(read_data=valid_edi_log)
+        with patch('builtins.open', mo, create=True):
+            log = edi.Log('some_log_file.edi')
+            # self.assertEqual(len(test_qsos_4_get_qsos), len(log.qsos))
+            zipped = zip(test_qsos_4_get_qsos, log.qsos)
+            for qso1, qso2 in zipped:
+                qso1_line = qso1[0]
+                qso1_qso = qso1[1]
+                qso2_line = qso2.line
+                qso2_qso = qso2.qso
+                self.assertEqual(qso1_line, qso2_line)
+                self.assertEqual(qso1_qso, qso2_qso)
