@@ -68,9 +68,9 @@ test_invalid_qso_lines = [
 ]
 
 test_qsos_4_get_qsos = [
-    (41, '130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;'),
-    (42, '130803;1321;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;'),
-    (43, '130803;1322;YO5TP;6;59;003;59;002;;KN16SS;1;;;;')
+    edi.Log.qsos_tuple(line=41, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;'),
+    edi.Log.qsos_tuple(line=42, qso='130803;1321;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;'),
+    edi.Log.qsos_tuple(line=43, qso='130803;1322;YO5TP;6;59;003;59;002;;KN16SS;1;;;;')
 ]
 
 
@@ -89,16 +89,16 @@ class TestEdi(TestCase):
         mo = mock_open(read_data=valid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertEqual('YO5PJB', log.get_field('PCall')[0])
-            self.assertEqual('YO5PJB', log.get_field('pcall')[0])
-            self.assertNotEqual('yo5pjb', log.get_field('pcall')[0])
-            self.assertNotEqual('INVALID_CALLSIGN', log.get_field('PCall')[0])
+        self.assertEqual('YO5PJB', log.get_field('PCall')[0])
+        self.assertEqual('YO5PJB', log.get_field('pcall')[0])
+        self.assertNotEqual('yo5pjb', log.get_field('pcall')[0])
+        self.assertNotEqual('INVALID_CALLSIGN', log.get_field('PCall')[0])
 
     def test_valid_qso_line(self):
         for line in test_valid_qso_lines:
             self.assertIsNone(edi.Log.valid_qso_line(self, line))
 
-        for line,message in test_invalid_qso_lines:
+        for (line, message) in test_invalid_qso_lines:
             ret = edi.Log.valid_qso_line(self, line)
             self.assertEqual(message, ret)
 
@@ -106,12 +106,5 @@ class TestEdi(TestCase):
         mo = mock_open(read_data=valid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            # self.assertEqual(len(test_qsos_4_get_qsos), len(log.qsos))
-            zipped = zip(test_qsos_4_get_qsos, log.qsos)
-            for qso1, qso2 in zipped:
-                qso1_line = qso1[0]
-                qso1_qso = qso1[1]
-                qso2_line = qso2.line
-                qso2_qso = qso2.qso
-                self.assertEqual(qso1_line, qso2_line)
-                self.assertEqual(qso1_qso, qso2_qso)
+        self.assertEqual(len(test_qsos_4_get_qsos), len(log.qsos))
+        self.assertEqual(test_qsos_4_get_qsos, log.qsos)

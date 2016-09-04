@@ -31,14 +31,15 @@ class Log(object):
     maidenhead_locator = None
     band = None
     section = None
-    qsos_tuple = namedtuple('qso_tuple', 'line qso')
+    qsos_tuple = namedtuple('qso_tuple', ['line', 'qso'])
     qsos = []
-    errors_tuple = namedtuple('errors_tuple', 'line qso error')
-    errors = []  # namedtuple(line number, qso raw line, error message)
+    errors_tuple = namedtuple('errors_tuple', ['line', 'qso', 'error'])
+    errors = []
 
     def __init__(self, path, checklog=False):
         self.path = path
         self.log_content = self.read_file_content(self.path)
+        del self.qsos[:]  # HACK: not sure why, but the self.qsos is not clean at this point when running unittests
         qsos = self.get_qsos()
 
     def read_file_content(self, path):
