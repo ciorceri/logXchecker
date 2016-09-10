@@ -39,7 +39,13 @@ class Log(object):
     def __init__(self, path, checklog=False):
         self.path = path
         self.log_content = self.read_file_content(self.path)
-        del self.qsos[:]  # HACK: not sure why, but the self.qsos is not clean at this point when running unittests
+        _temp = self.get_field('PCall')
+        if _temp is None:
+            raise ValueError('The PCall field is not present')
+        if len(_temp) > 1:
+            raise ValueError('The PCall field is present multiple times')
+        self.callsign = _temp[0]
+        self.qsos = []
         qsos = self.get_qsos()
 
     def read_file_content(self, path):

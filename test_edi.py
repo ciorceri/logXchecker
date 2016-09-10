@@ -1,4 +1,5 @@
 from unittest import TestCase
+from unittest import mock
 from unittest.mock import mock_open, patch
 
 import edi
@@ -81,14 +82,13 @@ class TestEdi(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
         self.assertEqual(valid_edi_log, ''.join(log.log_content))
-
         # test 'read_file_content' exceptions
         self.assertRaises(FileNotFoundError, edi.Log, 'non-existing-log-file.edi')
 
-    def test_get_field(self):
-        mo = mock_open(read_data=valid_edi_log)
-        with patch('builtins.open', mo, create=True):
-            log = edi.Log('some_log_file.edi')
+    @mock.patch.object(edi.Log, 'read_file_content')
+    def test_get_field(self, mock_read_file_content):
+        mock_read_file_content.return_value = valid_edi_log.split('\n')
+        log = edi.Log('some_log_file.edi')
         self.assertEqual('YO5PJB', log.get_field('PCall')[0])
         self.assertEqual('YO5PJB', log.get_field('pcall')[0])
         self.assertNotEqual('yo5pjb', log.get_field('pcall')[0])
@@ -102,9 +102,9 @@ class TestEdi(TestCase):
             ret = edi.Log.valid_qso_line(self, line)
             self.assertEqual(message, ret)
 
-    def test_get_qsos(self):
-        mo = mock_open(read_data=valid_edi_log)
-        with patch('builtins.open', mo, create=True):
-            log = edi.Log('some_log_file.edi')
+    @mock.patch.object(edi.Log, 'read_file_content')
+    def test_get_qsos(self, mock_read_file_content):
+        mock_read_file_content.return_value = valid_edi_log.split('\n')
+        log = edi.Log('some_log_file.edi')
         self.assertEqual(len(test_qsos_4_get_qsos), len(log.qsos))
         self.assertEqual(test_qsos_4_get_qsos, log.qsos)
