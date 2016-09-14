@@ -47,12 +47,68 @@ CODXC=YO8SSB;KN27OD;133
 [QSORecords;15]
 130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;
 130803;1321;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;
-130803;1322;YO5TP;6;59;003;59;002;;KN16SS;1;;;;"""
+130803;1322;YO5TP;6;59;003;59;002;;KN16SS;1;;;;
+[END;PaperQSO version 0.0.9.803]
+"""
 
 test_valid_qso_lines = [
     '130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;',
     '160507;1531;YO7LBX/P;1;59;006;59;016;;KN14QW;76;;;;',
     '160507;1404;HA6W;1;59;001;59;005;;KN08FB;149;;N;N;',
+]
+
+test_valid_qso_fields = [
+    {
+        'date': '130803',
+        'hour': '1319',
+        'call': 'YO5BTZ',
+        'mode': '6',
+        'rst_sent': '59',
+        'nr_sent': '001',
+        'rst_recv': '59',
+        'nr_recv': '001',
+        'exchange_recv': '',
+        'wwl': 'KN16SS',
+        'points': '1',
+        'new_exchange': '',
+        'new_wwl': '',
+        'new_dxcc': '',
+        'duplicate_qso': ''
+    },
+    {
+        'date': '160507',
+        'hour': '1531',
+        'call': 'YO7LBX/P',
+        'mode': '1',
+        'rst_sent': '59',
+        'nr_sent': '006',
+        'rst_recv': '59',
+        'nr_recv': '016',
+        'exchange_recv': '',
+        'wwl': 'KN14QW',
+        'points': '76',
+        'new_exchange': '',
+        'new_wwl': '',
+        'new_dxcc': '',
+        'duplicate_qso': ''
+    },
+    {
+        'date': '160507',
+        'hour': '1404',
+        'call': 'HA6W',
+        'mode': '1',
+        'rst_sent': '59',
+        'nr_sent': '001',
+        'rst_recv': '59',
+        'nr_recv': '005',
+        'exchange_recv': '',
+        'wwl': 'KN08FB',
+        'points': '149',
+        'new_exchange': '',
+        'new_wwl': 'N',
+        'new_dxcc': 'N',
+        'duplicate_qso': ''
+    },
 ]
 
 test_invalid_qso_lines = [
@@ -67,12 +123,11 @@ test_invalid_qso_lines = [
     ('130803;1319;YO5BTZ;6;59;001;59;00001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
 ]
 
-test_qsos_4_get_qsos = [
+test_logQso_qsos = [
     edi.Log.qsos_tuple(linenr=41, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True, error=None),
     edi.Log.qsos_tuple(linenr=42, qso='130803;1321;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;', valid=True, error=None),
     edi.Log.qsos_tuple(linenr=43, qso='130803;1322;YO5TP;6;59;003;59;002;;KN16SS;1;;;;', valid=True, error=None)
 ]
-
 
 
 class TestEdiLog(TestCase):
@@ -102,13 +157,13 @@ class TestEdiLog(TestCase):
         self.maxDiff = None
         mock_read_file_content.return_value = valid_edi_log.split('\n')
         log = edi.Log('some_log_file.edi')
-        self.assertEqual(len(test_qsos_4_get_qsos), len(log.qsos))
-        self.assertEqual(test_qsos_4_get_qsos, log.qsos)
+        self.assertEqual(len(test_logQso_qsos), len(log.qsos))
+        self.assertEqual(test_logQso_qsos, log.qsos)
 
 
 class TestEdiLogQso(TestCase):
     def test_init(self):
-        for _qso in test_qsos_4_get_qsos:
+        for _qso in test_logQso_qsos:
             linenr = _qso.linenr
             qso = _qso.qso
             valid = _qso.valid
@@ -120,7 +175,11 @@ class TestEdiLogQso(TestCase):
             self.assertEqual(lq.error_message, error)
 
     def test_qso_parser(self):
-        pass
+        lqlist = []
+        for qso in test_valid_qso_lines:
+            lq = edi.LogQso(qso, 1).qsoFields
+            lqlist.append(lq.copy())
+        self.assertEqual(lqlist, test_valid_qso_fields)
 
     def test_validate_qso(self):
         pass
