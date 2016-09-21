@@ -97,7 +97,9 @@ class Log(object):
         for qso in qso_lines:
             message = LogQso.valid_qso_line(qso[1])
             self.qsos.append(
-                self.qsos_tuple(linenr=qso[0], qso=qso[1], valid=False if message else True, error=message))
+                # self.qsos_tuple(linenr=qso[0], qso=qso[1], valid=False if message else True, error=message)
+                LogQso(qso[1], qso[0])
+            )
 
     def dump_summary(self):
         """

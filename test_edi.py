@@ -158,7 +158,20 @@ class TestEdiLog(TestCase):
         mock_read_file_content.return_value = valid_edi_log.split('\n')
         log = edi.Log('some_log_file.edi')
         self.assertEqual(len(test_logQso_qsos), len(log.qsos))
-        self.assertEqual(test_logQso_qsos, log.qsos)
+        for qso1, qso2 in zip(test_logQso_qsos, log.qsos):
+            _ln1 = qso1.linenr
+            _qso1 = qso1.qso
+            _valid1 = qso1.valid
+            _error1 = qso1.error
+            _ln2 = qso2.qso_line_number
+            _qso2 = qso2.qso_line
+            _valid2 = qso2.valid_qso
+            _error2 = qso2.error_message
+            self.assertEqual(_ln1, _ln2)
+            self.assertEqual(_qso1, _qso2)
+            self.assertEqual(_valid1, _valid2)
+            self.assertEqual(_error1, _error2)
+        # self.assertEqual(test_logQso_qsos, log.qsos)
 
 
 class TestEdiLogQso(TestCase):

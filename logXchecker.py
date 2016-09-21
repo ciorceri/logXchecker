@@ -2,6 +2,7 @@ import argparse
 import importlib
 import os
 import sys
+import configparser
 
 import edi
 import version
@@ -60,37 +61,118 @@ class Contest(object):
 
 class Rules(object):
     """
-    Will read and parse the contest rule files.
-    Rule example: contest date, contest bands, contest categories.
     Rule file format : https://en.wikipedia.org/wiki/INI_file
+
+    Will read and parse the contest rule files.
+    This class will contain various properties to get contest dates, bands, categories
+    Rule example: contest date, contest bands, contest categories.
+        [contest]
+        name=Cupa Nasaud
+        begindate=20160805
+        enddate=20160806
+        beginhour=1200
+        endhour=1200
+        bands=2
+        periods=2
+        categories=3
+
+        [log]
+        format=edi
+
+        [band1]
+        band=144
+        regexp=(144|145|2m)
+
+        [band2]
+        band=432
+        regexp=(430|432|70cm)
+
+        [period1]
+        begindate=20160805
+        enddate=20160805
+        beginhour=1200
+        endhour=2359
+        bands=band1,band2
+
+        [period2]
+        begindate=20160806
+        enddate=201608086
+        beginhour=0000
+        endhour=1200
+        bands=band1,band2
+
+        [category1]
+        name=Single Operator 144
+        regexp=(so|single)
+        bands=band1
+
+        [category2]
+        name=Single Operator 432
+        regexp=(so|single)
+        bands=band2
+
+        [category3]
+        name=Multi Operator
+        regexp=(mo|multi)
+        bands=band1,band2
+
+        # And then we have some details about mixing categories & bands. This will need some thinking
+
     """
     path = None
+    config = None
+    valid = False
 
     def __init__(self, path):
-        pass
+        if not os.path.isfile(path):
+            raise FileNotFoundError("The rules file " + str(path) + " was not found")
+        self.path = path
+        self.valid = False
+        self.config = configparser.ConfigParser()
+        if self.config.read_string(self.read_file_content(self.path)):
+            self.validate_rules()
 
-    def read_rules(self, path):
-        """
-        :param path: path to ini rule file
-        :return: ???
-        """
-        pass
+    def read_file_content(self, path):
+        try:
+            with open(self.path, 'r') as f:
+                content = f.read()
+        except IOError as why:
+            raise
+        except Exception as why:
+            raise
+        return content
 
     def validate_rules(self):
-        """
-        :return: ???
-        """
+        """ this will validate all readed rules"""
         pass
 
-    def _validate_log_name(self):
-        """
-        Based on ...
-        :return:
-        """
-        pass
+    @property
+    def contest_begin_date(self):
+        return self.config['contest']['begindate']
 
-    def _validate_log_xyz(self):
-        pass
+    @property
+    def contest_end_date(self):
+        return self.config['contest']['enddate']
+
+    @property
+    def contest_begin_hour(self):
+        return self.config['contest']['beginhour']
+
+    @property
+    def contest_end_hour(self):
+        return self.config['contest']['endhour']
+
+    @property
+    def contest_bands(self):
+        return self.config['contest']['bands']
+
+    @property
+    def contest_periods(self):
+        return self.config['contest']['periods']
+
+    @property
+    def contest_categories(self):
+        return self.config['contest']['categories']
 
 
 class Operator(edi.Operator):
