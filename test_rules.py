@@ -69,9 +69,21 @@ class TestRules(TestCase):
 
         self.assertEqual(rules.config.sections(), valid_rules_sections)
         self.assertEqual(rules.contest_begin_date, '20160805')
+
         self.assertEqual(rules.contest_end_date, '20160806')
         self.assertEqual(rules.contest_begin_hour, '1200')
         self.assertEqual(rules.contest_end_hour, '1200')
-        self.assertEqual(rules.contest_bands, '2')
-        self.assertEqual(rules.contest_periods, '2')
-        self.assertEqual(rules.contest_categories, '3')
+
+        self.assertEqual(rules.contest_bands_nr, 2)
+        self.assertEqual(rules.contest_band(1)['band'], '144')
+        self.assertEqual(rules.contest_band(2)['band'], '432')
+
+        self.assertEqual(rules.contest_periods_nr, 2)
+        self.assertEqual(rules.contest_period(1)['begindate'], '20160805')
+        self.assertEqual(rules.contest_period(1)['enddate'], '20160805')
+        self.assertEqual(rules.contest_period(1)['beginhour'], '1200')
+        self.assertEqual(rules.contest_period(1)['endhour'], '2359')
+        self.assertEqual(rules.contest_period(1)['bands'], 'band1,band2')
+        self.assertEqual(list(rules.contest_period_bands(1)), ['band1', 'band2'])
+
+        self.assertEqual(rules.contest_categories_nr, 3)

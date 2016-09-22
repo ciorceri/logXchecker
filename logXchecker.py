@@ -163,16 +163,29 @@ class Rules(object):
         return self.config['contest']['endhour']
 
     @property
-    def contest_bands(self):
-        return self.config['contest']['bands']
+    def contest_bands_nr(self):
+        return int(self.config['contest']['bands'])
+
+    def contest_band(self, number):
+        return self.config['band'+str(number)]
 
     @property
-    def contest_periods(self):
-        return self.config['contest']['periods']
+    def contest_periods_nr(self):
+        return int(self.config['contest']['periods'])
+
+    def contest_period(self, number):
+        return self.config['period'+str(number)]
+
+    def contest_period_bands(self, number):
+        for band in self.contest_period(number)['bands'].split(','):
+            yield band
 
     @property
-    def contest_categories(self):
-        return self.config['contest']['categories']
+    def contest_categories_nr(self):
+        return int(self.config['contest']['categories'])
+
+    def contest_category(self, number):
+        return self.config['category'+str(number)]
 
 
 class Operator(edi.Operator):
