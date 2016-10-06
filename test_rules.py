@@ -35,7 +35,7 @@ bands=band1,band2
 
 [period2]
 begindate=20160806
-enddate=201608086
+enddate=20160806
 beginhour=0000
 endhour=1200
 bands=band1,band2

@@ -3,6 +3,7 @@ import importlib
 import os
 import sys
 import configparser
+from datetime import datetime
 
 import edi
 import version
@@ -129,8 +130,8 @@ class Rules(object):
         self.path = path
         self.valid = False
         self.config = configparser.ConfigParser()
-        if self.config.read_string(self.read_file_content(self.path)):
-            self.validate_rules()
+        self.config.read_string(self.read_file_content(self.path))
+        self.validate_rules()
 
     def read_file_content(self, path):
         try:
@@ -143,7 +144,65 @@ class Rules(object):
         return content
 
     def validate_rules(self):
-        """ this will validate all readed rules"""
+        # validate bands number and fields
+        try:
+            for band in range(1, self.contest_bands_nr+1):
+                self.contest_band(band)
+                self.contest_band(band)['band']
+                self.contest_band(band)['regexp']
+        except KeyError as e:
+            print('ERROR: Rules file has invalid settings for band', band)
+            sys.exit(1)
+
+        # validate period number and fields
+        try:
+            for period in range(1, self.contest_periods_nr+1):
+                self.contest_period(period)
+                self.contest_period(period)['begindate']
+                self.contest_period(period)['enddate']
+                self.contest_period(period)['beginhour']
+                self.contest_period(period)['endhour']
+                self.contest_period(period)['bands']
+        except KeyError as e:
+            print('ERROR: Rules file has invalid settings for period', period)
+            sys.exit(1)
+
+        # validate period number and fields
+        try:
+            for category in range(1, self.contest_categories_nr+1):
+                self.contest_category(category)
+                self.contest_category(category)['name']
+                self.contest_category(category)['regexp']
+                self.contest_category(category)['bands']
+        except KeyError as e:
+            print('ERROR: Rules file has invalid settings for category', category)
+            sys.exit(1)
+
+        # validate date and time
+        try:
+            msg = 'contest begin date'
+            datetime.strptime(self.contest_begin_date, '%Y%m%d')
+            msg = 'contest end date'
+            datetime.strptime(self.contest_end_date, '%Y%m%d')
+            for period in range(1, self.contest_periods_nr+1):
+                msg = 'period %d begin date' % period
+                datetime.strptime(self.contest_period(period)['begindate'], '%Y%m%d')
+                msg = 'period %d end date' % period
+                datetime.strptime(self.contest_period(period)['enddate'], '%Y%m%d')
+            msg = 'contest begin hour'
+            datetime.strptime(self.contest_begin_hour, '%H%M')
+            msg = 'contest end hour'
+            datetime.strptime(self.contest_end_hour, '%H%M')
+            for period in range(1, self.contest_periods_nr+1):
+                msg = 'period %d begin hour' % period
+                datetime.strptime(self.contest_period(period)['beginhour'], '%H%M')
+                msg = 'period %d end hour' % period
+                datetime.strptime(self.contest_period(period)['endhour'], '%H%M')
+        except ValueError as e:
+            print('ERROR: Rules file has invalid', msg)
+            sys.exit(1)
+
+        # validate category & period bands
         pass
 
     @property
