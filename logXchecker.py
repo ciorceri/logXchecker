@@ -5,7 +5,7 @@ import sys
 
 import edi
 import version
-import rules
+import rules as _rules
 
 
 class ArgumentParser():
@@ -59,60 +59,48 @@ class Contest(object):
     """
 
 
-class Operator(edi.Operator):
-    """
-    This will keep the info & logs for each ham operator (team)
-    """
-    callsign = None
-    info = {}
-    logs = []
-
-    def __init__(self):
-        pass
-
-
-class Log(edi.Log):
-    """
-    This will keep a single log information (header + list of LogQso instances)
-    """
-    path = None
-
-    def __init__(self):
-        pass
-
-    def validate_log_name(self):
-        pass
-
-    def validate_log_content(self):
-        pass
-
-    def get_summary(self):
-        """
-        Based on the output format (text, html...) this will output a summary of the log
-        """
-        pass
-
-
-class LogQso(edi.LogQso):
-    """
-    This will keep a single QSO
-    """
-    qsoFields = {}
-
-    def __init__(self):
-        pass
-
-    def qso_parser(self):
-        """
-        This should parse a qso based on log format
-        """
-        pass
-
-    def validate_qso(self):
-        """
-        This will validate a parsed qso based on generic rules (simple validation) or based on rules
-        """
-        pass
+# class Log(edi.Log):
+#     """
+#     This will keep a single log information (header + list of LogQso instances)
+#     """
+#     path = None
+#
+#     def __init__(self):
+#         pass
+#
+#     def validate_log_name(self):
+#         pass
+#
+#     def validate_log_content(self):
+#         pass
+#
+#     def get_summary(self):
+#         """
+#         Based on the output format (text, html...) this will output a summary of the log
+#         """
+#         pass
+#
+#
+# class LogQso(edi.LogQso):
+#     """
+#     This will keep a single QSO
+#     """
+#     qsoFields = {}
+#
+#     def __init__(self):
+#         pass
+#
+#     def qso_parser(self):
+#         """
+#         This should parse a qso based on log format
+#         """
+#         pass
+#
+#     def validate_qso(self):
+#         """
+#         This will validate a parsed qso based on generic rules (simple validation) or based on rules
+#         """
+#         pass
 
 
 # This function is not used at this moment since I have support only for 'edi format'
@@ -139,15 +127,30 @@ def load_log_format_module(module_name):
 def main():
     print(version.__project__,  version.__version__)
     args = ArgumentParser().parse(sys.argv[1:])
+
+    operator = None
+    log = None
+    logQso = None
+
     if args.format:
         # lfmodule = load_log_format_module(args.format)
         lfmodule = edi
+        if args.format == 'EDI':
+            operator = lfmodule.Operator
+            log = lfmodule.Log
+            logQso = lfmodule.LogQso
+
+    # do we have 'rules' ?
+    rules = None
+    if args.rules:
+        rules = _rules.Rules(args.rules)
 
     # if 'validate one log'
     if args.slc:
         print('Validate log: ', args.slc)
         if not os.path.isfile(args.slc):
             raise FileNotFoundError(args.slc)
+        log = edi.Log(args.slc)
 
     elif args.mlc:
         print('Validate folder: ', args.mlc)

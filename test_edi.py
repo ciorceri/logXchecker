@@ -199,9 +199,9 @@ class TestEdiLogQso(TestCase):
 
     def test_valid_qso_line(self):
         for line in test_valid_qso_lines:
-            self.assertIsNone(edi.LogQso.valid_qso_line(line))
+            self.assertIsNone(edi.LogQso.regexp_qso_validator(line))
 
         for (line, message) in test_invalid_qso_lines:
-            ret = edi.LogQso.valid_qso_line(line)
+            ret = edi.LogQso.regexp_qso_validator(line)
             self.assertEqual(message, ret)
 

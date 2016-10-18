@@ -1,6 +1,6 @@
 import re
 from collections import namedtuple
-
+from datetime import datetime
 
 class Operator(object):
     """
@@ -95,7 +95,7 @@ class Log(object):
 
         # validate qso lines
         for qso in qso_lines:
-            message = LogQso.valid_qso_line(qso[1])
+            message = LogQso.regexp_qso_validator(qso[1])
             self.qsos.append(
                 # self.qsos_tuple(linenr=qso[0], qso=qso[1], valid=False if message else True, error=message)
                 LogQso(qso[1], qso[0])
@@ -140,15 +140,15 @@ class LogQso(object):
                  'duplicate_qso': None,
                  }
 
-    def __init__(self, qso_line, qso_line_number):
+    def __init__(self, qso_line, qso_line_number, rules=None):
         self.qso_line = qso_line
         self.qso_line_number = qso_line_number
-        self.error_message = self.valid_qso_line(qso_line) or None
+        self.error_message = self.regexp_qso_validator(qso_line) or None
         self.valid_qso = False if self.error_message else True
 
         if self.valid_qso:
             self.qso_parser()
-            self.error_message = self.validate_qso() or None
+            self.error_message = self.generic_qso_validator() or self.rules_based_qso_validator(rules) or None
 
     def qso_parser(self):
         """
@@ -159,14 +159,8 @@ class LogQso(object):
             for key in self.qsoFields.keys():
                 self.qsoFields[key] = res.group(key)
 
-    def validate_qso(self):
-        """
-        This will validate a parsed qso based on generic rules (simple validation) or based on rules
-        """
-        pass
-
     @classmethod
-    def valid_qso_line(cls, line):
+    def regexp_qso_validator(cls, line):
         """
         This will validate the a line of qso from .edi log
         :param line:
@@ -183,6 +177,50 @@ class LogQso(object):
         if not res:
             return 'QSO checks didn\'t pass'
         return None
+
+    def generic_qso_validator(self):
+        """
+        This will validate a parsed qso based on generic rules
+        :return:
+        """
+        try:
+            datetime.strptime(self.qsoFields['date'], '%y%m%d')
+        except ValueError as e:
+            return 'Qso date is invalid: %s' % (str(e))
+
+        try:
+            datetime.strptime(self.qsoFields['hour'], '%H%M')
+        except ValueError as e:
+            return 'Qso hour is invalid: %s' % (str(e))
+
+        rePWWLo = "^\s*([a-rA-R]{2}\d{2}[a-xA-X]{2})\s*$"
+        result = re.match(rePWWLo, self.qsoFields['wwl'], re.IGNORECASE)
+        if not result:
+            return 'Qso WWL is invalid'
+
+    def rules_based_qso_validator(self, rules):
+        """
+        This will validate the self.qsoFields based on Rules class instance
+        :param rules:
+        :return:
+        """
+        if rules is None:
+            return
+
+        # validate qso date
+        if self.qsoFields['date'] < rules.contest_begin_date:
+            return 'Qso date is invalid: before contest starts'
+        if self.qsoFields['date'] > rules.contest_end_date:
+            return 'Qso date is invalid: after contest ends'
+
+        # validate qso hour
+        if self.qsoFields['hour'] < rules.contest_begin_hour:
+            return 'Qso hour is invalid: before contest start hour'
+        if self.qsoFields['hour'] > rules.contest_end_hour:
+            return 'Qso hour is invalid: after contest end hour'
+
+        # validate qso mode
+        # todo: I have to add 'modes' in rules.py
 
 
 class LogException(Exception):

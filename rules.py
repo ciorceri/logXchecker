@@ -74,10 +74,10 @@ class Rules(object):
         self.path = path
         self.valid = False
         self.config = configparser.ConfigParser()
-        self.config.read_string(self.read_file_content(self.path))
+        self.config.read_string(self.read_config_file_content(self.path))
         self.validate_rules()
 
-    def read_file_content(self, path):
+    def read_config_file_content(self, path):
         try:
             with open(self.path, 'r') as f:
                 content = f.read()
