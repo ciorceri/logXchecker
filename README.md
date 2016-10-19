@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/ciorceri/logXchecker.svg?branch=master)](https://travis-ci.org/ciorceri/logXchecker)
+
+
+
 # logXchecker
 
 **logXchecker** is a ham radio contests log cross checker with the following features:
