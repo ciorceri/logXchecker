@@ -105,6 +105,9 @@ class Rules(object):
 
     def validate_rules(self):
         # validate bands number and fields
+        if self.contest_bands_nr < 1:
+            print('ERROR: Rules file has invalid settings for band')
+            sys.exit(10)
         try:
             for band in range(1, self.contest_bands_nr+1):
                 self.contest_band(band)
@@ -112,7 +115,7 @@ class Rules(object):
                 self.contest_band(band)['regexp']
         except KeyError as e:
             print('ERROR: Rules file has invalid settings for band', band)
-            sys.exit(1)
+            sys.exit(10)
 
         # validate period number and fields
         try:
@@ -125,7 +128,7 @@ class Rules(object):
                 self.contest_period(period)['bands']
         except KeyError as e:
             print('ERROR: Rules file has invalid settings for period', period)
-            sys.exit(1)
+            sys.exit(11)
 
         # validate period number and fields
         try:
@@ -136,7 +139,7 @@ class Rules(object):
                 self.contest_category(category)['bands']
         except KeyError as e:
             print('ERROR: Rules file has invalid settings for category', category)
-            sys.exit(1)
+            sys.exit(12)
 
         # validate date and time
         try:

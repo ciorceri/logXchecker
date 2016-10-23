@@ -74,6 +74,29 @@ bands=band1,band2
 
 valid_rules_sections = ['contest', 'log', 'band1', 'band2', 'period1', 'period2', 'category1', 'category2', 'category3']
 
+invalid_rules_band = [
+"""
+[contest]
+bands=0
+""" ,
+"""
+[contest]
+bands=1
+"""
+]
+
+invalid_rules_period = [
+"""
+[contest]
+bands=1
+periods=1
+
+[band1]
+band=144
+regexp=(144|145|2m)
+""",
+]
+
 
 class TestRules(TestCase):
     @mock.patch('os.path.isfile')
@@ -103,3 +126,24 @@ class TestRules(TestCase):
         self.assertEqual(list(_rules.contest_period_bands(1)), ['band1', 'band2'])
 
         self.assertEqual(_rules.contest_categories_nr, 3)
+
+    def test_init_fail(self):
+        # test 'file not found'
+        self.assertRaises(FileNotFoundError, rules.Rules, 'some_missing_file.rules')
+
+    @mock.patch('os.path.isfile')
+    def test_rules_band_validation(self, mock_isfile):
+        mock_isfile.return_value = True
+        for rule_band in invalid_rules_band:
+            print("TESTING:", rule_band)
+            mo = mock.mock_open(read_data=rule_band)
+            with patch('builtins.open', mo, create=True):
+                self.assertRaisesRegex(SystemExit, '^10$', rules.Rules, 'some_rule_file.rules')
+
+    @mock.patch('os.path.isfile')
+    def test_rules_period_validation(self, mock_isfile):
+        mock_isfile.return_value = True
+        for rule_period in invalid_rules_period:
+            mo = mock.mock_open(read_data=rule_period)
+            with patch('builtins.open', mo, create=True):
+                self.assertRaisesRegex(SystemExit, '^11$', rules.Rules, 'some_rule_file.rules')
