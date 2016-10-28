@@ -74,6 +74,17 @@ bands=band1,band2
 
 valid_rules_sections = ['contest', 'log', 'band1', 'band2', 'period1', 'period2', 'category1', 'category2', 'category3']
 
+invalid_rules_band_syntax = [
+"""
+[contest]
+bands=
+""" ,
+"""
+[contest]
+bands=X
+"""
+]
+
 invalid_rules_band = [
 """
 [contest]
@@ -84,6 +95,19 @@ bands=0
 bands=1
 """
 ]
+
+invalid_rules_period_syntax = [
+"""
+[contest]
+periods=
+""" ,
+"""
+[contest]
+periods=X
+""",
+
+]
+
 
 invalid_rules_period = [
 """
@@ -132,13 +156,28 @@ class TestRules(TestCase):
         self.assertRaises(FileNotFoundError, rules.Rules, 'some_missing_file.rules')
 
     @mock.patch('os.path.isfile')
+    def test_rules_band_syntax_validation(self, mock_isfile):
+        mock_isfile.return_value = True
+        for rule_band in invalid_rules_band_syntax:
+            mo = mock.mock_open(read_data=rule_band)
+            with patch('builtins.open', mo, create=True):
+                self.assertRaisesRegex(ValueError, 'The bands value is not valid', rules.Rules, 'some_rule_file.rules')
+
+    @mock.patch('os.path.isfile')
     def test_rules_band_validation(self, mock_isfile):
         mock_isfile.return_value = True
         for rule_band in invalid_rules_band:
-            print("TESTING:", rule_band)
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
                 self.assertRaisesRegex(SystemExit, '^10$', rules.Rules, 'some_rule_file.rules')
+
+    @mock.patch('os.path.isfile')
+    def test_rules_period_syntax_validation(self, mock_isfile):
+        mock_isfile.return_value = True
+        for rule_period in invalid_rules_period_syntax:
+            mo = mock.mock_open(read_data=rule_period)
+            with patch('builtins.open', mo, create=True):
+                self.assertRaisesRegex(ValueError, 'The bands value is not valid', rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_rules_period_validation(self, mock_isfile):

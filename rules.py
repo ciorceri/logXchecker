@@ -186,14 +186,22 @@ class Rules(object):
 
     @property
     def contest_bands_nr(self):
-        return int(self.config['contest']['bands'])
+        try:
+            nr = int(self.config['contest']['bands'])
+            return nr
+        except:
+            raise ValueError("The bands value is not valid")
 
     def contest_band(self, number):
         return self.config['band'+str(number)]
 
     @property
     def contest_periods_nr(self):
-        return int(self.config['contest']['periods'])
+        try:
+            nr = int(self.config['contest']['periods'])
+            return nr
+        except:
+            raise ValueError("The periods value is not valid")
 
     def contest_period(self, number):
         return self.config['period'+str(number)]
