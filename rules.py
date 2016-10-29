@@ -104,9 +104,18 @@ class Rules(object):
         return content
 
     def validate_rules(self):
+        # validata contest fields
+        try:
+            self.contest_bands_nr
+            self.contest_periods_nr
+            self.contest_categories_nr
+        except KeyError as e:
+            print('ERROR: Rules has missing fields from [contest] section')
+            sys.exit(9)
+
         # validate bands number and fields
         if self.contest_bands_nr < 1:
-            print('ERROR: Rules file has invalid settings for band')
+            print('ERROR: Rules file has invalid settings for [contest] secttion -> band field')
             sys.exit(10)
         try:
             for band in range(1, self.contest_bands_nr+1):
@@ -118,6 +127,9 @@ class Rules(object):
             sys.exit(10)
 
         # validate period number and fields
+        if self.contest_periods_nr < 1:
+            print("ERROR: Rules file has invalid settings for [contest] section -> periods field")
+            sys.exit(11)
         try:
             for period in range(1, self.contest_periods_nr+1):
                 self.contest_period(period)
@@ -131,6 +143,9 @@ class Rules(object):
             sys.exit(11)
 
         # validate period number and fields
+        if self.contest_categories_nr < 1:
+            print("ERROR: Rules file has invalid settings for [contest] section -> categories field")
+            sys.exit(12)
         try:
             for category in range(1, self.contest_categories_nr+1):
                 self.contest_category(category)
@@ -190,7 +205,7 @@ class Rules(object):
             nr = int(self.config['contest']['bands'])
             return nr
         except:
-            raise ValueError("The bands value is not valid")
+            raise ValueError("The contest bands value is not valid")
 
     def contest_band(self, number):
         return self.config['band'+str(number)]
@@ -201,7 +216,7 @@ class Rules(object):
             nr = int(self.config['contest']['periods'])
             return nr
         except:
-            raise ValueError("The periods value is not valid")
+            raise ValueError("The contest periods value is not valid")
 
     def contest_period(self, number):
         return self.config['period'+str(number)]
@@ -212,7 +227,11 @@ class Rules(object):
 
     @property
     def contest_categories_nr(self):
-        return int(self.config['contest']['categories'])
+        try:
+            nr = int(self.config['contest']['categories'])
+            return nr
+        except:
+            raise ValueError("The contest categories value is not valid")
 
     def contest_category(self, number):
         return self.config['category'+str(number)]
