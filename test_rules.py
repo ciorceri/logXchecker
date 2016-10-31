@@ -20,7 +20,7 @@ from unittest.mock import mock_open, patch
 
 import rules
 
-valid_rules = """
+valid_contest_section = """
 [contest]
 name=Cupa Nasaud
 begindate=20160805
@@ -30,51 +30,84 @@ endhour=1200
 bands=2
 periods=2
 categories=3
-
+"""
+valid_log_section = """
 [log]
 format=edi
-
+"""
+valid_band1_section = """
 [band1]
 band=144
 regexp=(144|145|2m)
-
+"""
+valid_band2_section = """
 [band2]
 band=432
 regexp=(430|432|70cm)
-
+"""
+valid_period1_section = """
 [period1]
 begindate=20160805
 enddate=20160805
 beginhour=1200
 endhour=2359
 bands=band1,band2
-
+"""
+valid_period2_section = """
 [period2]
 begindate=20160806
 enddate=20160806
 beginhour=0000
 endhour=1200
 bands=band1,band2
-
+"""
+valid_category1_section = """
 [category1]
 name=Single Operator 144
 regexp=(so|single)
 bands=band1
-
+"""
+valid_category2_section = """
 [category2]
 name=Single Operator 432
 regexp=(so|single)
 bands=band2
-
+"""
+valid_category3_section = """
 [category3]
 name=Multi Operator
 regexp=(mo|multi)
 bands=band1,band2
 """
 
+valid_rules = valid_contest_section + \
+              valid_log_section + \
+              valid_band1_section + \
+              valid_band2_section + \
+              valid_period1_section + \
+              valid_period2_section + \
+              valid_category1_section + \
+              valid_category2_section + \
+              valid_category3_section
+
 valid_rules_sections = ['contest', 'log', 'band1', 'band2', 'period1', 'period2', 'category1', 'category2', 'category3']
 
-invalid_rules_band_syntax = [
+missing_contest_section_fields = [
+    """
+[contest]
+""",
+    """
+[contest]
+bands=1
+""",
+    """
+[contest]
+bands=1
+periods=1
+"""
+]
+
+invalid_bands_value = [
     """
 [contest]
 bands=
@@ -85,7 +118,7 @@ bands=X
 """
 ]
 
-invalid_rules_band = [
+missing_band_section = [
     """
 [contest]
 bands=0
@@ -100,7 +133,7 @@ categories=1
 """
 ]
 
-invalid_rules_period_syntax = [
+invalid_periods_value = [
     """
 [contest]
 bands=1
@@ -115,17 +148,20 @@ categories=1
 """
 ]
 
-invalid_rules_period = [
+missing_period_section = [
+    """
+[contest]
+bands=1
+periods=0
+categories=1
+""" + valid_band1_section,
     """
 [contest]
 bands=1
 periods=1
 categories=1
+""" + valid_band1_section
 
-[band1]
-band=144
-regexp=(144|145|2m)
-"""
 ]
 
 invalid_rules_categories_syntax = [
@@ -134,46 +170,17 @@ invalid_rules_categories_syntax = [
 bands=1
 categories=
 periods=1
-
-[band1]
-band=144
-regexp=(144|145|2m)
-
-[period1]
-begindate=20160805
-enddate=20160805
-beginhour=1200
-endhour=2359
-bands=band1
-
-[category1]
-name=1
-regexp=(1)
-bands=band1
-""",
+""" +
+    valid_band1_section +
+    valid_period1_section,
     """
 [contest]
 bands=1
 periods=1
 categories=X
-
-[band1]
-band=144
-regexp=(144|145|2m)
-
-[period1]
-begindate=20160805
-enddate=20160805
-beginhour=1200
-endhour=2359
-bands=band1
-
-[category1]
-name=1
-regexp=(1)
-bands=band1
-
-"""
+""" +
+    valid_band1_section +
+    valid_period1_section
 ]
 
 
@@ -211,41 +218,52 @@ class TestRules(TestCase):
         self.assertRaises(FileNotFoundError, rules.Rules, 'some_missing_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_rules_band_syntax_validation(self, mock_isfile):
+    def test_missing_contest_section_fields(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_band in invalid_rules_band_syntax:
+        for rule_band in missing_contest_section_fields:
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, 'The contest bands value is not valid', rules.Rules, 'some_rule_file.rules')
+                self.assertRaisesRegex(SystemExit, '^9$', rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_rules_band_validation(self, mock_isfile):
+    def test_invalid_bands_value(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_band in invalid_rules_band:
+        for rule_band in invalid_bands_value:
+            mo = mock.mock_open(read_data=rule_band)
+            with patch('builtins.open', mo, create=True):
+                self.assertRaisesRegex(ValueError, "The rules have an invalid 'bands' value in \[contest\] section", rules.Rules,
+                                       'some_rule_file.rules')
+
+    @mock.patch('os.path.isfile')
+    def test_missing_band_section(self, mock_isfile):
+        mock_isfile.return_value = True
+        for rule_band in missing_band_section:
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
                 self.assertRaisesRegex(SystemExit, '^10$', rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_rules_period_syntax_validation(self, mock_isfile):
+    def test_periods_value(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_period in invalid_rules_period_syntax:
+        for rule_period in invalid_periods_value:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, 'The contest periods value is not valid', rules.Rules, 'some_rule_file.rules')
+                self.assertRaisesRegex(ValueError, "The rules have an invalid 'periods' value in \[contest\] section", rules.Rules,
+                                       'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_rules_period_validation(self, mock_isfile):
+    def test_missing_period_section(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_period in invalid_rules_period:
+        for rule_period in missing_period_section:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
                 self.assertRaisesRegex(SystemExit, '^11$', rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_rules_category_syntax_validation(self, mock_isfile):
+    def test_rules_category_syntax(self, mock_isfile):
         mock_isfile.return_value = True
         for rule_period in invalid_rules_categories_syntax:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, 'The contest categories value is not valid', rules.Rules, 'some_rule_file.rules')
+                self.assertRaisesRegex(ValueError, "The rules have an invalid 'categories' value in \[contest\] section", rules.Rules,
+                                       'some_rule_file.rules')

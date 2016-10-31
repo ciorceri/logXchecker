@@ -202,10 +202,13 @@ class Rules(object):
     @property
     def contest_bands_nr(self):
         try:
+            self.config['contest']['bands']
             nr = int(self.config['contest']['bands'])
             return nr
-        except:
-            raise ValueError("The contest bands value is not valid")
+        except KeyError:
+            raise KeyError("Rules has missing field 'bands' in [contest] section")
+        except ValueError:
+            raise ValueError("The rules have an invalid 'bands' value in [contest] section")
 
     def contest_band(self, number):
         return self.config['band'+str(number)]
@@ -213,10 +216,13 @@ class Rules(object):
     @property
     def contest_periods_nr(self):
         try:
+            self.config['contest']['periods']
             nr = int(self.config['contest']['periods'])
             return nr
-        except:
-            raise ValueError("The contest periods value is not valid")
+        except KeyError:
+            raise KeyError("Rules has missing field 'periods' in [contest] section")
+        except ValueError:
+            raise ValueError("The rules have an invalid 'periods' value in [contest] section")
 
     def contest_period(self, number):
         return self.config['period'+str(number)]
@@ -228,10 +234,13 @@ class Rules(object):
     @property
     def contest_categories_nr(self):
         try:
+            self.config['contest']['categories']
             nr = int(self.config['contest']['categories'])
             return nr
-        except:
-            raise ValueError("The contest categories value is not valid")
+        except KeyError:
+            raise KeyError("Rules has missing field 'categories' in [contest] section")
+        except ValueError:
+            raise ValueError("The rules have an invalid 'categories' value in [contest] section")
 
     def contest_category(self, number):
         return self.config['category'+str(number)]
