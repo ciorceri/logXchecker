@@ -18,6 +18,7 @@ import re
 from collections import namedtuple
 from datetime import datetime
 
+
 class Operator(object):
     """
     This will keep the info & logs for each ham operator (team)
@@ -224,19 +225,21 @@ class LogQso(object):
             return
 
         # validate qso date
-        if self.qsoFields['date'] < rules.contest_begin_date:
-            return 'Qso date is invalid: before contest starts'
-        if self.qsoFields['date'] > rules.contest_end_date:
-            return 'Qso date is invalid: after contest ends'
+        if self.qsoFields['date'] < rules.contest_begin_date[2:]:
+            return 'Qso date is invalid: before contest starts (<%s)' % rules.contest_begin_date[2:]
+        if self.qsoFields['date'] > rules.contest_end_date[2:]:
+            return 'Qso date is invalid: after contest ends (>%s)' % rules.contest_end_date[2:]
 
         # validate qso hour
-        if self.qsoFields['hour'] < rules.contest_begin_hour:
-            return 'Qso hour is invalid: before contest start hour'
-        if self.qsoFields['hour'] > rules.contest_end_hour:
-            return 'Qso hour is invalid: after contest end hour'
+        if self.qsoFields['date'] == rules.contest_begin_date[2:] and \
+           self.qsoFields['hour'] < rules.contest_begin_hour:
+            return 'Qso hour is invalid: before contest start hour (<%s)' % rules.contest_begin_hour
+        if self.qsoFields['date'] == rules.contest_end_date[2:] and \
+           self.qsoFields['hour'] > rules.contest_end_hour:
+            return 'Qso hour is invalid: after contest end hour (>%s)' % rules.contest_end_hour
 
         # validate qso mode
-        # todo: I have to add 'modes' in rules.py
+        # TODO: I have to add 'modes' in rules.py
 
 
 class LogException(Exception):

@@ -18,6 +18,9 @@ from unittest import TestCase
 from unittest import mock
 from unittest.mock import mock_open, patch
 
+import rules
+from test_rules import valid_rules
+
 import edi
 
 valid_edi_log = """
@@ -142,7 +145,24 @@ test_invalid_qso_lines = [
 test_logQso_qsos = [
     edi.Log.qsos_tuple(linenr=41, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True, error=None),
     edi.Log.qsos_tuple(linenr=42, qso='130803;1321;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;', valid=True, error=None),
-    edi.Log.qsos_tuple(linenr=43, qso='130803;1322;YO5TP;6;59;003;59;002;;KN16SS;1;;;;', valid=True, error=None)
+    edi.Log.qsos_tuple(linenr=43, qso='130803;1322;YO5TP;6;59;003;59;002;;KN16SS;1;;;;', valid=True, error=None),
+]
+
+test_invalid_logQso_qsos = [
+    edi.Log.qsos_tuple(linenr=1, qso='160804;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
+                       error='Qso date is invalid: before contest starts (<160805)'),
+    edi.Log.qsos_tuple(linenr=1, qso='160807;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
+                       error='Qso date is invalid: after contest ends (>160806)'),
+    edi.Log.qsos_tuple(linenr=1, qso='999999;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
+                       error='Qso date is invalid: unconverted data remains: 99'),
+    edi.Log.qsos_tuple(linenr=2, qso='160805;1100;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;', valid=True,
+                       error='Qso hour is invalid: before contest start hour (<1200)'),
+    edi.Log.qsos_tuple(linenr=2, qso='160805;1300;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;', valid=True, error=None),
+    edi.Log.qsos_tuple(linenr=2, qso='160806;1300;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;', valid=True,
+                       error='Qso hour is invalid: after contest end hour (>1200)'),
+    edi.Log.qsos_tuple(linenr=2, qso='160806;1100;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;', valid=True, error=None),
+    edi.Log.qsos_tuple(linenr=2, qso='160805;9999;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;', valid=True,
+                       error='Qso hour is invalid: unconverted data remains: 99'),
 ]
 
 
@@ -198,6 +218,24 @@ class TestEdiLogQso(TestCase):
             valid = _qso.valid
             error = _qso.error
             lq = edi.LogQso(qso, linenr)
+            self.assertEqual(lq.qso_line_number, linenr)
+            self.assertEqual(lq.qso_line, qso)
+            self.assertEqual(lq.valid_qso, valid)
+            self.assertEqual(lq.error_message, error)
+
+    @mock.patch('os.path.isfile')
+    def test_init_with_rules(self, mock_isfile):
+        mock_isfile.return_value = True
+        mo = mock.mock_open(read_data=valid_rules)
+        with patch('builtins.open', mo, create=True):
+            _rules = rules.Rules('some_rule_file.rules')
+
+        for _qso in test_invalid_logQso_qsos:
+            linenr = _qso.linenr
+            qso = _qso.qso
+            valid = _qso.valid
+            error = _qso.error
+            lq = edi.LogQso(qso, linenr, rules=_rules)
             self.assertEqual(lq.qso_line_number, linenr)
             self.assertEqual(lq.qso_line, qso)
             self.assertEqual(lq.valid_qso, valid)
