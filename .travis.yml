@@ -8,4 +8,4 @@ script:
     - python -m py_compile edi.py
     - python -m py_compile test_edi.py
     - python -m py_compile test_parser.py
-    - nosetests -v --with-coverage --cover-erase --cover-html --cover-package=. --cover-min-percentage=89
+    - nosetests -v --with-coverage --cover-erase --cover-html --cover-package=. --cover-min-percentage=90

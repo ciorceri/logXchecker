@@ -188,6 +188,17 @@ test_invalid_logQso_qsos = [
                        error='RST is invalid: 59Z'),
     edi.Log.qsos_tuple(linenr=4, qso='160805;1300;YO5PLP/P;6;59;002;69A;007;;KN27HM;116;;;;', valid=True,
                        error='RST is invalid: 69A'),
+
+    edi.Log.qsos_tuple(linenr=5, qso='160805;1300;YO5PLP/P;6;59;002;59;007;;0027HM;116;;;;', valid=False,
+                       error='QSO checks didn\'t pass'),
+    edi.Log.qsos_tuple(linenr=5, qso='160805;1300;YO5PLP/P;6;59;002;59;007;;KN2700;116;;;;', valid=False,
+                       error='QSO checks didn\'t pass'),
+    edi.Log.qsos_tuple(linenr=5, qso='160805;1300;YO5PLP/P;6;59;002;59;007;;KNAAHM;116;;;;', valid=False,
+                       error='QSO checks didn\'t pass'),
+    edi.Log.qsos_tuple(linenr=5, qso='160805;1300;YO5PLP/P;6;59;002;59;007;;ZZ27HM;116;;;;', valid=True,
+                       error='Qso WWL is invalid'),
+    edi.Log.qsos_tuple(linenr=5, qso='160805;1300;YO5PLP/P;6;59;002;59;007;;KN27ZZ;116;;;;', valid=True,
+                       error='Qso WWL is invalid'),
 ]
 
 
