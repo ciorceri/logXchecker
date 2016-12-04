@@ -155,6 +155,7 @@ test_invalid_logQso_qsos = [
                        error='Qso date is invalid: after contest ends (>160806)'),
     edi.Log.qsos_tuple(linenr=1, qso='999999;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
                        error='Qso date is invalid: unconverted data remains: 99'),
+
     edi.Log.qsos_tuple(linenr=2, qso='160805;1100;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;', valid=True,
                        error='Qso hour is invalid: before contest start hour (<1200)'),
     edi.Log.qsos_tuple(linenr=2, qso='160805;1300;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;', valid=True, error=None),
@@ -163,6 +164,19 @@ test_invalid_logQso_qsos = [
     edi.Log.qsos_tuple(linenr=2, qso='160806;1100;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;', valid=True, error=None),
     edi.Log.qsos_tuple(linenr=2, qso='160805;9999;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;', valid=True,
                        error='Qso hour is invalid: unconverted data remains: 99'),
+
+    edi.Log.qsos_tuple(linenr=3, qso='160805;1300;YO5PLP/P;6;09;002;59;007;;KN27HM;116;;;;', valid=True,
+                       error='RST is invalid: 09'),
+    edi.Log.qsos_tuple(linenr=3, qso='160805;1300;YO5PLP/P;6;69;002;59;007;;KN27HM;116;;;;', valid=True,
+                       error='RST is invalid: 69'),
+    edi.Log.qsos_tuple(linenr=3, qso='160805;1300;YO5PLP/P;6;50;002;59;007;;KN27HM;116;;;;', valid=True,
+                       error='RST is invalid: 50'),
+    edi.Log.qsos_tuple(linenr=3, qso='160805;1300;YO5PLP/P;6;59A;002;59;007;;KN27HM;116;;;;', valid=True, error=None),
+    edi.Log.qsos_tuple(linenr=3, qso='160805;1300;YO5PLP/P;6;59Z;002;59;007;;KN27HM;116;;;;', valid=True,
+                       error='RST is invalid: 59Z'),
+    edi.Log.qsos_tuple(linenr=3, qso='160805;1300;YO5PLP/P;6;69A;002;59;007;;KN27HM;116;;;;', valid=True,
+                       error='RST is invalid: 69A'),
+
 ]
 
 

@@ -46,7 +46,7 @@ class Log(object):
     band = None
     section = None
     qsos_tuple = namedtuple('qso_tuple', ['linenr', 'qso', 'valid', 'error'])
-    qsos = []
+    qsos = []   # list with LogQso instances
 
     def __init__(self, path, checklog=False):
         self.path = path
@@ -133,7 +133,7 @@ class LogQso(object):
                            '(?P<rst_sent>.*?);(?P<nr_sent>.*?);(?P<rst_recv>.*?);(?P<nr_recv>.*?);' \
                            '(?P<exchange_recv>.*?);(?P<wwl>.*?);(?P<points>.*?);' \
                            '(?P<new_exchange>.*?);(?P<new_wwl>.*?);(?P<new_dxcc>.*?);(?P<duplicate_qso>.*?)'
-    regexMediumQsoCheck = '^\d{6};\d{4};.*?;\d;\d{2,3};\d{2,4};\d{2,3};\d{2,4};.*?;.*?;.*?;.*?;.*?;.*?;.*?'
+    regexMediumQsoCheck = '^\d{6};\d{4};.*?;\d;\d{2,3}.?;\d{2,4};\d{2,3};\d{2,4};.*?;.*?;.*?;.*?;.*?;.*?;.*?'
 
     qso_line_number = 0
     qso_line = None
@@ -200,16 +200,26 @@ class LogQso(object):
         This will validate a parsed qso based on generic rules
         :return:
         """
+
+        # validate date format
         try:
             datetime.strptime(self.qsoFields['date'], '%y%m%d')
         except ValueError as e:
             return 'Qso date is invalid: %s' % (str(e))
 
+        # validate time format
         try:
             datetime.strptime(self.qsoFields['hour'], '%H%M')
         except ValueError as e:
             return 'Qso hour is invalid: %s' % (str(e))
 
+        # validate RST format
+        reRST = "^[1-5][1-9][aA]?$"
+        result = re.match(reRST, self.qsoFields['rst_sent'])
+        if not result:
+            return 'RST is invalid: %s' % (self.qsoFields['rst_sent'])
+
+        # validate QTH locator format
         rePWWLo = "^\s*([a-rA-R]{2}\d{2}[a-xA-X]{2})\s*$"
         result = re.match(rePWWLo, self.qsoFields['wwl'], re.IGNORECASE)
         if not result:
