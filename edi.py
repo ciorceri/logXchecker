@@ -133,7 +133,8 @@ class LogQso(object):
                            '(?P<rst_sent>.*?);(?P<nr_sent>.*?);(?P<rst_recv>.*?);(?P<nr_recv>.*?);' \
                            '(?P<exchange_recv>.*?);(?P<wwl>.*?);(?P<points>.*?);' \
                            '(?P<new_exchange>.*?);(?P<new_wwl>.*?);(?P<new_dxcc>.*?);(?P<duplicate_qso>.*?)'
-    regexMediumQsoCheck = '^\d{6};\d{4};.*?;\d;\d{2,3}.?;\d{2,4};\d{2,3};\d{2,4};.*?;.*?;.*?;.*?;.*?;.*?;.*?'
+    regexMediumQsoCheck = '^\d{6};\d{4};.*?;\d;\d{2,3}.?;\d{2,4};\d{2,3}.?;\d{2,4};.*?;.*?;.*?;.*?;.*?;.*?;.*?'
+    #                       date  time   id  m    rst       nr      rst       nr    .  qth  km  .   .   .   .
 
     qso_line_number = 0
     qso_line = None
@@ -218,6 +219,9 @@ class LogQso(object):
         result = re.match(reRST, self.qsoFields['rst_sent'])
         if not result:
             return 'RST is invalid: %s' % (self.qsoFields['rst_sent'])
+        result = re.match(reRST, self.qsoFields['rst_recv'])
+        if not result:
+            return 'RST is invalid: %s' % (self.qsoFields['rst_recv'])
 
         # validate QTH locator format
         rePWWLo = "^\s*([a-rA-R]{2}\d{2}[a-xA-X]{2})\s*$"

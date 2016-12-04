@@ -177,6 +177,17 @@ test_invalid_logQso_qsos = [
     edi.Log.qsos_tuple(linenr=3, qso='160805;1300;YO5PLP/P;6;69A;002;59;007;;KN27HM;116;;;;', valid=True,
                        error='RST is invalid: 69A'),
 
+    edi.Log.qsos_tuple(linenr=4, qso='160805;1300;YO5PLP/P;6;59;002;09;007;;KN27HM;116;;;;', valid=True,
+                       error='RST is invalid: 09'),
+    edi.Log.qsos_tuple(linenr=4, qso='160805;1300;YO5PLP/P;6;59;002;69;007;;KN27HM;116;;;;', valid=True,
+                       error='RST is invalid: 69'),
+    edi.Log.qsos_tuple(linenr=4, qso='160805;1300;YO5PLP/P;6;59;002;50;007;;KN27HM;116;;;;', valid=True,
+                       error='RST is invalid: 50'),
+    edi.Log.qsos_tuple(linenr=4, qso='160805;1300;YO5PLP/P;6;59;002;59A;007;;KN27HM;116;;;;', valid=True, error=None),
+    edi.Log.qsos_tuple(linenr=4, qso='160805;1300;YO5PLP/P;6;59;002;59Z;007;;KN27HM;116;;;;', valid=True,
+                       error='RST is invalid: 59Z'),
+    edi.Log.qsos_tuple(linenr=4, qso='160805;1300;YO5PLP/P;6;59;002;69A;007;;KN27HM;116;;;;', valid=True,
+                       error='RST is invalid: 69A'),
 ]
 
 
