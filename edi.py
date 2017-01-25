@@ -21,7 +21,7 @@ from datetime import datetime
 
 class Operator(object):
     """
-    This will keep the info & logs for each ham operator (team)
+    Keep operator callsign, info and logs path
     """
     callsign = None
     info = {}
@@ -37,7 +37,8 @@ class Operator(object):
 
 class Log(object):
     """
-    This will keep a single log information (header + list of LogQso instances)
+    Keep a single EDI log information:
+    log path, log raw content, callsign, qth, band, section, qsos tuple (raw content) and a list with LogQso() instances
     """
     path = None
     log_content = None  # full content of the log
@@ -52,19 +53,30 @@ class Log(object):
         self.path = path
         self.log_content = self.read_file_content(self.path)
 
-        # _temp = self.get_field('PCall')
-        # if _temp is None:
-        #     raise ValueError('The PCall field is not present')
-        # if len(_temp) > 1:
-        #     raise ValueError('The PCall field is present multiple times')
-        # self.callsign = _temp[0]
+        # get & validate callsign
+        _callsign = self.get_field('PCall')
+        if _callsign is None:
+            raise ValueError('The PCall field is not present')
+        if len(_callsign) > 1:
+            raise ValueError('The PCall field is present multiple times')
+        self.callsign = _callsign[0]
+
+        # get & validate maidenhead locator
+        # TODO
+
+        # get & validate band
+        # TODO
+
+        # get & validate section
+        # TODO
 
         self.qsos = []
         self.get_qsos()
 
-    def read_file_content(self, path):
+    @staticmethod
+    def read_file_content(path):
         try:
-            with open(self.path, 'r') as f:
+            with open(path, 'r') as f:
                 content = f.readlines()
         except IOError as why:
             raise
@@ -73,11 +85,12 @@ class Log(object):
         return content
 
     def validate_log_content(self):
+        # TODO: to see later if we have to do a genric validation or not
         pass
 
     def get_field(self, field):
         """
-        Will read the log_content and will return field value
+        Will read the log_content and will return field value in a list
         """
 
         if self.log_content is None:
@@ -92,7 +105,7 @@ class Log(object):
 
     def get_qsos(self):
         """
-        Will read the log_content and will return a list of LogQso
+        Will read the self.log_content and will return a list of LogQso
         """
         qso_record_start = "[QSORECORDS"
         qso_record_end = "[END;"
@@ -115,7 +128,7 @@ class Log(object):
             message = LogQso.regexp_qso_validator(qso[1])
             self.qsos.append(
                 # self.qsos_tuple(linenr=qso[0], qso=qso[1], valid=False if message else True, error=message)
-                LogQso(qso[1], qso[0])
+                LogQso(qso[1], qso[0]) # LogQso(qso_line, qso_line_number_in_log)
             )
 
     def dump_summary(self):
@@ -127,7 +140,8 @@ class Log(object):
 
 class LogQso(object):
     """
-    This will keep a single QSO
+    Keep a single QSO (in EDI format) and some info:
+    qso line number, raw qso, is valid ? , error message if !valid, all qso fields
     """
     regexMinimalQsoCheck = '(?P<date>.*?);(?P<hour>.*?);(?P<call>.*?);(?P<mode>.*?);' \
                            '(?P<rst_sent>.*?);(?P<nr_sent>.*?);(?P<rst_recv>.*?);(?P<nr_recv>.*?);' \
@@ -214,7 +228,13 @@ class LogQso(object):
         except ValueError as e:
             return 'Qso hour is invalid: %s' % (str(e))
 
-        # validate RST format
+        # validate callsign format
+        # TODO
+
+        # validate mode format
+        # TODO
+
+        # validate RST (sent & recv) format
         reRST = "^[1-5][1-9][aA]?$"
         result = re.match(reRST, self.qsoFields['rst_sent'])
         if not result:
@@ -223,11 +243,20 @@ class LogQso(object):
         if not result:
             return 'RST is invalid: %s' % (self.qsoFields['rst_recv'])
 
+        # validate NR (sent & recv) format
+        # TODO
+
+        # validate 'exchange_recv' format
+        # TODO
+
         # validate QTH locator format
         rePWWLo = "^\s*([a-rA-R]{2}\d{2}[a-xA-X]{2})\s*$"
         result = re.match(rePWWLo, self.qsoFields['wwl'], re.IGNORECASE)
         if not result:
             return 'Qso WWL is invalid'
+
+        # validate 'duplicate_qso' format
+        # TODO
 
     def rules_based_qso_validator(self, rules):
         """
