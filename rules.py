@@ -40,6 +40,20 @@ class Rules(object):
         [log]
         format=edi
 
+        [mode]
+        regexp=(1|2|6)
+
+        # 0 non of below non of below
+        # 1 SSB SSB
+        # 2 CW CW
+        # 3 SSB CW
+        # 4 CW SSB
+        # 5 AM AM
+        # 6 FM FM
+        # 7 RTTY RTTY
+        # 8 SSTV SSTV
+        # 9 ATV ATV
+
         [band1]
         band=144
         regexp=(144|145|2m)
@@ -78,8 +92,8 @@ class Rules(object):
         bands=band1,band2
 
         # And then we have some details about mixing categories & bands. This will need some thinking
-
     """
+
     path = None
     config = None
     valid = False
@@ -93,9 +107,10 @@ class Rules(object):
         self.config.read_string(self.read_config_file_content(self.path))
         self.validate_rules()
 
-    def read_config_file_content(self, path):
+    @staticmethod
+    def read_config_file_content(path):
         try:
-            with open(self.path, 'r') as f:
+            with open(path, 'r') as f:
                 content = f.read()
         except IOError as why:
             raise
@@ -181,7 +196,7 @@ class Rules(object):
             sys.exit(1)
 
         # validate category & period bands
-        pass
+        # TODO
 
     @property
     def contest_begin_date(self):
