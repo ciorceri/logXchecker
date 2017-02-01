@@ -41,7 +41,7 @@ class Rules(object):
         format=edi
 
         [mode]
-        regexp=(1|2|6)
+        regexp=1|2|6
 
         # 0 non of below non of below
         # 1 SSB SSB
@@ -56,11 +56,11 @@ class Rules(object):
 
         [band1]
         band=144
-        regexp=(144|145|2m)
+        regexp=144|145|2m
 
         [band2]
         band=432
-        regexp=(430|432|70cm)
+        regexp=430|432|70cm
 
         [period1]
         begindate=20160805
@@ -78,17 +78,17 @@ class Rules(object):
 
         [category1]
         name=Single Operator 144
-        regexp=(so|single)
+        regexp=so|single
         bands=band1
 
         [category2]
         name=Single Operator 432
-        regexp=(so|single)
+        regexp=so|single
         bands=band2
 
         [category3]
         name=Multi Operator
-        regexp=(mo|multi)
+        regexp=mo|multi
         bands=band1,band2
 
         # And then we have some details about mixing categories & bands. This will need some thinking

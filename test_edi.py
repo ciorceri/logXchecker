@@ -245,6 +245,18 @@ class TestEdiLog(TestCase):
             self.assertEqual(_error1, _error2)
         # self.assertEqual(test_logQso_qsos, log.qsos)
 
+    def test_validate_qth_locator(self):
+        # TODO: test for this function
+        pass
+
+    def test_validate_band(self):
+        # TODO: test for this function
+        pass
+
+    def test_rules_based_validate_band(self):
+        # TODO: test for this function
+        pass
+
 
 class TestEdiLogQso(TestCase):
     def test_init(self):

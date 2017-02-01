@@ -38,12 +38,12 @@ format=edi
 valid_band1_section = """
 [band1]
 band=144
-regexp=(144|145|2m)
+regexp=144|145|2m
 """
 valid_band2_section = """
 [band2]
 band=432
-regexp=(430|432|70cm)
+regexp=430|432|70cm
 """
 valid_period1_section = """
 [period1]

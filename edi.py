@@ -49,7 +49,7 @@ class Log(object):
     qsos_tuple = namedtuple('qso_tuple', ['linenr', 'qso', 'valid', 'error'])
     qsos = []   # list with LogQso instances
 
-    def __init__(self, path, checklog=False):
+    def __init__(self, path, rules=None, checklog=False):
         self.path = path
         self.log_content = self.read_file_content(self.path)
 
@@ -62,10 +62,22 @@ class Log(object):
         self.callsign = _callsign[0]
 
         # get & validate maidenhead locator
-        # TODO
+        _qthlocator = self.get_field('PWWLo')
+        if _qthlocator is None:
+            raise ValueError('The PWWLo field is not present')
+        if len(_qthlocator) > 1:
+            raise ValueError('The PWWLo field is present multiple times')
+        if not self.validate_qth_locator(_qthlocator[0]):
+            raise ValueError('The PWWLo field value is not valid')
 
         # get & validate band
-        # TODO
+        _band = self.get_field('PBand')
+        if _band is None:
+            raise ValueError('The PBand field is not present')
+        if len(_band) > 1:
+            raise ValueError('The PBand field is present muliple times')
+        if not self.validate_band(_band[0]):
+            raise ValueError('The PBand field value is not valids')
 
         # get & validate section
         # TODO
@@ -130,6 +142,44 @@ class Log(object):
                 # self.qsos_tuple(linenr=qso[0], qso=qso[1], valid=False if message else True, error=message)
                 LogQso(qso[1], qso[0]) # LogQso(qso_line, qso_line_number_in_log)
             )
+
+    def validate_qth_locator(self, qth):
+        regexMaidenhead = '^\s*([a-rA-R]{2}\d{2}[a-xA-X]{2})\s*$'
+        res = re.match(regexMaidenhead, qth)
+        return True if res else False
+
+    def validate_band(self, band):
+        """
+        This will validate PBand based on generic rules
+        """
+        validated = False
+        regexpBandCheck = ['144.*', '145.*',
+                           '430.*', '432.*', '435.*',
+                           '1296.*', '1[.,][23].*']
+        for _regex in regexpBandCheck:
+            res = re.match(_regex, band)
+            if res:
+                validated = True
+
+        return validated
+
+    def rules_based_validate_band(self, band, rules):
+        """
+        This will validate PBand based on Rules class instance
+        """
+        validated = False
+
+        if rules is None:
+            raise ValueError('TODO : nu avem rules ! tre fixat cum se da eroarea !')
+
+        for _nr in range(rules.contest_bands_nr):
+            _regex = '^\s*(' + rules.contest_band(_nr)['regexp'] + ')\s*$'
+            res = re.match(_regex, band)
+            if res:
+                validated = True
+
+        return validated
+
 
     def dump_summary(self):
         """
