@@ -143,9 +143,10 @@ class Log(object):
                 LogQso(qso[1], qso[0]) # LogQso(qso_line, qso_line_number_in_log)
             )
 
-    def validate_qth_locator(self, qth):
+    @staticmethod
+    def validate_qth_locator(qth):
         regexMaidenhead = '^\s*([a-rA-R]{2}\d{2}[a-xA-X]{2})\s*$'
-        res = re.match(regexMaidenhead, qth)
+        res = re.match(regexMaidenhead, qth, re.IGNORECASE)
         return True if res else False
 
     def validate_band(self, band):
@@ -300,9 +301,7 @@ class LogQso(object):
         # TODO
 
         # validate QTH locator format
-        rePWWLo = "^\s*([a-rA-R]{2}\d{2}[a-xA-X]{2})\s*$"
-        result = re.match(rePWWLo, self.qsoFields['wwl'], re.IGNORECASE)
-        if not result:
+        if not Log.validate_qth_locator(self.qsoFields['wwl']):
             return 'Qso WWL is invalid'
 
         # validate 'duplicate_qso' format
