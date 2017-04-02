@@ -246,8 +246,13 @@ class TestEdiLog(TestCase):
         # self.assertEqual(test_logQso_qsos, log.qsos)
 
     def test_validate_qth_locator(self):
-        # TODO: test for this function
-        pass
+        positive_tests = ['KN16SS', 'kn16ss', 'AA00AA', 'RR00XX']
+        negative_tests = ['0016SS', 'KNXXSS', 'KN1600', 'KN16SS00', '00KN16SS']
+
+        for test in positive_tests:
+            self.assertTrue(edi.Log.validate_qth_locator(test))
+        for test in negative_tests:
+            self.assertFalse(edi.Log.validate_qth_locator(test))
 
     def test_validate_band(self):
         # TODO: test for this function

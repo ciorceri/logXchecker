@@ -146,6 +146,7 @@ class Log(object):
     @staticmethod
     def validate_qth_locator(qth):
         regexMaidenhead = '^\s*([a-rA-R]{2}\d{2}[a-xA-X]{2})\s*$'
+
         res = re.match(regexMaidenhead, qth, re.IGNORECASE)
         return True if res else False
 
