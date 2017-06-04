@@ -1,5 +1,5 @@
 """
-Copyright 2016 Ciorceri Petru Sorin
+Copyright 2016-2017 Ciorceri Petru Sorin
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ class Operator(object):
     Keep operator callsign, info and logs path
     """
     callsign = None
-    info = {}
-    logs = []
+    info = {}           # no idea what was this for :(
+    logs = []           # list with Log() instances
 
     def __init__(self, callsign):
         self.callsign = callsign
@@ -38,10 +38,11 @@ class Operator(object):
 class Log(object):
     """
     Keep a single EDI log information:
-    log path, log raw content, callsign, qth, band, section, qsos tuple (raw content) and a list with LogQso() instances
+    log path, log raw content, callsign, qth, band, section, qsos tuple (raw content)
+    and a list with LogQso() instances
     """
     path = None
-    log_content = None  # full content of the log
+    log_content = None  # a list with log lines
     callsign = None
     maidenhead_locator = None
     band = None
@@ -69,6 +70,7 @@ class Log(object):
             raise ValueError('The PWWLo field is present multiple times')
         if not self.validate_qth_locator(_qthlocator[0]):
             raise ValueError('The PWWLo field value is not valid')
+        self.maidenhead_locator = _qthlocator
 
         # get & validate band
         _band = self.get_field('PBand')
@@ -78,6 +80,7 @@ class Log(object):
             raise ValueError('The PBand field is present muliple times')
         if not self.validate_band(_band[0]):
             raise ValueError('The PBand field value is not valids')
+        self.band = _band
 
         # get & validate section
         # TODO
@@ -150,6 +153,26 @@ class Log(object):
         res = re.match(regexMaidenhead, qth, re.IGNORECASE)
         return True if res else False
 
+    @staticmethod
+    def get_band(band):
+        """
+        This will parse the 'PBand=' field content
+        and return the proper band
+        :param band: the content of 'PBand=' field
+        :return: The deteted band (144,432,1296) or None
+        """
+
+        regexpBand = {144: ['144.*', '145.*'],
+                      432: ['430.*', '432.*', '435.*'],
+                      1296: ['1296.*', '1[.,][23].*']}
+        for _band in regexpBand:
+            for regexp in regexpBand[_band]:
+                res = re.match(regexp, band)
+                if res:
+                    return _band
+        return None
+
+    # TODO: this will be deprecated, I should remove it in the future
     def validate_band(self, band):
         """
         This will validate PBand based on generic rules
