@@ -254,7 +254,6 @@ class TestEdiLog(TestCase):
         for test in negative_tests:
             self.assertFalse(edi.Log.validate_qth_locator(test))
 
-
     def test_get_band(self):
         positive_tests_144 = ['144', '145', '144mhz', '145mhz']
         negative_tests_144 = [' 144', ' 145', '143', '146']
@@ -274,8 +273,13 @@ class TestEdiLog(TestCase):
             self.assertIsNone(edi.Log.get_band(test))
 
     def test_validate_band(self):
-        # TODO: test for this function
-        pass
+        positive_tests = ['144', '145', '144mhz', '145mhz', '430', '432', '435', '430mhz', '432mhz', '432.2',
+                          '435hz', '1296', '1296mhz', '1.2g', '1.3g']
+        negative_tests = ['143', '146', '431', '433', '1200']
+        for test in positive_tests:
+            self.assertTrue(edi.Log.validate_band(test))
+        for test in negative_tests:
+            self.assertFalse(edi.Log.validate_band(test))
 
     def test_rules_based_validate_band(self):
         # TODO: test for this function

@@ -173,7 +173,8 @@ class Log(object):
         return None
 
     # TODO: this will be deprecated, I should remove it in the future
-    def validate_band(self, band):
+    @staticmethod
+    def validate_band(band):
         """
         This will validate PBand based on generic rules
         """
