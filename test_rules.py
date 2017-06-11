@@ -248,7 +248,7 @@ class TestRules(TestCase):
         for rule_band in invalid_bands_value:
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, "The rules have an invalid 'bands' value in \[contest\] section",
+                self.assertRaisesRegex(ValueError, "The rules have invalid 'bands' value in \[contest\] section",
                                        rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
@@ -265,7 +265,7 @@ class TestRules(TestCase):
         for rule_period in invalid_periods_value:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, "The rules have an invalid 'periods' value in \[contest\] section",
+                self.assertRaisesRegex(ValueError, "The rules have invalid 'periods' value in \[contest\] section",
                                        rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')

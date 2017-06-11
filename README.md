@@ -86,4 +86,4 @@ Notes:
 
     - This is a work in progress and there are still more things to add.
     - Suggestions are appreciated.
-    - Only Python 3.5+ will be supported.
+    - Only Python 3.6+ will be supported.
