@@ -95,7 +95,7 @@ The rules file is validated and the following errors are displayed if validation
     - exitcode=12 and "ERROR: Rules file has invalid band settings (...) for period ..."
     - exitcode=13 and "ERROR: Rules file has invalid settings for category ..."
     - exitcode=13 and "ERROR: Rules file has invalid band settings (...) for category ..."
-````
+
 Notes:
 
     - This is a work in progress and there are still more things to add.

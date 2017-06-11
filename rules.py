@@ -225,6 +225,11 @@ class Rules(object):
         return self.config['contest']['endhour']
 
     @property
+    def contest_qso_modes(self):
+        # TODO : add contest qso modes 1,2,6 (SSB,CW,FM)
+        pass
+
+    @property
     def contest_bands_nr(self):
         try:
             self.config['contest']['bands']

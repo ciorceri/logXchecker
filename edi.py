@@ -72,7 +72,8 @@ class Log(object):
             raise ValueError('The PWWLo field value is not valid')
         self.maidenhead_locator = _qthlocator
 
-        # get & validate band
+        # get & validate band based on generic rules and by custom rules if provided (rules.contest_band['regexp'])
+        # TODO : rule validation
         _band = self.get_field('PBand')
         if _band is None:
             raise ValueError('The PBand field is not present')
@@ -82,8 +83,13 @@ class Log(object):
             raise ValueError('The PBand field value is not valids')
         self.band = _band
 
-        # get & validate section
-        # TODO
+        # get & validate PSect based on generic rules and by custom rules if provided (rules.contest_category['regexp']
+        # TODO : both
+
+        # get & validate TDate based on generic rules format and by custom rules if provided (rules.contest_begin_date & rules.contest_end_date)
+        # TODO : both
+
+
 
         self.qsos = []
         self.get_qsos()
@@ -256,6 +262,7 @@ class LogQso(object):
 
         if self.valid_qso:
             self.qso_parser()
+            # TODO : make this qso validator smarter ! This .. or .. or is useless !
             self.error_message = self.generic_qso_validator() or self.rules_based_qso_validator(rules) or None
 
     def qso_parser(self):
@@ -347,6 +354,8 @@ class LogQso(object):
         if self.qsoFields['date'] > rules.contest_end_date[2:]:
             return 'Qso date is invalid: after contest ends (>%s)' % rules.contest_end_date[2:]
 
+        # TODO : validate qso date based on period (if exists !)
+
         # validate qso hour
         if self.qsoFields['date'] == rules.contest_begin_date[2:] and \
            self.qsoFields['hour'] < rules.contest_begin_hour:
@@ -354,6 +363,8 @@ class LogQso(object):
         if self.qsoFields['date'] == rules.contest_end_date[2:] and \
            self.qsoFields['hour'] > rules.contest_end_hour:
             return 'Qso hour is invalid: after contest end hour (>%s)' % rules.contest_end_hour
+
+        # TODO : validate qso hour based on period (if exists !)
 
         # validate qso mode
         # TODO: I have to add 'modes' in rules.py
