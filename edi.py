@@ -143,7 +143,7 @@ class Log(object):
             message = LogQso.regexp_qso_validator(qso[1])
             self.qsos.append(
                 # self.qsos_tuple(linenr=qso[0], qso=qso[1], valid=False if message else True, error=message)
-                LogQso(qso[1], qso[0]) # LogQso(qso_line, qso_line_number_in_log)
+                LogQso(qso[1], qso[0])  # LogQso(qso_line, qso_line_number_in_log)
             )
 
     @staticmethod
@@ -206,7 +206,6 @@ class Log(object):
 
         return validated
 
-
     def dump_summary(self):
         """
         Based on the output format (text, html...) this will output a summary of the log
@@ -223,7 +222,8 @@ class LogQso(object):
                            '(?P<rst_sent>.*?);(?P<nr_sent>.*?);(?P<rst_recv>.*?);(?P<nr_recv>.*?);' \
                            '(?P<exchange_recv>.*?);(?P<wwl>.*?);(?P<points>.*?);' \
                            '(?P<new_exchange>.*?);(?P<new_wwl>.*?);(?P<new_dxcc>.*?);(?P<duplicate_qso>.*?)'
-    regexMediumQsoCheck = '^\d{6};\d{4};.*?;\d;\d{2,3}.?;\d{2,4};\d{2,3}.?;\d{2,4};.*?;[a-zA-Z]{2}\d{2}[a-zA-Z]{2};.*?;.*?;.*?;.*?;.*?'
+    regexMediumQsoCheck = '^\d{6};\d{4};.*?;\d;\d{2,3}.?;\d{2,4};\d{2,3}.?;\d{2,4};.*?;[a-zA-Z]{2}\d{2}[a-zA-Z]{2};' \
+                          '.*?;.*?;.*?;.*?;.*?'
     #                       date  time   id  m    rst       nr      rst       nr    .  qth  km  .   .   .   .
 
     qso_line_number = 0

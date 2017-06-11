@@ -334,4 +334,3 @@ class TestEdiLogQso(TestCase):
         for (line, message) in test_invalid_qso_lines:
             ret = edi.LogQso.regexp_qso_validator(line)
             self.assertEqual(message, ret)
-

@@ -109,13 +109,9 @@ class Rules(object):
 
     @staticmethod
     def read_config_file_content(path):
-        try:
-            with open(path, 'r') as f:
-                content = f.read()
-        except IOError as why:
-            raise
-        except Exception as why:
-            raise
+        content = None
+        with open(path, 'r') as f:
+            content = f.read()
         return content
 
     def validate_rules(self):

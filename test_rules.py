@@ -222,6 +222,7 @@ class TestRules(TestCase):
         self.assertEqual(_rules.contest_category(3)['name'], 'Multi Operator')
         self.assertEqual(_rules.contest_category(3)['regexp'], 'mo|multi')
         self.assertEqual(_rules.contest_category(3)['bands'], 'band1,band2')
+
     def test_init_fail(self):
         # test 'file not found'
         self.assertRaises(FileNotFoundError, rules.Rules, 'some_missing_file.rules')
@@ -247,8 +248,8 @@ class TestRules(TestCase):
         for rule_band in invalid_bands_value:
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, "The rules have an invalid 'bands' value in \[contest\] section", rules.Rules,
-                                       'some_rule_file.rules')
+                self.assertRaisesRegex(ValueError, "The rules have an invalid 'bands' value in \[contest\] section",
+                                       rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_missing_band_section(self, mock_isfile):
@@ -264,8 +265,8 @@ class TestRules(TestCase):
         for rule_period in invalid_periods_value:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, "The rules have an invalid 'periods' value in \[contest\] section", rules.Rules,
-                                       'some_rule_file.rules')
+                self.assertRaisesRegex(ValueError, "The rules have an invalid 'periods' value in \[contest\] section",
+                                       rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_missing_period_section(self, mock_isfile):
@@ -281,5 +282,5 @@ class TestRules(TestCase):
         for rule_period in invalid_rules_categories_syntax:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, "The rules have an invalid 'categories' value in \[contest\] section", rules.Rules,
-                                       'some_rule_file.rules')
+                self.assertRaisesRegex(ValueError, "The rules have invalid 'categories' value in \[contest\] section",
+                                       rules.Rules, 'some_rule_file.rules')
