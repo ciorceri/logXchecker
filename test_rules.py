@@ -183,6 +183,44 @@ categories=X
     valid_period1_section
 ]
 
+valid_minimal_contest_section = """
+[contest]
+name=Cupa Nasaud
+begindate=20160805
+enddate=20160806
+beginhour=1200
+endhour=1200
+bands=1
+periods=1
+categories=1
+"""
+
+missing_band_section_in_period = [
+    valid_minimal_contest_section +
+    valid_band1_section +
+    valid_category1_section +
+    """
+[period1]
+begindate=20160805
+enddate=20160805
+beginhour=1200
+endhour=2359
+bands=band10
+"""
+]
+
+missing_band_section_in_category = [
+    valid_minimal_contest_section +
+    valid_band1_section +
+    valid_period1_section +
+    """
+[category1]
+name=Single Operator 144
+regexp=so|single
+bands=band10
+"""
+]
+
 
 class TestRules(TestCase):
 
@@ -229,6 +267,7 @@ class TestRules(TestCase):
 
     @mock.patch('os.path.isfile')
     def test_read_config_file_content(self, mock_isfile):
+        mock_isfile.return_value = True
         mo = mock.mock_open(read_data=valid_rules)
         with patch('builtins.open', mo, create=True):
             _content = rules.Rules.read_config_file_content('some_rule_file.rules')
@@ -283,4 +322,22 @@ class TestRules(TestCase):
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
                 self.assertRaisesRegex(ValueError, "The rules have invalid 'categories' value in \[contest\] section",
+                                       rules.Rules, 'some_rule_file.rules')
+
+    @mock.patch('os.path.isfile')
+    def test_missing_band_section_in_period(self, mock_isfile):
+        mock_isfile.return_value = True
+        for rule_period in missing_band_section_in_period:
+            mo = mock.mock_open(read_data=rule_period)
+            with patch('builtins.open', mo, create=True):
+                self.assertRaisesRegex(SystemExit, '^1$',
+                                       rules.Rules, 'some_rule_file.rules')
+
+    @mock.patch('os.path.isfile')
+    def test_missing_band_section_in_category(self, mock_isfile):
+        mock_isfile.return_value = True
+        for rule_period in missing_band_section_in_category:
+            mo = mock.mock_open(read_data=rule_period)
+            with patch('builtins.open', mo, create=True):
+                self.assertRaisesRegex(SystemExit, '^1$',
                                        rules.Rules, 'some_rule_file.rules')

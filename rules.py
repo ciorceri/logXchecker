@@ -116,6 +116,7 @@ class Rules(object):
 
     def validate_rules(self):
         # validate contest fields
+        # in case of error it will print it and exit with exitcode = 1,9,10,11,12
         try:
             self.contest_bands_nr
             self.contest_periods_nr
@@ -126,7 +127,7 @@ class Rules(object):
 
         # validate bands number and fields
         if self.contest_bands_nr < 1:
-            print('ERROR: Rules file has invalid settings for [contest] secttion -> band field')
+            print('ERROR: Rules file has invalid settings for [contest] section -> band field')
             sys.exit(10)
         try:
             for band in range(1, self.contest_bands_nr+1):
@@ -139,7 +140,7 @@ class Rules(object):
 
         # validate period number and fields
         if self.contest_periods_nr < 1:
-            print("ERROR: Rules file has invalid settings for [contest] section -> periods field")
+            print('ERROR: Rules file has invalid settings for [contest] section -> periods field')
             sys.exit(11)
         try:
             for period in range(1, self.contest_periods_nr+1):
@@ -155,7 +156,7 @@ class Rules(object):
 
         # validate period number and fields
         if self.contest_categories_nr < 1:
-            print("ERROR: Rules file has invalid settings for [contest] section -> categories field")
+            print('ERROR: Rules file has invalid settings for [contest] section -> categories field')
             sys.exit(12)
         try:
             for category in range(1, self.contest_categories_nr+1):
@@ -167,7 +168,7 @@ class Rules(object):
             print('ERROR: Rules file has invalid settings for category', category)
             sys.exit(12)
 
-        # validate date and time
+        # validate date and time in [periodX]. period date and time to be in [contest] date/time range
         try:
             msg = 'contest begin date'
             datetime.strptime(self.contest_begin_date, '%Y%m%d')
@@ -191,8 +192,21 @@ class Rules(object):
             print('ERROR: Rules file has invalid', msg)
             sys.exit(1)
 
-        # validate category & period bands
-        # TODO
+        # validate band field in [periodX]
+        for period in range(1, self.contest_periods_nr+1):
+            period_bands = self.contest_period_bands(period)
+            for period_band in period_bands:
+                if period_band not in self.config.sections():
+                    print('ERROR: Rules file has invalid band settings ({}) for period {}'.format(period_band, period))
+                    sys.exit(1)
+
+        # validate band field in [categoryX]
+        for category in range(1, self.contest_categories_nr+1):
+            category_bands = self.contest_category_bands(category)
+            for category_band in category_bands:
+                if category_band not in self.config.sections():
+                    print('ERROR: Rules file has invalid band settings ({}) for category {}'.format(category_band, period))
+                    sys.exit(1)
 
     @property
     def contest_begin_date(self):
@@ -239,8 +253,7 @@ class Rules(object):
         return self.config['period'+str(number)]
 
     def contest_period_bands(self, number):
-        for band in self.contest_period(number)['bands'].split(','):
-            yield band
+        return [band for band in self.contest_period(number)['bands'].split(',')]
 
     @property
     def contest_categories_nr(self):
@@ -255,3 +268,6 @@ class Rules(object):
 
     def contest_category(self, number):
         return self.config['category'+str(number)]
+
+    def contest_category_bands(self, number):
+        return [band for band in self.contest_category(number)['bands'].split(',')]
