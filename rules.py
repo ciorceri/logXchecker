@@ -1,5 +1,5 @@
 """
-Copyright 2016 Ciorceri Petru Sorin
+Copyright 2016-2017 Ciorceri Petru Sorin
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -119,7 +119,7 @@ class Rules(object):
         return content
 
     def validate_rules(self):
-        # validata contest fields
+        # validate contest fields
         try:
             self.contest_bands_nr
             self.contest_periods_nr

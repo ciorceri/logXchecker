@@ -100,7 +100,7 @@ class Log(object):
         return content
 
     def validate_log_content(self):
-        # TODO: to see later if we have to do a genric validation or not
+        # TODO: to see later if we have to do a generic validation or not
         pass
 
     def get_field(self, field):
@@ -159,7 +159,7 @@ class Log(object):
         This will parse the 'PBand=' field content
         and return the proper band
         :param band: the content of 'PBand=' field
-        :return: The deteted band (144,432,1296) or None
+        :return: The detected band (144,432,1296) or None
         """
 
         regexpBand = {144: ['144.*', '145.*'],

@@ -64,19 +64,19 @@ bands=band1,band2
 valid_category1_section = """
 [category1]
 name=Single Operator 144
-regexp=(so|single)
+regexp=so|single
 bands=band1
 """
 valid_category2_section = """
 [category2]
 name=Single Operator 432
-regexp=(so|single)
+regexp=so|single
 bands=band2
 """
 valid_category3_section = """
 [category3]
 name=Multi Operator
-regexp=(mo|multi)
+regexp=mo|multi
 bands=band1,band2
 """
 
@@ -185,6 +185,7 @@ categories=X
 
 
 class TestRules(TestCase):
+
     @mock.patch('os.path.isfile')
     def test_init(self, mock_isfile):
         mock_isfile.return_value = True
@@ -212,10 +213,25 @@ class TestRules(TestCase):
         self.assertEqual(list(_rules.contest_period_bands(1)), ['band1', 'band2'])
 
         self.assertEqual(_rules.contest_categories_nr, 3)
-
+        self.assertEqual(_rules.contest_category(1)['name'], 'Single Operator 144')
+        self.assertEqual(_rules.contest_category(1)['regexp'], 'so|single')
+        self.assertEqual(_rules.contest_category(1)['bands'], 'band1')
+        self.assertEqual(_rules.contest_category(2)['name'], 'Single Operator 432')
+        self.assertEqual(_rules.contest_category(2)['regexp'], 'so|single')
+        self.assertEqual(_rules.contest_category(2)['bands'], 'band2')
+        self.assertEqual(_rules.contest_category(3)['name'], 'Multi Operator')
+        self.assertEqual(_rules.contest_category(3)['regexp'], 'mo|multi')
+        self.assertEqual(_rules.contest_category(3)['bands'], 'band1,band2')
     def test_init_fail(self):
         # test 'file not found'
         self.assertRaises(FileNotFoundError, rules.Rules, 'some_missing_file.rules')
+
+    @mock.patch('os.path.isfile')
+    def test_read_config_file_content(self, mock_isfile):
+        mo = mock.mock_open(read_data=valid_rules)
+        with patch('builtins.open', mo, create=True):
+            _content = rules.Rules.read_config_file_content('some_rule_file.rules')
+            self.assertEqual(_content, valid_rules)
 
     @mock.patch('os.path.isfile')
     def test_missing_contest_section_fields(self, mock_isfile):
