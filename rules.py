@@ -236,6 +236,10 @@ class Rules(object):
             raise ValueError("The rules have invalid 'bands' value in [contest] section")
 
     def contest_band(self, number):
+        """
+        :param number: 
+        :return: an instance of the config[bandX] 
+        """
         return self.config['band'+str(number)]
 
     @property
@@ -250,9 +254,17 @@ class Rules(object):
             raise ValueError("The rules have invalid 'periods' value in [contest] section")
 
     def contest_period(self, number):
+        """
+        :param number: 
+        :return: an instance of config[periodX] 
+        """
         return self.config['period'+str(number)]
 
     def contest_period_bands(self, number):
+        """
+        :param number: 
+        :return: a list with bands names from config[periodX][bands] 
+        """
         return [band for band in self.contest_period(number)['bands'].split(',')]
 
     @property
@@ -267,7 +279,15 @@ class Rules(object):
             raise ValueError("The rules have invalid 'categories' value in [contest] section")
 
     def contest_category(self, number):
+        """
+        :param number: 
+        :return: an instance of config[categoryX] 
+        """
         return self.config['category'+str(number)]
 
     def contest_category_bands(self, number):
+        """
+        :param number: 
+        :return: a list with bands names from config[categoryX][bands]
+        """
         return [band for band in self.contest_category(number)['bands'].split(',')]
