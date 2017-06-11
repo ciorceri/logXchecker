@@ -85,15 +85,17 @@ There are the following sections:
 The rules file is validated and the following errors are displayed if validation fails:
 
     - 'The rules file ... was not found'
-    - exitcode=1 and message "ERROR: Rules file is invalid ..."
-    - exitcode=9 and message "ERROR: Rules has missing fields from [contest] section"
-    - exitcode=10 and message "ERROR: Rules file has invalid settings for [contest] secttion -> band field"
-    - exitcode=10 and message "ERROR: Rules file has invalid settings for band ..."
-    - exitcode=11 and message "ERROR: Rules file has invalid settings for [contest] section -> periods field"
-    - exitcode=11 and message "ERROR: Rules file has invalid settings for period ..."
-    - exitcode=12 and message "ERROR: Rules file has invalid settings for [contest] section -> categories field"
-    - exitcode=12 and message "ERROR: Rules file has invalid settings for category ..."
-
+    - exitcode=10 and "ERROR: Rules has missing fields from [contest] section"
+    - exitcode=10 and "ERROR: Rules file has invalid 'bands' field setting in [contest] section"
+    - exitcode=10 and "ERROR: Rules file has invalid 'periods' field setting in [contest] section"
+    - exitcode=10 and "ERROR: Rules file has invalid 'categories' field setting in [contest] section"
+    - exitcode=11 and "ERROR: Rules file has invalid settings for band ..."
+    - exitcode=12 and "ERROR: Rules file has invalid settings for period ..."
+    - exitcode=12 and "ERROR: Rules file has invalid period begin/end date/hour"
+    - exitcode=12 and "ERROR: Rules file has invalid band settings (...) for period ..."
+    - exitcode=13 and "ERROR: Rules file has invalid settings for category ..."
+    - exitcode=13 and "ERROR: Rules file has invalid band settings (...) for category ..."
+````
 Notes:
 
     - This is a work in progress and there are still more things to add.

@@ -119,18 +119,18 @@ bands=X
 ]
 
 missing_band_section = [
-    """
+    ("""
 [contest]
 bands=0
 periods=1
 categories=1
-""",
-    """
+""", 10),
+    ("""
 [contest]
 bands=1
 periods=1
 categories=1
-"""
+""", 11)
 ]
 
 invalid_periods_value = [
@@ -149,18 +149,18 @@ categories=1
 ]
 
 missing_period_section = [
-    """
+    ("""
 [contest]
 bands=1
 periods=0
 categories=1
-""" + valid_band1_section,
-    """
+""" + valid_band1_section, 10),
+    ("""
 [contest]
 bands=1
 periods=1
 categories=1
-""" + valid_band1_section
+""" + valid_band1_section, 12)
 
 ]
 
@@ -279,7 +279,7 @@ class TestRules(TestCase):
         for rule_band in missing_contest_section_fields:
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(SystemExit, '^9$', rules.Rules, 'some_rule_file.rules')
+                self.assertRaisesRegex(SystemExit, '^10$', rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_invalid_bands_value(self, mock_isfile):
@@ -293,10 +293,10 @@ class TestRules(TestCase):
     @mock.patch('os.path.isfile')
     def test_missing_band_section(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_band in missing_band_section:
+        for rule_band, exit_code in missing_band_section:
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(SystemExit, '^10$', rules.Rules, 'some_rule_file.rules')
+                self.assertRaisesRegex(SystemExit, str(exit_code), rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_periods_value(self, mock_isfile):
@@ -310,10 +310,10 @@ class TestRules(TestCase):
     @mock.patch('os.path.isfile')
     def test_missing_period_section(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_period in missing_period_section:
+        for rule_period, exit_code in missing_period_section:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(SystemExit, '^11$', rules.Rules, 'some_rule_file.rules')
+                self.assertRaisesRegex(SystemExit, str(exit_code), rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_rules_category_syntax(self, mock_isfile):
@@ -330,7 +330,7 @@ class TestRules(TestCase):
         for rule_period in missing_band_section_in_period:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(SystemExit, '^1$',
+                self.assertRaisesRegex(SystemExit, '^12$',
                                        rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
@@ -339,5 +339,5 @@ class TestRules(TestCase):
         for rule_period in missing_band_section_in_category:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(SystemExit, '^1$',
+                self.assertRaisesRegex(SystemExit, '^12$',
                                        rules.Rules, 'some_rule_file.rules')
