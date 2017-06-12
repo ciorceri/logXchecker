@@ -175,18 +175,18 @@ class Rules(object):
             msg = 'contest end date'
             datetime.strptime(self.contest_end_date, '%Y%m%d')
             for period in range(1, self.contest_periods_nr+1):
-                msg = 'period %d begin date' % period
+                msg = 'period {} begin date'.format(period)
                 datetime.strptime(self.contest_period(period)['begindate'], '%Y%m%d')
-                msg = 'period %d end date' % period
+                msg = 'period {} end date'.format(period)
                 datetime.strptime(self.contest_period(period)['enddate'], '%Y%m%d')
             msg = 'contest begin hour'
             datetime.strptime(self.contest_begin_hour, '%H%M')
             msg = 'contest end hour'
             datetime.strptime(self.contest_end_hour, '%H%M')
             for period in range(1, self.contest_periods_nr+1):
-                msg = 'period %d begin hour' % period
+                msg = 'period {} begin hour'.format(period)
                 datetime.strptime(self.contest_period(period)['beginhour'], '%H%M')
-                msg = 'period %d end hour' % period
+                msg = 'period {} end hour'.format(period)
                 datetime.strptime(self.contest_period(period)['endhour'], '%H%M')
         except ValueError as e:
             print('ERROR: Rules file has invalid', msg)

@@ -303,16 +303,19 @@ class LogQso(object):
         try:
             datetime.strptime(self.qsoFields['date'], '%y%m%d')
         except ValueError as e:
-            return 'Qso date is invalid: %s' % (str(e))
+            return 'Qso date is invalid: {}'.format(str(e))
 
         # validate time format
         try:
             datetime.strptime(self.qsoFields['hour'], '%H%M')
         except ValueError as e:
-            return 'Qso hour is invalid: %s' % (str(e))
+            return 'Qso hour is invalid: {}'.format(str(e))
 
         # validate callsign format
-        # TODO
+        reCall = "^\w+/?\w+$"
+        result = re.match(reCall, self.qsoFields['call'])
+        if not result:
+            return 'Callsign is invalid: {}'.format(self.qsoFields['call'])
 
         # validate mode format
         # TODO
@@ -321,10 +324,10 @@ class LogQso(object):
         reRST = "^[1-5][1-9][aA]?$"
         result = re.match(reRST, self.qsoFields['rst_sent'])
         if not result:
-            return 'RST is invalid: %s' % (self.qsoFields['rst_sent'])
+            return 'RST is invalid: {}'.format(self.qsoFields['rst_sent'])
         result = re.match(reRST, self.qsoFields['rst_recv'])
         if not result:
-            return 'RST is invalid: %s' % (self.qsoFields['rst_recv'])
+            return 'RST is invalid: {}'.format(self.qsoFields['rst_recv'])
 
         # validate NR (sent & recv) format
         # TODO
@@ -350,19 +353,19 @@ class LogQso(object):
 
         # validate qso date
         if self.qsoFields['date'] < rules.contest_begin_date[2:]:
-            return 'Qso date is invalid: before contest starts (<%s)' % rules.contest_begin_date[2:]
+            return 'Qso date is invalid: before contest starts (<{})'.format(rules.contest_begin_date[2:])
         if self.qsoFields['date'] > rules.contest_end_date[2:]:
-            return 'Qso date is invalid: after contest ends (>%s)' % rules.contest_end_date[2:]
+            return 'Qso date is invalid: after contest ends (>{})'.format(rules.contest_end_date[2:])
 
         # TODO : validate qso date based on period (if exists !)
 
         # validate qso hour
         if self.qsoFields['date'] == rules.contest_begin_date[2:] and \
            self.qsoFields['hour'] < rules.contest_begin_hour:
-            return 'Qso hour is invalid: before contest start hour (<%s)' % rules.contest_begin_hour
+            return 'Qso hour is invalid: before contest start hour (<{})'.format(rules.contest_begin_hour)
         if self.qsoFields['date'] == rules.contest_end_date[2:] and \
            self.qsoFields['hour'] > rules.contest_end_hour:
-            return 'Qso hour is invalid: after contest end hour (>%s)' % rules.contest_end_hour
+            return 'Qso hour is invalid: after contest end hour (>{})'.format(rules.contest_end_hour)
 
         # TODO : validate qso hour based on period (if exists !)
 

@@ -38,7 +38,7 @@ class ArgumentParser():
         valid_formats = ('EDI', 'ADIF', 'CABRILLO')
         if arg.upper() in valid_formats:
             return arg.upper()
-        raise argparse.ArgumentTypeError('Format "%s" is an invalid value' % arg)
+        raise argparse.ArgumentTypeError('Format "{}" is an invalid value'.format(arg))
 
     def check_output_value(self, arg):
         """
@@ -49,7 +49,7 @@ class ArgumentParser():
         valid_output = ('TXT', 'TEXT', 'HTML', 'JSON', 'YML')
         if arg.upper() in valid_output:
             return arg
-        raise argparse.ArgumentTypeError('Output "%s" is an invalid value' % arg)
+        raise argparse.ArgumentTypeError('Output "{}" is an invalid value'.format(arg))
 
     def __init__(self):
         self.parser = argparse.ArgumentParser(description='log cross checker')
