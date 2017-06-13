@@ -228,8 +228,8 @@ class LogQso(object):
                            '(?P<rst_sent>.*?);(?P<nr_sent>.*?);(?P<rst_recv>.*?);(?P<nr_recv>.*?);' \
                            '(?P<exchange_recv>.*?);(?P<wwl>.*?);(?P<points>.*?);' \
                            '(?P<new_exchange>.*?);(?P<new_wwl>.*?);(?P<new_dxcc>.*?);(?P<duplicate_qso>.*?)'
-    regexMediumQsoCheck = '^\d{6};\d{4};.*?;\d;\d{2,3}.?;\d{2,4};\d{2,3}.?;\d{2,4};.*?;[a-zA-Z]{2}\d{2}[a-zA-Z]{2};' \
-                          '.*?;.*?;.*?;.*?;.*?'
+    regexMediumQsoCheck = '^\d{6};\d{4};.*?;.?;\d{2,3}.?;\d{2,4};\d{2,3}.?;\d{2,4};.*?;' \
+                          '[a-zA-Z]{2}\d{2}[a-zA-Z]{2};.*?;.*?;.*?;.*?;.*?'
     #                       date  time   id  m    rst       nr      rst       nr    .  qth  km  .   .   .   .
 
     qso_line_number = 0
@@ -281,9 +281,9 @@ class LogQso(object):
         :param line:
         :return: None or error message
         """
-        qso_min_line_lenght = 40
+        qso_min_line_length = 40
 
-        if len(line) < qso_min_line_lenght:
+        if len(line) < qso_min_line_length:
             return 'QSO line is too short'
         res = re.match(cls.regexMinimalQsoCheck, line)
         if not res:
@@ -318,7 +318,10 @@ class LogQso(object):
             return 'Callsign is invalid: {}'.format(self.qsoFields['call'])
 
         # validate mode format
-        # TODO
+        reMode = "^[0-9]$"
+        result = re.match(reMode, self.qsoFields['mode'])
+        if not result:
+            return 'QSO mode is invalid: {}'.format(self.qsoFields['mode'])
 
         # validate RST (sent & recv) format
         reRST = "^[1-5][1-9][aA]?$"
@@ -330,14 +333,23 @@ class LogQso(object):
             return 'RST is invalid: {}'.format(self.qsoFields['rst_recv'])
 
         # validate NR (sent & recv) format
-        # TODO
+        reSentRecvNr = "^\d{1,4}$"
+        result = re.match(reSentRecvNr, self.qsoFields['nr_sent'])
+        if not result:
+            return 'Sent Qso number is invalid: {}'.format(self.qsoFields['nr_sent'])
+        result = re.match(reSentRecvNr, self.qsoFields['nr_recv'])
+        if not result:
+            return 'Received Qso number is invalid: {}'.format(self.qsoFields['nr_recv'])
 
         # validate 'exchange_recv' format
-        # TODO
+        reExchange = "^\w{0,6}$"
+        result = re.match(reExchange, self.qsoFields['exchange_recv'])
+        if not result:
+            return 'Received exchange is invalid: {}'.format(self.qsoFields['exchange_recv'])
 
         # validate QTH locator format
         if not Log.validate_qth_locator(self.qsoFields['wwl']):
-            return 'Qso WWL is invalid'
+            return 'Qso WWL is invalid: {}'.format(self.qsoFields['wwl'])
 
         # validate 'duplicate_qso' format
         # TODO
