@@ -78,9 +78,9 @@ class Log(object):
         if _band is None:
             raise ValueError('The PBand field is not present')
         if len(_band) > 1:
-            raise ValueError('The PBand field is present muliple times')
+            raise ValueError('The PBand field is present multiple times')
         if not self.validate_band(_band[0]):
-            raise ValueError('The PBand field value is not valids')
+            raise ValueError('The PBand field value is not valid')
         self.band = _band
 
         # get & validate PSect based on generic rules and by custom rules if provided (rules.contest_category['regexp']
