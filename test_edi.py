@@ -269,6 +269,17 @@ class TestEdiLog(TestCase):
             with self.assertRaisesRegex(ValueError, 'The PBand field is present multiple times'):
                 edi.Log('some_log_file.edi')
 
+    @mock.patch('os.path.isfile')
+    def test_init_with_rules(self, mock_isfile):
+        mock_isfile.return_value = True
+        mo_rules = mock.mock_open(read_data=valid_rules)
+        with patch('builtins.open', mo_rules, create=True):
+            _rules = rules.Rules('some_rule_file.rules')
+
+        mo_log = mock.mock_open(read_data=valid_edi_log)
+        with patch('builtins.open', mo_log, create=True):
+            _log = edi.Log('some_log_file.edi', rules=_rules)
+    # TODO : to continue
 
     def test_read_file_content(self):
         # test 'read_file_content', the buildins.open is mocked
