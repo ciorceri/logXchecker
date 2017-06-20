@@ -23,8 +23,8 @@ import rules
 valid_contest_section = """
 [contest]
 name=Cupa Nasaud
-begindate=20160805
-enddate=20160806
+begindate=20130803
+enddate=20130804
 beginhour=1200
 endhour=1200
 bands=2
@@ -47,18 +47,18 @@ regexp=430|432|70cm
 """
 valid_period1_section = """
 [period1]
-begindate=20160805
-enddate=20160805
+begindate=20130803
+enddate=20130803
 beginhour=1200
-endhour=2359
+endhour=1759
 bands=band1,band2
 """
 valid_period2_section = """
 [period2]
-begindate=20160806
-enddate=20160806
-beginhour=0000
-endhour=1200
+begindate=20130804
+enddate=20130804
+beginhour=0600
+endhour=1159
 bands=band1,band2
 """
 valid_category1_section = """
@@ -186,8 +186,8 @@ categories=X
 valid_minimal_contest_section = """
 [contest]
 name=Cupa Nasaud
-begindate=20160805
-enddate=20160806
+begindate=20130803
+enddate=20130804
 beginhour=1200
 endhour=1200
 bands=1
@@ -201,8 +201,8 @@ missing_band_section_in_period = [
     valid_category1_section +
     """
 [period1]
-begindate=20160805
-enddate=20160805
+begindate=20130803
+enddate=20130804
 beginhour=1200
 endhour=2359
 bands=band10
@@ -232,9 +232,9 @@ class TestRules(TestCase):
             _rules = rules.Rules('some_rule_file.rules')
 
         self.assertEqual(_rules.config.sections(), valid_rules_sections)
-        self.assertEqual(_rules.contest_begin_date, '20160805')
+        self.assertEqual(_rules.contest_begin_date, '20130803')
 
-        self.assertEqual(_rules.contest_end_date, '20160806')
+        self.assertEqual(_rules.contest_end_date, '20130804')
         self.assertEqual(_rules.contest_begin_hour, '1200')
         self.assertEqual(_rules.contest_end_hour, '1200')
 
@@ -243,10 +243,10 @@ class TestRules(TestCase):
         self.assertEqual(_rules.contest_band(2)['band'], '432')
 
         self.assertEqual(_rules.contest_periods_nr, 2)
-        self.assertEqual(_rules.contest_period(1)['begindate'], '20160805')
-        self.assertEqual(_rules.contest_period(1)['enddate'], '20160805')
+        self.assertEqual(_rules.contest_period(1)['begindate'], '20130803')
+        self.assertEqual(_rules.contest_period(1)['enddate'], '20130803')
         self.assertEqual(_rules.contest_period(1)['beginhour'], '1200')
-        self.assertEqual(_rules.contest_period(1)['endhour'], '2359')
+        self.assertEqual(_rules.contest_period(1)['endhour'], '1759')
         self.assertEqual(_rules.contest_period(1)['bands'], 'band1,band2')
         self.assertEqual(list(_rules.contest_period_bands(1)), ['band1', 'band2'])
 

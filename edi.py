@@ -262,8 +262,9 @@ class LogQso(object):
 
         if self.valid_qso:
             self.qso_parser()
-            # TODO : make this qso validator smarter ! This .. or .. or is useless !
-            self.error_message = self.generic_qso_validator() or self.rules_based_qso_validator(rules) or None
+            self.error_message = self.generic_qso_validator()
+            if (self.error_message is None) and (rules is not None):
+                self.error_message = self.rules_based_qso_validator(rules)
 
     def qso_parser(self):
         """
