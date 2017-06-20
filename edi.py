@@ -73,7 +73,6 @@ class Log(object):
         self.maidenhead_locator = _qthlocator
 
         # get & validate band based on generic rules and by custom rules if provided (rules.contest_band['regexp'])
-        # TODO : rule validation
         _band = self.get_field('PBand')
         if _band is None:
             raise ValueError('The PBand field is not present')
@@ -81,10 +80,21 @@ class Log(object):
             raise ValueError('The PBand field is present multiple times')
         if not self.validate_band(_band[0]):
             raise ValueError('The PBand field value is not valid')
+        if rules and self.rules_based_validate_band(_band[0], rules):
+            raise ValueError('The PBand field value has an invalid value. Not as defined in contest rules')
         self.band = _band
 
         # get & validate PSect based on generic rules and by custom rules if provided (rules.contest_category['regexp']
-        # TODO : both
+        _section = self.get_field('PSect')
+        if _section is None:
+            raise ValueError('The PSect field is not present')
+        if len(_section) > 1:
+            raise ValueError('The PSect field is present multiple times')
+        if not self.validate_section(_section[0]):
+            raise ValueError('The PSect field value is not valid')
+        if rules and self.rules_based_validate_section(_section[0], rules):
+            raise ValueError('The PSect field value has an invalid value. Not as defined in contest rules')
+        self.section = _section
 
         # get & validate TDate based on generic rules format and by custom rules if provided (rules.contest_begin_date & rules.contest_end_date)
         # TODO : both
@@ -162,7 +172,7 @@ class Log(object):
     @staticmethod
     def get_band(band):
         """
-        This will parse the 'PBand=' field content
+        This will parse the 'PBand=' field value
         and return the proper band
         :param band: the content of 'PBand=' field
         :return: The detected band (144,432,1296) or None
@@ -180,36 +190,65 @@ class Log(object):
 
     # TODO: this will be deprecated, I should remove it in the future
     @staticmethod
-    def validate_band(band):
+    def validate_band(band_value):
         """
         This will validate PBand based on generic rules
         """
         validated = False
+
         regexpBandCheck = ['144.*', '145.*',
                            '430.*', '432.*', '435.*',
                            '1296.*', '1[.,][23].*']
         for _regex in regexpBandCheck:
-            res = re.match(_regex, band)
+            res = re.match(_regex, band_value)
             if res:
                 validated = True
-
         return validated
 
-    def rules_based_validate_band(self, band, rules):
+    def rules_based_validate_band(self, band_value, rules):
         """
         This will validate PBand based on Rules class instance
         """
         validated = False
 
         if rules is None:
-            raise ValueError('TODO : nu avem rules ! tre fixat cum se da eroarea !')
-
-        for _nr in range(rules.contest_bands_nr):
+            raise ValueError('No contest rules provided !')
+        for _nr in range(1, rules.contest_bands_nr+1):
             _regex = '^\s*(' + rules.contest_band(_nr)['regexp'] + ')\s*$'
-            res = re.match(_regex, band)
+            res = re.match(_regex, band_value)
             if res:
                 validated = True
+        return validated
 
+    @staticmethod
+    def validate_section(section_value):
+        """
+        This will validate PSect based on generic rules
+        """
+        validated = False
+
+        regexpSectCheck = ['.*SOSB.*', '.*SOMB.*', '.*Single.*', '^SO$',
+                           '.*MOSB.*', '.*MOMB.*', '.*Multi.*', '^MO$',
+                           'check', 'checklog', 'check log']
+        for _regex in regexpSectCheck:
+            res = re.match(_regex, section_value)
+            if res:
+                validated = True
+        return validated
+
+    def rules_based_validate_section(self, section_value, rules):
+        """
+        This will validate PSect based on Rules class instance
+        """
+        validated = False
+
+        if rules is None:
+            raise ValueError('No contest rules provided !')
+        for _nr in range(1, rules.contest_categories_nr+1):
+            _regex = '^\s*(' + rules.contest_category(_nr)['regexp'] + ')\s*$'
+            res = re.match(_regex, section_value)
+            if res:
+                validated = True
         return validated
 
     def dump_summary(self):

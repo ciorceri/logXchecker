@@ -26,7 +26,7 @@ name=Cupa Nasaud
 begindate=20130803
 enddate=20130804
 beginhour=1200
-endhour=1200
+endhour=1159
 bands=2
 periods=2
 categories=3
@@ -236,7 +236,7 @@ class TestRules(TestCase):
 
         self.assertEqual(_rules.contest_end_date, '20130804')
         self.assertEqual(_rules.contest_begin_hour, '1200')
-        self.assertEqual(_rules.contest_end_hour, '1200')
+        self.assertEqual(_rules.contest_end_hour, '1159')
 
         self.assertEqual(_rules.contest_bands_nr, 2)
         self.assertEqual(_rules.contest_band(1)['band'], '144')

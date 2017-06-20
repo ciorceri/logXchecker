@@ -233,9 +233,9 @@ test_logQso_rules_based_qso_validator = [
                        error='Qso hour is invalid: before contest start hour (<1200)'),
     edi.Log.qsos_tuple(linenr=2, qso='130803;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True, error=None),
 
-    edi.Log.qsos_tuple(linenr=2, qso='130804;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True, error=None),
-    edi.Log.qsos_tuple(linenr=2, qso='130804;1201;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
-                       error='Qso hour is invalid: after contest end hour (>1200)'),
+    edi.Log.qsos_tuple(linenr=2, qso='130804;1159;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True, error=None),
+    edi.Log.qsos_tuple(linenr=2, qso='130804;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
+                       error='Qso hour is invalid: after contest end hour (>1159)'),
 
     # TODO: add validation based on contest hours between periods
     # edi.Log.qsos_tuple(linenr=2, qso='130803;1800;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
@@ -387,6 +387,10 @@ class TestEdiLog(TestCase):
             self.assertFalse(edi.Log.validate_band(test))
 
     def test_rules_based_validate_band(self):
+        # TODO: test for this function
+        pass
+
+    def test_rules_based_validate_section(self):
         # TODO: test for this function
         pass
 
