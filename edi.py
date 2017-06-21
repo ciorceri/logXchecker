@@ -80,8 +80,9 @@ class Log(object):
             raise ValueError('The PBand field is present multiple times')
         if not self.validate_band(_band[0]):
             raise ValueError('The PBand field value is not valid')
-        if rules and self.rules_based_validate_band(_band[0], rules):
-            raise ValueError('The PBand field value has an invalid value. Not as defined in contest rules')
+        if rules and not self.rules_based_validate_band(_band[0], rules):
+            raise ValueError('The PBand field value has an invalid value ({}). Not as defined in contest '
+                             'rules'.format(_band[0]))
         self.band = _band
 
         # get & validate PSect based on generic rules and by custom rules if provided (rules.contest_category['regexp']
@@ -92,14 +93,23 @@ class Log(object):
             raise ValueError('The PSect field is present multiple times')
         if not self.validate_section(_section[0]):
             raise ValueError('The PSect field value is not valid')
-        if rules and self.rules_based_validate_section(_section[0], rules):
-            raise ValueError('The PSect field value has an invalid value. Not as defined in contest rules')
+        if rules and not self.rules_based_validate_section(_section[0], rules):
+            raise ValueError('The PSect field value has an invalid value ({}). Not as defined in contest '
+                             'rules'.format(_section[0]))
         self.section = _section
 
-        # get & validate TDate based on generic rules format and by custom rules if provided (rules.contest_begin_date & rules.contest_end_date)
-        # TODO : both
-
-
+        # get & validate TDate based on generic rules format and by custom rules if provided
+        # (rules.contest_begin_date & rules.contest_end_date)
+        _date = self.get_field('TDate')
+        if _date is None:
+            raise ValueError('The TDate field is not present')
+        if len(_date) > 1:
+            raise ValueError('The TDate field is present multiple times')
+        if not self.validate_date(_date[0]):
+            raise ValueError('The TDate field value is not valid ({})'.format(_date[0]))
+        if rules and not self.rules_based_validate_date(_date[0], rules):
+            raise ValueError('The TDate field value has an invalid value ({}). Not as defined in contest '
+                             'rules'.format(_date[0]))
 
         self.qsos = []
         self.get_qsos()
@@ -214,7 +224,7 @@ class Log(object):
         if rules is None:
             raise ValueError('No contest rules provided !')
         for _nr in range(1, rules.contest_bands_nr+1):
-            _regex = '^\s*(' + rules.contest_band(_nr)['regexp'] + ')\s*$'
+            _regex = '\s*(' + rules.contest_band(_nr)['regexp'] + ')\s*'
             res = re.match(_regex, band_value)
             if res:
                 validated = True
@@ -231,7 +241,7 @@ class Log(object):
                            '.*MOSB.*', '.*MOMB.*', '.*Multi.*', '^MO$',
                            'check', 'checklog', 'check log']
         for _regex in regexpSectCheck:
-            res = re.match(_regex, section_value)
+            res = re.match(_regex, section_value, re.IGNORECASE)
             if res:
                 validated = True
         return validated
@@ -245,11 +255,38 @@ class Log(object):
         if rules is None:
             raise ValueError('No contest rules provided !')
         for _nr in range(1, rules.contest_categories_nr+1):
-            _regex = '^\s*(' + rules.contest_category(_nr)['regexp'] + ')\s*$'
-            res = re.match(_regex, section_value)
+            _regex = '\s*(' + rules.contest_category(_nr)['regexp'] + ')\s*'
+            res = re.match(_regex, section_value, re.IGNORECASE)
             if res:
                 validated = True
         return validated
+
+    @staticmethod
+    def validate_date(date_value):
+        """
+        This will validate TDate based on generic rules
+        """
+        validated = False
+        dates = date_value.split(';')
+        print(dates)
+        for _date in dates:
+            try:
+                datetime.strptime(_date, '%Y%m%d')
+                validated = True
+            except ValueError as e:
+                pass
+        return validated
+
+    def rules_based_validate_date(self, date_value, rules):
+        """
+        This will validate TDate based on Ruless class instance
+        """
+        validated = False
+
+        if rules is None:
+            raise ValueError('No contest rules provided !')
+        # TODO !!!
+        return True
 
     def dump_summary(self):
         """

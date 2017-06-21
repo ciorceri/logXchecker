@@ -75,6 +75,12 @@ bands=band2
 """
 valid_category3_section = """
 [category3]
+name=Single Operator Multi Band
+regexp=somb
+bands=band1,band2
+"""
+valid_category4_section = """
+[category4]
 name=Multi Operator
 regexp=mo|multi
 bands=band1,band2
@@ -88,9 +94,11 @@ valid_rules = valid_contest_section + \
               valid_period2_section + \
               valid_category1_section + \
               valid_category2_section + \
-              valid_category3_section
+              valid_category3_section + \
+              valid_category4_section
 
-valid_rules_sections = ['contest', 'log', 'band1', 'band2', 'period1', 'period2', 'category1', 'category2', 'category3']
+valid_rules_sections = ['contest', 'log', 'band1', 'band2', 'period1', 'period2', 'category1', 'category2',
+                        'category3', 'category4']
 
 missing_contest_section_fields = [
     """
@@ -257,9 +265,12 @@ class TestRules(TestCase):
         self.assertEqual(_rules.contest_category(2)['name'], 'Single Operator 432')
         self.assertEqual(_rules.contest_category(2)['regexp'], 'so|single')
         self.assertEqual(_rules.contest_category(2)['bands'], 'band2')
-        self.assertEqual(_rules.contest_category(3)['name'], 'Multi Operator')
-        self.assertEqual(_rules.contest_category(3)['regexp'], 'mo|multi')
+        self.assertEqual(_rules.contest_category(3)['name'], 'Single Operator Multi Band')
+        self.assertEqual(_rules.contest_category(3)['regexp'], 'somb')
         self.assertEqual(_rules.contest_category(3)['bands'], 'band1,band2')
+        self.assertEqual(_rules.contest_category(4)['name'], 'Multi Operator')
+        self.assertEqual(_rules.contest_category(4)['regexp'], 'mo|multi')
+        self.assertEqual(_rules.contest_category(4)['bands'], 'band1,band2')
 
     def test_init_fail(self):
         # test 'file not found'
