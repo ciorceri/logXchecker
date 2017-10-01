@@ -36,13 +36,7 @@ class Rules(object):
         bands=2
         periods=2
         categories=3
-
-        [log]
-        format=edi
-
-        [mode]
-        regexp=1|2|6
-
+        modes=1,2,6
         # 0 non of below non of below
         # 1 SSB SSB
         # 2 CW CW
@@ -53,6 +47,9 @@ class Rules(object):
         # 7 RTTY RTTY
         # 8 SSTV SSTV
         # 9 ATV ATV
+
+        [log]
+        format=edi
 
         [band1]
         band=144
@@ -116,11 +113,12 @@ class Rules(object):
 
     def validate_rules(self):
         # validate contest fields
-        # in case of error it will print it and exit with exitcode = 1,9,10,11,12
+        # in case of error it will print it and exit with exitcode = 10,11,12,13
         try:
             self.contest_bands_nr
             self.contest_periods_nr
             self.contest_categories_nr
+            self.contest_qso_modes
         except KeyError as e:
             print('ERROR: Rules has missing fields from [contest] section')
             sys.exit(10)
@@ -154,7 +152,7 @@ class Rules(object):
             print('ERROR: Rules file has invalid settings for period', period)
             sys.exit(12)
 
-        # validate period number and fields
+        # validate category number and fields
         if self.contest_categories_nr < 1:
             print('ERROR: Rules file has invalid \'categories\' field setting in [contest] section')
             sys.exit(10)
@@ -226,8 +224,11 @@ class Rules(object):
 
     @property
     def contest_qso_modes(self):
-        # TODO : add contest qso modes 1,2,6 (SSB,CW,FM)
-        pass
+        try:
+            modes = [int(mode) for mode in self.config['contest']['modes'].split(',')]
+            return modes
+        except KeyError:
+            raise KeyError("Rules are missing field 'modes' in [contest] section")
 
     @property
     def contest_bands_nr(self):

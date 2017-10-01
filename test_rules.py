@@ -30,6 +30,7 @@ endhour=1159
 bands=2
 periods=2
 categories=3
+modes=1,2,6
 """
 valid_log_section = """
 [log]
@@ -107,11 +108,26 @@ missing_contest_section_fields = [
     """
 [contest]
 bands=1
+periods=1
+categories=1
 """,
     """
 [contest]
 bands=1
 periods=1
+modes=1
+""",
+    """
+[contest]
+bands=1
+categories=1
+modes=1
+""",
+    """
+[contest]
+periods=1
+categories=1
+modes=1
 """
 ]
 
@@ -132,12 +148,14 @@ missing_band_section = [
 bands=0
 periods=1
 categories=1
+modes=1
 """, 10),
     ("""
 [contest]
 bands=1
 periods=1
 categories=1
+modes=1
 """, 11)
 ]
 
@@ -162,12 +180,14 @@ missing_period_section = [
 bands=1
 periods=0
 categories=1
+modes=1
 """ + valid_band1_section, 10),
     ("""
 [contest]
 bands=1
 periods=1
 categories=1
+modes=1
 """ + valid_band1_section, 12)
 
 ]
@@ -201,6 +221,7 @@ endhour=1200
 bands=1
 periods=1
 categories=1
+modes=1
 """
 
 missing_band_section_in_period = [
