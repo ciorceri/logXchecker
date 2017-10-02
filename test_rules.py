@@ -131,6 +131,23 @@ modes=1
 """
 ]
 
+invalid_modes_value = [
+    """
+[contest]
+bands=1
+periods=1
+categories=1
+modes=
+""",
+    """
+[contest]
+bands=1
+periods=1
+categories=1
+modes=X
+"""
+]
+
 invalid_bands_value = [
     """
 [contest]
@@ -271,6 +288,8 @@ class TestRules(TestCase):
         self.assertEqual(_rules.contest_band(1)['band'], '144')
         self.assertEqual(_rules.contest_band(2)['band'], '432')
 
+        self.assertEqual(_rules.contest_qso_modes, [1, 2, 6])
+
         self.assertEqual(_rules.contest_periods_nr, 2)
         self.assertEqual(_rules.contest_period(1)['begindate'], '20130803')
         self.assertEqual(_rules.contest_period(1)['enddate'], '20130803')
@@ -312,6 +331,14 @@ class TestRules(TestCase):
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
                 self.assertRaisesRegex(SystemExit, '^10$', rules.Rules, 'some_rule_file.rules')
+
+    @mock.patch('os.path.isfile')
+    def test_invalid_modes_value(self, mock_isfile):
+        mock_isfile.return_value = True
+        for mode_value in invalid_modes_value:
+            mo = mock.mock_open(read_data=mode_value)
+            with patch('builtins.open', mo, create=True):
+                self.assertRaisesRegex(SystemExit, '^1000$', rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_invalid_bands_value(self, mock_isfile):

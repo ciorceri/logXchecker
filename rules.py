@@ -229,6 +229,8 @@ class Rules(object):
             return modes
         except KeyError:
             raise KeyError("Rules are missing field 'modes' in [contest] section")
+        except ValueError:
+            raise KeyError("The rules have invalid 'modes' value in [contest] section")
 
     @property
     def contest_bands_nr(self):
