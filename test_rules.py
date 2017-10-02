@@ -338,7 +338,7 @@ class TestRules(TestCase):
         for mode_value in invalid_modes_value:
             mo = mock.mock_open(read_data=mode_value)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(SystemExit, '^1000$', rules.Rules, 'some_rule_file.rules')
+                self.assertRaisesRegex(ValueError, "The rules have invalid 'modes' value in \[contest\] section", rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_invalid_bands_value(self, mock_isfile):
