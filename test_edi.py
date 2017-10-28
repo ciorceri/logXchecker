@@ -79,10 +79,23 @@ CODXC=YO8SSB;KN27OD;133
 130804;0642;YO6POK;6;59;014;59;030;;KN27JG;109;;;;
 130804;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;"""
 
-invalid_edi_log = """
+invalid_edi_log_PBand = """
 PCall=YO5PJB
 PWWLo=KN16SS
 PBand=200 MHz
+"""
+invalid_edi_log_PSect = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=extraterrestrial
+"""
+invalid_edi_log_TDate = """
+TDate=20250101;20250102
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
 """
 
 test_valid_qso_lines = [
@@ -342,7 +355,7 @@ class TestEdiLog(TestCase):
                 edi.Log('some_log_file.edi')
 
         # test with invalid TDate
-        invalid_edi_log = 'TDate=test\n' + invalid_edi_log
+        invalid_edi_log = 'TDate=20170101,20170102\n' + invalid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             with self.assertRaisesRegex(ValueError, 'The TDate field value is not valid'):
@@ -368,15 +381,25 @@ class TestEdiLog(TestCase):
             edi.Log('some_log_file.edi', rules=_rules)
 
         # test with valid rules and with invalid edi log (invalid PBand)
-        mo_log = mock.mock_open(read_data=invalid_edi_log)
+        mo_log = mock.mock_open(read_data=invalid_edi_log_PBand)
         with patch('builtins.open', mo_log, create=True):
             with self.assertRaisesRegex(ValueError, 'The PBand field value has an invalid value \(200 MHz\). '
                                                     'Not as defined in contest rules'):
                 edi.Log('some_log_file.edi', rules=_rules)
 
-        # TODO : test with valid rules and with invalid edi log (invalid PSect)
+        # test with valid rules and with invalid edi log (invalid PSect)
+        mo_log = mock.mock_open(read_data=invalid_edi_log_PSect)
+        with patch('builtins.open', mo_log, create=True):
+            with self.assertRaisesRegex(ValueError, 'The PSect field value has an invalid value \(extraterrestrial\). '
+                                                    'Not as defined in contest rules'):
+                edi.Log('some_log_file.edi', rules=_rules)
 
-        # TODO : test with valid rules and with invalid edi log (invalid TDate)
+        # test with valid rules and with invalid edi log (invalid TDate)
+        mo_log = mock.mock_open(read_data=invalid_edi_log_TDate)
+        with patch('builtins.open', mo_log, create=True):
+            with self.assertRaisesRegex(ValueError, 'The TDate field value has an invalid value \(20250101;20250102\). '
+                                                    'Not as defined in contest rules'):
+                edi.Log('some_log_file.edi', rules=_rules)
 
     def test_read_file_content(self):
         # test 'read_file_content', the buildins.open is mocked

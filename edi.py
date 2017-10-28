@@ -105,9 +105,9 @@ class Log(object):
             raise ValueError('The TDate field is not present')
         if len(_date) > 1:
             raise ValueError('The TDate field is present multiple times')
-        if not rules and not self.validate_date(_date[0]):
+        if not self.validate_date(_date[0]):
             raise ValueError('The TDate field value is not valid ({})'.format(_date[0]))
-        elif rules and not self.rules_based_validate_date(_date[0], rules):
+        if rules and not self.rules_based_validate_date(_date[0], rules):
             raise ValueError('The TDate field value has an invalid value ({}). Not as defined in contest '
                              'rules'.format(_date[0]))
 
@@ -286,8 +286,10 @@ class Log(object):
 
         if rules is None:
             raise ValueError('No contest rules provided !')
-        # TODO !!!
-        return True
+        _begin_date, _end_date = date_value.split(';')
+        if _begin_date == rules.contest_begin_date and _end_date == rules.contest_end_date:
+            validated = True
+        return validated
 
     def dump_summary(self):
         """
