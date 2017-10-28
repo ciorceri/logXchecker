@@ -386,7 +386,21 @@ class TestEdiLog(TestCase):
         for test in negative_tests:
             self.assertFalse(edi.Log.validate_band(test))
 
-    def test_rules_based_validate_band(self):
+    @mock.patch('os.path.isfile')
+    def test_rules_based_validate_band(self, mock_isfile):
+        mock_isfile.return_value = True
+        positive_tests = ['144', '145', '144mhz', '145mhz', '430', '432', '430mhz', '432mhz', '432.2']
+        negative_tests = ['143', '146', '431', '433', '435']
+
+        mo = mock.mock_open(read_data=valid_rules)
+        with patch('builtins.open', mo, create=True):
+            _rules = rules.Rules('some_rule_file.rules')
+        for test in positive_tests:
+            self.assertTrue(edi.Log.rules_based_validate_band(test, _rules))
+        for test in negative_tests:
+            self.assertFalse(edi.Log.rules_based_validate_band(test, _rules))
+
+    def test_validate_section(self):
         # TODO: test for this function
         pass
 

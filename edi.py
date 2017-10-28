@@ -78,9 +78,9 @@ class Log(object):
             raise ValueError('The PBand field is not present')
         if len(_band) > 1:
             raise ValueError('The PBand field is present multiple times')
-        if not self.validate_band(_band[0]):
+        if not rules and not self.validate_band(_band[0]):
             raise ValueError('The PBand field value is not valid')
-        if rules and not self.rules_based_validate_band(_band[0], rules):
+        elif rules and not self.rules_based_validate_band(_band[0], rules):
             raise ValueError('The PBand field value has an invalid value ({}). Not as defined in contest '
                              'rules'.format(_band[0]))
         self.band = _band
@@ -199,6 +199,7 @@ class Log(object):
         return None
 
     # TODO: this will be deprecated, I should remove it in the future
+    # QUESTION : WHY ? WE NEED GENERIC VALIDATION FOR EDI LOGS !!!
     @staticmethod
     def validate_band(band_value):
         """
@@ -215,7 +216,8 @@ class Log(object):
                 validated = True
         return validated
 
-    def rules_based_validate_band(self, band_value, rules):
+    @staticmethod
+    def rules_based_validate_band(band_value, rules):
         """
         This will validate PBand based on Rules class instance
         """
