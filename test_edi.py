@@ -311,13 +311,49 @@ class TestEdiLog(TestCase):
             with self.assertRaisesRegex(ValueError, 'The PBand field is present multiple times'):
                 edi.Log('some_log_file.edi')
 
-        # TODO : test with missing PSect
-        # TODO : test with invalid PSect
-        # TODO : test with multiple PSect
+        # test with missing PSect
+        invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PSect=')]
+        invalid_edi_log = '\n'.join(invalid_edi_log)
+        mo = mock.mock_open(read_data=invalid_edi_log)
+        with patch('builtins.open', mo, create=True):
+            with self.assertRaisesRegex(ValueError, 'The PSect field is not present'):
+                edi.Log('some_log_file.edi')
 
-        # TODO : test with missing TDate
-        # TODO : test with invalid TDate
-        # TODO : test with multiple TDate
+        # test with invalid PSect
+        invalid_edi_log = 'PSect=test\n' + invalid_edi_log
+        mo = mock.mock_open(read_data=invalid_edi_log)
+        with patch('builtins.open', mo, create=True):
+            with self.assertRaisesRegex(ValueError, 'The PSect field value is not valid'):
+                edi.Log('some_log_file.edi')
+
+        # test with multiple PSect
+        invalid_edi_log = 'PSect=test\n' + valid_edi_log
+        mo = mock.mock_open(read_data=invalid_edi_log)
+        with patch('builtins.open', mo, create=True):
+            with self.assertRaisesRegex(ValueError, 'The PSect field is present multiple times'):
+                edi.Log('some_log_file.edi')
+
+        # test with missing TDate
+        invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('TDate=')]
+        invalid_edi_log = '\n'.join(invalid_edi_log)
+        mo = mock.mock_open(read_data=invalid_edi_log)
+        with patch('builtins.open', mo, create=True):
+            with self.assertRaisesRegex(ValueError, 'The TDate field is not present'):
+                edi.Log('some_log_file.edi')
+
+        # test with invalid TDate
+        invalid_edi_log = 'TDate=test\n' + invalid_edi_log
+        mo = mock.mock_open(read_data=invalid_edi_log)
+        with patch('builtins.open', mo, create=True):
+            with self.assertRaisesRegex(ValueError, 'The TDate field value is not valid'):
+                edi.Log('some_log_file.edi')
+
+        # test with multiple TDate
+        invalid_edi_log = 'TDate=test\n' + valid_edi_log
+        mo = mock.mock_open(read_data=invalid_edi_log)
+        with patch('builtins.open', mo, create=True):
+            with self.assertRaisesRegex(ValueError, 'The TDate field is present multiple times'):
+                edi.Log('some_log_file.edi')
 
     @mock.patch('os.path.isfile')
     def test_init_with_rules(self, mock_isfile):
@@ -342,7 +378,6 @@ class TestEdiLog(TestCase):
 
         # TODO : test with valid rules and with invalid edi log (invalid TDate)
 
-
     def test_read_file_content(self):
         # test 'read_file_content', the buildins.open is mocked
         mo = mock_open(read_data=valid_edi_log)
@@ -351,9 +386,6 @@ class TestEdiLog(TestCase):
         self.assertEqual(valid_edi_log, ''.join(log.log_content))
         # test 'read_file_content' exceptions
         self.assertRaises(FileNotFoundError, edi.Log, 'non-existing-log-file.edi')
-
-    def validate_log_content(self):
-        pass
 
     @mock.patch.object(edi.Log, 'read_file_content')
     def test_get_field(self, mock_read_file_content):
