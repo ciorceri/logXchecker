@@ -79,6 +79,12 @@ CODXC=YO8SSB;KN27OD;133
 130804;0642;YO6POK;6;59;014;59;030;;KN27JG;109;;;;
 130804;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;"""
 
+invalid_edi_log = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=200 MHz
+"""
+
 test_valid_qso_lines = [
     '130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;',
     '160507;1531;YO7LBX/P;1;59;006;59;016;;KN14QW;76;;;;',
@@ -303,10 +309,22 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo_rules, create=True):
             _rules = rules.Rules('some_rule_file.rules')
 
+        # test with valid rules and with valid edi log
         mo_log = mock.mock_open(read_data=valid_edi_log)
         with patch('builtins.open', mo_log, create=True):
-            _log = edi.Log('some_log_file.edi', rules=_rules)
-    # TODO : to continue
+            edi.Log('some_log_file.edi', rules=_rules)
+
+        # test with valid rules and with invalid edi log (invalid PBand)
+        mo_log = mock.mock_open(read_data=invalid_edi_log)
+        with patch('builtins.open', mo_log, create=True):
+            with self.assertRaisesRegex(ValueError, 'The PBand field value has an invalid value \(200 MHz\). '
+                                                    'Not as defined in contest rules'):
+                edi.Log('some_log_file.edi', rules=_rules)
+
+        # TODO : test with valid rules and with invalid edi log (invalid PSect)
+
+        # TODO : test with valid rules and with invalid edi log (invalid TDate)
+
 
     def test_read_file_content(self):
         # test 'read_file_content', the buildins.open is mocked

@@ -270,7 +270,6 @@ class Log(object):
         """
         validated = False
         dates = date_value.split(';')
-        print(dates)
         for _date in dates:
             try:
                 datetime.strptime(_date, '%Y%m%d')
