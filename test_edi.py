@@ -251,6 +251,8 @@ test_logQso_rules_based_qso_validator = [
 
 class TestEdiLog(TestCase):
     def test_init(self):
+
+        # test with missing PCall
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PCall=')]
         invalid_edi_log = '\n'.join(invalid_edi_log)
         mo = mock.mock_open(read_data=invalid_edi_log)
@@ -258,12 +260,14 @@ class TestEdiLog(TestCase):
             with self.assertRaisesRegex(ValueError, 'The PCall field is not present'):
                 edi.Log('some_log_file.edi')
 
+        # test with multiple PCall
         invalid_edi_log = 'PCall=test\n' + valid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             with self.assertRaisesRegex(ValueError, 'The PCall field is present multiple times'):
                 edi.Log('some_log_file.edi')
 
+        # test with missing PWWLo
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PWWLo=')]
         invalid_edi_log = '\n'.join(invalid_edi_log)
         mo = mock.mock_open(read_data=invalid_edi_log)
@@ -271,18 +275,21 @@ class TestEdiLog(TestCase):
             with self.assertRaisesRegex(ValueError, 'The PWWLo field is not present'):
                 edi.Log('some_log_file.edi')
 
+        # test with invalid PWWLo
         invalid_edi_log = 'PWWLo=test\n' + invalid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             with self.assertRaisesRegex(ValueError, 'The PWWLo field value is not valid'):
                 edi.Log('some_log_file.edi')
 
+        # test with multiple PWWLo
         invalid_edi_log = 'PWWLo=test\n' + valid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             with self.assertRaisesRegex(ValueError, 'The PWWLo field is present multiple times'):
                 edi.Log('some_log_file.edi')
 
+        # test with missing PBand
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PBand=')]
         invalid_edi_log = '\n'.join(invalid_edi_log)
         mo = mock.mock_open(read_data=invalid_edi_log)
@@ -290,17 +297,27 @@ class TestEdiLog(TestCase):
             with self.assertRaisesRegex(ValueError, 'The PBand field is not present'):
                 edi.Log('some_log_file.edi')
 
+        # test with invalid PBand
         invalid_edi_log = 'PBand=test\n' + invalid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             with self.assertRaisesRegex(ValueError, 'The PBand field value is not valid'):
                 edi.Log('some_log_file.edi')
 
+        # test with multiple PBand
         invalid_edi_log = 'PBand=test\n' + valid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             with self.assertRaisesRegex(ValueError, 'The PBand field is present multiple times'):
                 edi.Log('some_log_file.edi')
+
+        # TODO : test with missing PSect
+        # TODO : test with invalid PSect
+        # TODO : test with multiple PSect
+
+        # TODO : test with missing TDate
+        # TODO : test with invalid TDate
+        # TODO : test with multiple TDate
 
     @mock.patch('os.path.isfile')
     def test_init_with_rules(self, mock_isfile):

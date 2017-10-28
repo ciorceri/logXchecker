@@ -91,9 +91,9 @@ class Log(object):
             raise ValueError('The PSect field is not present')
         if len(_section) > 1:
             raise ValueError('The PSect field is present multiple times')
-        if not self.validate_section(_section[0]):
+        if not rules and not self.validate_section(_section[0]):
             raise ValueError('The PSect field value is not valid')
-        if rules and not self.rules_based_validate_section(_section[0], rules):
+        elif rules and not self.rules_based_validate_section(_section[0], rules):
             raise ValueError('The PSect field value has an invalid value ({}). Not as defined in contest '
                              'rules'.format(_section[0]))
         self.section = _section
@@ -105,9 +105,9 @@ class Log(object):
             raise ValueError('The TDate field is not present')
         if len(_date) > 1:
             raise ValueError('The TDate field is present multiple times')
-        if not self.validate_date(_date[0]):
+        if not rules and not self.validate_date(_date[0]):
             raise ValueError('The TDate field value is not valid ({})'.format(_date[0]))
-        if rules and not self.rules_based_validate_date(_date[0], rules):
+        elif rules and not self.rules_based_validate_date(_date[0], rules):
             raise ValueError('The TDate field value has an invalid value ({}). Not as defined in contest '
                              'rules'.format(_date[0]))
 
