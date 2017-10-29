@@ -198,8 +198,6 @@ class Log(object):
                     return _band
         return None
 
-    # TODO: this will be deprecated, I should remove it in the future
-    # QUESTION : WHY ? WE NEED GENERIC VALIDATION FOR EDI LOGS !!!
     @staticmethod
     def validate_band(band_value):
         """
@@ -433,6 +431,7 @@ class LogQso(object):
 
         # validate 'duplicate_qso' format
         # TODO
+        return None
 
     def rules_based_qso_validator(self, rules):
         """
@@ -449,7 +448,16 @@ class LogQso(object):
         if self.qsoFields['date'] > rules.contest_end_date[2:]:
             return 'Qso date is invalid: after contest ends (>{})'.format(rules.contest_end_date[2:])
 
-        # TODO : validate qso date based on period (if exists !)
+        # validate qso date based on period
+        # TODO : is the period field mandatory in case there is only one period ?
+        inside_period = False
+        for period in range(1, rules.contest_periods_nr + 1):
+            if rules.contest_period(period)['begindate'][2:] <= self.qsoFields['date'] <= \
+                    rules.contest_period(period)['enddate'][2:]:
+                inside_period = True
+        if not inside_period:
+            return 'Qso date is invalid: not in defined period date ({},{})'.\
+                format(rules.contest_period(period)['begindate'], rules.contest_period(period)['enddate'])
 
         # validate qso hour
         if self.qsoFields['date'] == rules.contest_begin_date[2:] and \
@@ -459,10 +467,21 @@ class LogQso(object):
            self.qsoFields['hour'] > rules.contest_end_hour:
             return 'Qso hour is invalid: after contest end hour (>{})'.format(rules.contest_end_hour)
 
-        # TODO : validate qso hour based on period (if exists !)
+        # validate qso hour based on period hours
+        inside_period = False
+        for period in range(1, rules.contest_periods_nr + 1):
+                # TODO : have to do some SMART check of time
+                # example: 1200 < qso_time < 1159
+                inside_period = True
+        if not inside_period:
+            return 'Qso hour is invalid: not in defined period hours ({},{})'.\
+                format(rules.contest_period(period)['begintime'], rules.contest_period(period)['endtime'])
 
         # validate qso mode
-        # TODO: I have to add 'modes' in rules.py
+        if int(self.qsoFields['mode']) not in rules.contest_qso_modes:
+            return 'Qso mode is invalid: not in defined modes ({})'.format(rules.contest_qso_modes)
+
+        return None
 
 
 class LogException(Exception):

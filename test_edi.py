@@ -547,6 +547,7 @@ class TestEdiLogQso(TestCase):
             _rules = rules.Rules('some_rule_file.rules')
 
         for (linenr, qso, valid, error) in test_logQso_rules_based_qso_validator:
+            print("VALIDEZ : ", linenr, qso)
             lq = edi.LogQso(qso, linenr, rules=_rules)
             self.assertEqual(lq.qso_line_number, linenr)
             self.assertEqual(lq.qso_line, qso)

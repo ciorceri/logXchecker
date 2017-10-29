@@ -234,6 +234,9 @@ class Rules(object):
 
     @property
     def contest_bands_nr(self):
+        """
+        :return: number of contest bands
+        """
         try:
             self.config['contest']['bands']
             nr = int(self.config['contest']['bands'])
@@ -245,13 +248,16 @@ class Rules(object):
 
     def contest_band(self, number):
         """
-        :param number: 
+        :param number: the band number to query
         :return: an instance of the config[bandX] 
         """
         return self.config['band'+str(number)]
 
     @property
     def contest_periods_nr(self):
+        """
+        :return: number of periods
+        """
         try:
             self.config['contest']['periods']
             nr = int(self.config['contest']['periods'])
@@ -263,14 +269,15 @@ class Rules(object):
 
     def contest_period(self, number):
         """
-        :param number: 
+        :param number: the period number to query
         :return: an instance of config[periodX] 
         """
         return self.config['period'+str(number)]
 
     def contest_period_bands(self, number):
         """
-        :param number: 
+        This will return a list of bands used in a period
+        :param number: the period number to query
         :return: a list with bands names from config[periodX][bands] 
         """
         return [band for band in self.contest_period(number)['bands'].split(',')]
