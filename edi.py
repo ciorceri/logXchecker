@@ -448,17 +448,6 @@ class LogQso(object):
         if self.qsoFields['date'] > rules.contest_end_date[2:]:
             return 'Qso date is invalid: after contest ends (>{})'.format(rules.contest_end_date[2:])
 
-        # validate qso date based on period
-        # TODO : is the period field mandatory in case there is only one period ?
-        inside_period = False
-        for period in range(1, rules.contest_periods_nr + 1):
-            if rules.contest_period(period)['begindate'][2:] <= self.qsoFields['date'] <= \
-                    rules.contest_period(period)['enddate'][2:]:
-                inside_period = True
-        if not inside_period:
-            return 'Qso date is invalid: not in defined period date ({},{})'.\
-                format(rules.contest_period(period)['begindate'], rules.contest_period(period)['enddate'])
-
         # validate qso hour
         if self.qsoFields['date'] == rules.contest_begin_date[2:] and \
            self.qsoFields['hour'] < rules.contest_begin_hour:
@@ -467,15 +456,34 @@ class LogQso(object):
            self.qsoFields['hour'] > rules.contest_end_hour:
             return 'Qso hour is invalid: after contest end hour (>{})'.format(rules.contest_end_hour)
 
-        # validate qso hour based on period hours
+        # validate date & hour based on period
         inside_period = False
         for period in range(1, rules.contest_periods_nr + 1):
-                # TODO : have to do some SMART check of time
-                # example: 1200 < qso_time < 1159
-                inside_period = True
+            # if date is not in period, check next period
+            if not (rules.contest_period(period)['begindate'] <= self.qsoFields['date'] <= rules.contest_period(period)['enddate']):
+                continue
+            # FIXME : the following line has a BUG !
+            period_days = rules.contest_period(period)['enddate'] - rules.contest_period(period)['begindate']
+            # if period is in same day
+            if period_days == 0 and rules.contest_period(period)['beginhour'] <= self.qsoFields['hour'] <= rules.contest_period(period)['endhour']:
+                    inside_period = True
+                    break
+            # if period is in multiple days
+            else:
+                if rules.contest_period(period)['begindate'] == self.qsoFields['date'] and \
+                                rules.contest_period(period)['begintime'] <= self.qsoFields['hour']:
+                    inside_period = True
+                    break
+                if self.qsoFields['date'] == rules.contest_period(period)['enddate'] and \
+                                self.qsoFields['hour'] <= rules.contest_period(period)['endtime']:
+                    inside_period = True
+                    break
+                # if begin_period < qso_date < end_period
+                if rules.contest_period(period)['begindate'] < self.qsoFields['date'] < rules.contest_period(period)['enddate']:
+                    inside_period = True
+                    break
         if not inside_period:
-            return 'Qso hour is invalid: not in defined period hours ({},{})'.\
-                format(rules.contest_period(period)['begintime'], rules.contest_period(period)['endtime'])
+            return 'Qso date/hour is invalid: not inside contest periods'
 
         # validate qso mode
         if int(self.qsoFields['mode']) not in rules.contest_qso_modes:

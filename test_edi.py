@@ -244,15 +244,17 @@ test_logQso_generic_qso_validator = [
 test_logQso_rules_based_qso_validator = [
     edi.Log.qsos_tuple(linenr=1, qso='130802;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
                        error='Qso date is invalid: before contest starts (<130803)'),
-    edi.Log.qsos_tuple(linenr=1, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True, error=None),
+    edi.Log.qsos_tuple(linenr=1, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
+                       error='Qso date/hour is invalid: not inside contest periods'),
     edi.Log.qsos_tuple(linenr=1, qso='130805;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
                        error='Qso date is invalid: after contest ends (>130804)'),
 
     edi.Log.qsos_tuple(linenr=2, qso='130803;1159;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
                        error='Qso hour is invalid: before contest start hour (<1200)'),
-    edi.Log.qsos_tuple(linenr=2, qso='130803;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True, error=None),
-
-    edi.Log.qsos_tuple(linenr=2, qso='130804;1159;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True, error=None),
+    edi.Log.qsos_tuple(linenr=2, qso='130803;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
+                       error='Qso date/hour is invalid: not inside contest periods'),
+    edi.Log.qsos_tuple(linenr=2, qso='130804;1159;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
+                       error='Qso date/hour is invalid: not inside contest periods'),
     edi.Log.qsos_tuple(linenr=2, qso='130804;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
                        error='Qso hour is invalid: after contest end hour (>1159)'),
 
@@ -553,5 +555,3 @@ class TestEdiLogQso(TestCase):
             self.assertEqual(lq.qso_line, qso)
             self.assertEqual(lq.valid_qso, valid)
             self.assertEqual(lq.error_message, error)
-
-
