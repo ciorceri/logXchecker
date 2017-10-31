@@ -24,7 +24,7 @@ valid_contest_section = """
 [contest]
 name=Cupa Nasaud
 begindate=20130803
-enddate=20130804
+enddate=20130806
 beginhour=1200
 endhour=1159
 bands=2
@@ -57,7 +57,7 @@ bands=band1,band2
 valid_period2_section = """
 [period2]
 begindate=20130804
-enddate=20130804
+enddate=20130806
 beginhour=0600
 endhour=1159
 bands=band1,band2
@@ -280,7 +280,7 @@ class TestRules(TestCase):
         self.assertEqual(_rules.config.sections(), valid_rules_sections)
         self.assertEqual(_rules.contest_begin_date, '20130803')
 
-        self.assertEqual(_rules.contest_end_date, '20130804')
+        self.assertEqual(_rules.contest_end_date, '20130806')
         self.assertEqual(_rules.contest_begin_hour, '1200')
         self.assertEqual(_rules.contest_end_hour, '1159')
 

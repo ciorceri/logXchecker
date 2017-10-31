@@ -15,8 +15,8 @@ limitations under the License.
 """
 
 import re
+import datetime
 from collections import namedtuple
-from datetime import datetime
 
 
 class Operator(object):
@@ -270,7 +270,7 @@ class Log(object):
         dates = date_value.split(';')
         for _date in dates:
             try:
-                datetime.strptime(_date, '%Y%m%d')
+                datetime.datetime.strptime(_date, '%Y%m%d')
                 validated = True
             except ValueError as e:
                 pass
@@ -342,6 +342,7 @@ class LogQso(object):
             self.error_message = self.generic_qso_validator()
             if (self.error_message is None) and (rules is not None):
                 self.error_message = self.rules_based_qso_validator(rules)
+            self.valid_qso = False if self.error_message else True
 
     def qso_parser(self):
         """
@@ -379,13 +380,13 @@ class LogQso(object):
 
         # validate date format
         try:
-            datetime.strptime(self.qsoFields['date'], '%y%m%d')
+            datetime.datetime.strptime(self.qsoFields['date'], '%y%m%d')
         except ValueError as e:
             return 'Qso date is invalid: {}'.format(str(e))
 
         # validate time format
         try:
-            datetime.strptime(self.qsoFields['hour'], '%H%M')
+            datetime.datetime.strptime(self.qsoFields['hour'], '%H%M')
         except ValueError as e:
             return 'Qso hour is invalid: {}'.format(str(e))
 
@@ -460,26 +461,28 @@ class LogQso(object):
         inside_period = False
         for period in range(1, rules.contest_periods_nr + 1):
             # if date is not in period, check next period
-            if not (rules.contest_period(period)['begindate'] <= self.qsoFields['date'] <= rules.contest_period(period)['enddate']):
+            if not (rules.contest_period(period)['begindate'][2:] <= self.qsoFields['date'] <= rules.contest_period(period)['enddate'][2:]):
                 continue
-            # FIXME : the following line has a BUG !
-            period_days = rules.contest_period(period)['enddate'] - rules.contest_period(period)['begindate']
+            _enddate = datetime.datetime.strptime(rules.contest_period(period)['enddate'], '%Y%m%d')
+            _begindate = datetime.datetime.strptime(rules.contest_period(period)['begindate'], '%Y%m%d')
+            delta_days = _enddate - _begindate
             # if period is in same day
-            if period_days == 0 and rules.contest_period(period)['beginhour'] <= self.qsoFields['hour'] <= rules.contest_period(period)['endhour']:
+            if delta_days == datetime.timedelta(0) and \
+               rules.contest_period(period)['beginhour'] <= self.qsoFields['hour'] <= rules.contest_period(period)['endhour']:
                     inside_period = True
                     break
             # if period is in multiple days
-            else:
-                if rules.contest_period(period)['begindate'] == self.qsoFields['date'] and \
-                                rules.contest_period(period)['begintime'] <= self.qsoFields['hour']:
+            elif delta_days > datetime.timedelta(0):
+                if rules.contest_period(period)['begindate'][2:] == self.qsoFields['date'] and \
+                                rules.contest_period(period)['beginhour'] <= self.qsoFields['hour']:
                     inside_period = True
                     break
-                if self.qsoFields['date'] == rules.contest_period(period)['enddate'] and \
-                                self.qsoFields['hour'] <= rules.contest_period(period)['endtime']:
+                if self.qsoFields['date'] == rules.contest_period(period)['enddate'][2:] and \
+                                self.qsoFields['hour'] <= rules.contest_period(period)['endhour']:
                     inside_period = True
                     break
                 # if begin_period < qso_date < end_period
-                if rules.contest_period(period)['begindate'] < self.qsoFields['date'] < rules.contest_period(period)['enddate']:
+                if rules.contest_period(period)['begindate'][2:] < self.qsoFields['date'] < rules.contest_period(period)['enddate'][2:]:
                     inside_period = True
                     break
         if not inside_period:
