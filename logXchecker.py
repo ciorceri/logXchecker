@@ -53,14 +53,15 @@ class ArgumentParser():
 
     def __init__(self):
         self.parser = argparse.ArgumentParser(description='log cross checker')
-        self.parser.add_argument('-f', '--format', type=self.check_format_value, required=True,
-                                 help="Log format: edi, adif, cabrillo")
-        self.parser.add_argument('-r', '--rules', type=str, required=False, help='INI file with contest rules')
+        group1 = self.parser.add_mutually_exclusive_group(required=True)
+        group1.add_argument('-f', '--format', type=self.check_format_value,
+                            help="Log format: edi, adif, cabrillo")
+        group1.add_argument('-r', '--rules', type=str, help='INI file with contest rules')
+        group2 = self.parser.add_mutually_exclusive_group(required=True)
+        group2.add_argument('-slc', '--singlelogcheck', type=str, default=False, help='single log check')
+        group2.add_argument('-mlc', '--multilogcheck', type=str, default=False, help='multiple log check')
         self.parser.add_argument('-o', '--output', type=self.check_output_value, required=False,
                                  help='Output format: text, html, json, yml')
-        group = self.parser.add_mutually_exclusive_group()
-        group.add_argument('-slc', '--singlelogcheck', type=str, default=False, help='single log check')
-        group.add_argument('-mlc', '--multilogcheck', type=str, default=False, help='multiple log check')
 
     def parse(self, args):
         return self.parser.parse_args(args)
@@ -148,7 +149,14 @@ def main():
     log = None
     logQso = None
 
+    # do we have 'rules' ?
+    rules = None
+    if args.rules:
+        rules = _rules.Rules(args.rules)
+        # TODO : get the log format
+
     if args.format:
+        # TODO : get the log format
         # lfmodule = load_log_format_module(args.format)
         lfmodule = edi
         if args.format == 'EDI':
@@ -156,10 +164,8 @@ def main():
             log = lfmodule.Log
             logQso = lfmodule.LogQso
 
-    # do we have 'rules' ?
-    rules = None
-    if args.rules:
-        rules = _rules.Rules(args.rules)
+    # TODO : move upper 3 lines here based on log type
+    # TODO : and use the proper log type checks
 
     # if 'validate one log'
     if args.singlelogcheck:

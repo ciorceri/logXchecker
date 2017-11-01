@@ -269,6 +269,8 @@ class Log(object):
         """
         validated = False
         dates = date_value.split(';')
+        if len(dates) != 2:
+            return validated
         for _date in dates:
             try:
                 datetime.datetime.strptime(_date, '%Y%m%d')
