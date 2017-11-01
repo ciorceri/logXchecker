@@ -162,16 +162,16 @@ def main():
         rules = _rules.Rules(args.rules)
 
     # if 'validate one log'
-    if args.slc:
-        print('Validate log: ', args.slc)
-        if not os.path.isfile(args.slc):
-            raise FileNotFoundError(args.slc)
-        log = edi.Log(args.slc)
+    if args.singlelogcheck:
+        print('Validate log: ', args.singlelogcheck)
+        if not os.path.isfile(args.singlelogcheck):
+            raise FileNotFoundError(args.singlelogcheck)
+        log = edi.Log(args.singlelogcheck)
 
-    elif args.mlc:
-        print('Validate folder: ', args.mlc)
-        if not os.path.isdir(args.mlc):
-            raise FileNotFoundError(args.mlc)
+    elif args.multilogcheck:
+        print('Validate folder: ', args.multilogcheck)
+        if not os.path.isdir(args.multilogcheck):
+            raise FileNotFoundError(args.multilogcheck)
 
 if __name__ == '__main__':
     main()

@@ -274,7 +274,7 @@ class Log(object):
                 datetime.datetime.strptime(_date, '%Y%m%d')
                 validated = True
             except ValueError as e:
-                pass
+                break
         return validated
 
     def rules_based_validate_date(self, date_value, rules):
