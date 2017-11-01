@@ -265,10 +265,6 @@ test_logQso_rules_based_qso_validator = [
 
     edi.Log.qsos_tuple(linenr=11, qso='130803;1200;YO5BTZ;7;59;001;59;001;;KN16SS;1;;;;', valid=False,
                        error='Qso mode is invalid: not in defined modes ([1, 2, 6])'),
-
-    # TODO: add validation based on contest hours between periods
-    # edi.Log.qsos_tuple(linenr=2, qso='130803;1800;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
-    #                    error='Qso hour is invalid: after contest end hour (>1200)'),
 ]
 
 
@@ -501,13 +497,28 @@ class TestEdiLog(TestCase):
             self.assertFalse(edi.Log.rules_based_validate_band(test, _rules))
 
     def test_validate_section(self):
-        # TODO: test for this function
-        pass
+        positive_tests = ['so', 'sosb', 'somb', 'single', 'single op', 'single-op',
+                          'mo', 'mosb', 'momb', 'multi', 'multi op', 'multi-op']
+        negative_tests = ['operator', 'band']
+        for test in positive_tests:
+            self.assertTrue(edi.Log.validate_section(test))
+        for test in negative_tests:
+            self.assertFalse(edi.Log.validate_section(test))
 
-    def test_rules_based_validate_section(self):
-        # TODO: test for this function
-        pass
-
+    @mock.patch('os.path.isfile')
+    def test_rules_based_validate_section(self, mock_isfile):
+        mock_isfile.return_value = True
+        positive_tests = ['so', 'sosb', 'somb', 'single', 'mo', 'multi',
+                          'single-op', 'single-operator', 'single operator',
+                          'multi-op', 'multi-operator' 'multi operator']
+        negative_tests = ['operator', 'band']
+        mo = mock.mock_open(read_data=valid_rules)
+        with patch('builtins.open', mo, create=True):
+            _rules = rules.Rules('some_rule_file.rules')
+        for test in positive_tests:
+            self.assertTrue(edi.Log.rules_based_validate_section(test, _rules))
+        for test in negative_tests:
+            self.assertFalse(edi.Log.rules_based_validate_section(test, _rules))
 
 class TestEdiLogQso(TestCase):
     def test_init(self):

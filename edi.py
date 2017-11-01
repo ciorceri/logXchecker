@@ -246,7 +246,8 @@ class Log(object):
                 validated = True
         return validated
 
-    def rules_based_validate_section(self, section_value, rules):
+    @staticmethod
+    def rules_based_validate_section(section_value, rules):
         """
         This will validate PSect based on Rules class instance
         """

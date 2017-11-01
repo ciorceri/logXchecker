@@ -29,7 +29,7 @@ beginhour=1200
 endhour=1159
 bands=2
 periods=2
-categories=3
+categories=4
 modes=1,2,6
 """
 valid_log_section = """
@@ -298,7 +298,7 @@ class TestRules(TestCase):
         self.assertEqual(_rules.contest_period(1)['bands'], 'band1,band2')
         self.assertEqual(list(_rules.contest_period_bands(1)), ['band1', 'band2'])
 
-        self.assertEqual(_rules.contest_categories_nr, 3)
+        self.assertEqual(_rules.contest_categories_nr, 4)
         self.assertEqual(_rules.contest_category(1)['name'], 'Single Operator 144')
         self.assertEqual(_rules.contest_category(1)['regexp'], 'so|single')
         self.assertEqual(_rules.contest_category(1)['bands'], 'band1')
