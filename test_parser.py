@@ -21,11 +21,11 @@ from logXchecker import ArgumentParser
 class TestParser(TestCase):
     testcase_with_error_checks = (('', 2), ('hello', 2), ('-h', 2), ('--help', 2),
                                   (['-h'], 0), (['--help'], 0),
-                                  (['-f=edi'], 0), (['-fedi'], 0), (['-f', 'edi'], 0),
-                                  (['-f=adif'], 0), (['-fadif'], 0), (['-f', 'adif'], 0),
-                                  (['-f=cabrillo'], 0), (['-fcabrillo'], 0), (['-f', 'cabrillo'], 0),
+                                  (['-f=edi'], 2), (['-fedi'], 2), (['-f', 'edi'], 2),
+                                  (['-f=adif'], 2), (['-fadif'], 2), (['-f', 'adif'], 2),
+                                  (['-f=cabrillo'], 2), (['-fcabrillo'], 2), (['-f', 'cabrillo'], 2),
                                   (['-f'], 2), (['-f edi'], 2), (['-f hello'], 2),
-                                  (['-f=edi', '-o=text'], 0), (['-f=edi', '-otext'], 0),
+                                  (['-f=edi', '-o=text'], 2), (['-f=edi', '-otext'], 2),
                                   (['-f=edi', '-o'], 2),
                                   (['-f=edi', '-o=hello'], 2), (['-f=edi', '-ohello'], 2),
                                   (['-f=edi', '-o', 'hello'], 2),
@@ -38,8 +38,8 @@ class TestParser(TestCase):
                                   (['-f=edi', '-slc', '-mlc'], 2),
                                   )
     testcase_with_success = (
-                             (['-f=edi'], 'EDI', False, False),
-                             (['-fedi'], 'EDI', False, False),
+                             (['-f=edi', '-slc=xxx.edi'], 'EDI', 'xxx.edi', False),
+                             (['-fedi', '-slc=xxx.edi'], 'EDI', 'xxx.edi', False),
                              (['-f=edi', '-slc=xxx.edi'], 'EDI', 'xxx.edi', False),
                              (['-f=edi', '--singlelogcheck=xxx.edi'], 'EDI', 'xxx.edi', False),
                              (['-f=edi', '-mlc=xxx.edi'], 'EDI', False, 'xxx.edi'),
@@ -52,7 +52,7 @@ class TestParser(TestCase):
     def test_parse(self):
         for (arg, exitCode) in self.testcase_with_error_checks:
             try:
-                print('testing parser agument:', arg)
+                print('1. testing parser agument:', arg)
                 parsed = self.p.parse(arg)
             except SystemExit as e:
                 print('error code:', e.code, '| expected error code:', exitCode)
@@ -62,8 +62,8 @@ class TestParser(TestCase):
                     raise ValueError('Should exit with exit code 0, but it didn\'t')
 
         for (arg, format, singlelogcheck, multilogcheck) in self.testcase_with_success:
-            print('testing parser argument:', arg)
+            print('2. testing parser argument:', arg)
             result = self.p.parse(arg)
-            self.assertEqual(result.format, format)
+            self.assertEqual(result.format.upper(), format.upper())
             self.assertEqual(result.singlelogcheck, singlelogcheck)
             self.assertEqual(result.multilogcheck, multilogcheck)
