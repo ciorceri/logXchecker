@@ -153,16 +153,16 @@ def main():
     rules = None
     if args.rules:
         rules = _rules.Rules(args.rules)
-        # TODO : get the log format
+        log_format = rules.contest_log_format
+    elif args.format:
+        log_format = args.format
 
-    if args.format:
-        # TODO : get the log format
-        # lfmodule = load_log_format_module(args.format)
-        lfmodule = edi
-        if args.format == 'EDI':
-            operator = lfmodule.Operator
-            log = lfmodule.Log
-            logQso = lfmodule.LogQso
+    # lfmodule = load_log_format_module(args.format)
+    lfmodule = edi  # FIXME: temporary hardcode log format
+    if log_format == 'EDI':
+        operator = lfmodule.Operator
+        log = lfmodule.Log
+        logQso = lfmodule.LogQso
 
     # TODO : move upper 3 lines here based on log type
     # TODO : and use the proper log type checks
@@ -172,8 +172,7 @@ def main():
         print('Validate log: ', args.singlelogcheck)
         if not os.path.isfile(args.singlelogcheck):
             raise FileNotFoundError(args.singlelogcheck)
-        log = edi.Log(args.singlelogcheck)
-
+        _log = log.Log(args.singlelogcheck)
     elif args.multilogcheck:
         print('Validate folder: ', args.multilogcheck)
         if not os.path.isdir(args.multilogcheck):

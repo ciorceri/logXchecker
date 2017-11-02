@@ -306,3 +306,7 @@ class Rules(object):
         :return: a list with bands names from config[categoryX][bands]
         """
         return [band for band in self.contest_category(number)['bands'].split(',')]
+
+    @property
+    def contest_log_format(self):
+        return self.config['log']['format'].upper()
