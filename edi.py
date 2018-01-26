@@ -56,7 +56,7 @@ class Log(object):
 
         # get & validate callsign
         _callsign = self.get_field('PCall')
-        if _callsign is None:
+        if not _callsign:
             raise ValueError('The PCall field is not present')
         if len(_callsign) > 1:
             raise ValueError('The PCall field is present multiple times')
@@ -64,7 +64,7 @@ class Log(object):
 
         # get & validate maidenhead locator
         _qthlocator = self.get_field('PWWLo')
-        if _qthlocator is None:
+        if not _qthlocator:
             raise ValueError('The PWWLo field is not present')
         if len(_qthlocator) > 1:
             raise ValueError('The PWWLo field is present multiple times')
@@ -74,7 +74,7 @@ class Log(object):
 
         # get & validate band based on generic rules and by custom rules if provided (rules.contest_band['regexp'])
         _band = self.get_field('PBand')
-        if _band is None:
+        if not _band:
             raise ValueError('The PBand field is not present')
         if len(_band) > 1:
             raise ValueError('The PBand field is present multiple times')
@@ -87,7 +87,7 @@ class Log(object):
 
         # get & validate PSect based on generic rules and by custom rules if provided (rules.contest_category['regexp']
         _section = self.get_field('PSect')
-        if _section is None:
+        if not _section:
             raise ValueError('The PSect field is not present')
         if len(_section) > 1:
             raise ValueError('The PSect field is present multiple times')
@@ -101,7 +101,7 @@ class Log(object):
         # get & validate TDate based on generic rules format and by custom rules if provided
         # (rules.contest_begin_date & rules.contest_end_date)
         _date = self.get_field('TDate')
-        if _date is None:
+        if not _date:
             raise ValueError('The TDate field is not present')
         if len(_date) > 1:
             raise ValueError('The TDate field is present multiple times')
@@ -117,11 +117,11 @@ class Log(object):
     @staticmethod
     def read_file_content(path):
         try:
-            with open(path, 'r') as f:
-                content = f.readlines()
-        except IOError as why:
+            with open(path, 'r') as _file:
+                content = _file.readlines()
+        except IOError:
             raise
-        except Exception as why:
+        except Exception:
             raise
         return content
 
@@ -142,7 +142,7 @@ class Log(object):
         for line in self.log_content:
             if line.upper().startswith(_field):
                 value.append(line.split('=', 1)[1].strip())
-        return value or None
+        return value
 
     def get_qsos(self):
         """
@@ -174,9 +174,8 @@ class Log(object):
 
     @staticmethod
     def validate_qth_locator(qth):
-        regexMaidenhead = '^\s*([a-rA-R]{2}\d{2}[a-xA-X]{2})\s*$'
-
-        res = re.match(regexMaidenhead, qth, re.IGNORECASE)
+        regex_maidenhead = r'^\s*([a-rA-R]{2}\d{2}[a-xA-X]{2})\s*$'
+        res = re.match(regex_maidenhead, qth, re.IGNORECASE)
         return True if res else False
 
     @staticmethod
@@ -188,11 +187,11 @@ class Log(object):
         :return: The detected band (144,432,1296) or None
         """
 
-        regexpBand = {144: ['144.*', '145.*'],
-                      432: ['430.*', '432.*', '435.*'],
-                      1296: ['1296.*', '1[.,][23].*']}
-        for _band in regexpBand:
-            for regexp in regexpBand[_band]:
+        regexp_band = {144: ['144.*', '145.*'],
+                       432: ['430.*', '432.*', '435.*'],
+                       1296: ['1296.*', '1[.,][23].*']}
+        for _band in regexp_band:
+            for regexp in regexp_band[_band]:
                 res = re.match(regexp, band)
                 if res:
                     return _band
@@ -205,10 +204,10 @@ class Log(object):
         """
         validated = False
 
-        regexpBandCheck = ['144.*', '145.*',
-                           '430.*', '432.*', '435.*',
-                           '1296.*', '1[.,][23].*']
-        for _regex in regexpBandCheck:
+        regexp_band_check = ['144.*', '145.*',
+                             '430.*', '432.*', '435.*',
+                             '1296.*', '1[.,][23].*']
+        for _regex in regexp_band_check:
             res = re.match(_regex, band_value)
             if res:
                 validated = True
@@ -224,7 +223,7 @@ class Log(object):
         if rules is None:
             raise ValueError('No contest rules provided !')
         for _nr in range(1, rules.contest_bands_nr+1):
-            _regex = '\s*(' + rules.contest_band(_nr)['regexp'] + ')\s*'
+            _regex = r'\s*(' + rules.contest_band(_nr)['regexp'] + r')\s*'
             res = re.match(_regex, band_value)
             if res:
                 validated = True
@@ -256,7 +255,7 @@ class Log(object):
         if rules is None:
             raise ValueError('No contest rules provided !')
         for _nr in range(1, rules.contest_categories_nr+1):
-            _regex = '\s*(' + rules.contest_category(_nr)['regexp'] + ')\s*'
+            _regex = r'\s*(' + rules.contest_category(_nr)['regexp'] + r')\s*'
             res = re.match(_regex, section_value, re.IGNORECASE)
             if res:
                 validated = True
@@ -275,7 +274,7 @@ class Log(object):
             try:
                 datetime.datetime.strptime(_date, '%Y%m%d')
                 validated = True
-            except ValueError as e:
+            except ValueError:
                 break
         return validated
 
@@ -308,7 +307,7 @@ class LogQso(object):
                            '(?P<rst_sent>.*?);(?P<nr_sent>.*?);(?P<rst_recv>.*?);(?P<nr_recv>.*?);' \
                            '(?P<exchange_recv>.*?);(?P<wwl>.*?);(?P<points>.*?);' \
                            '(?P<new_exchange>.*?);(?P<new_wwl>.*?);(?P<new_dxcc>.*?);(?P<duplicate_qso>.*?)'
-    regexMediumQsoCheck = '^\d{6};\d{4};.*?;.?;\d{2,3}.?;\d{2,4};\d{2,3}.?;\d{2,4};.*?;' \
+    regexMediumQsoCheck = r'^\d{6};\d{4};.*?;.?;\d{2,3}.?;\d{2,4};\d{2,3}.?;\d{2,4};.*?;' \
                           '[a-zA-Z]{2}\d{2}[a-zA-Z]{2};.*?;.*?;.*?;.*?;.*?'
     #                       date  time   id  m    rst       nr      rst       nr    .  qth  km  .   .   .   .
 
@@ -332,7 +331,7 @@ class LogQso(object):
                  'new_wwl': None,
                  'new_dxcc': None,
                  'duplicate_qso': None,
-                 }
+                }
 
     def __init__(self, qso_line, qso_line_number, rules=None):
         self.qso_line = qso_line
@@ -353,7 +352,7 @@ class LogQso(object):
         """
         res = re.match(self.regexMinimalQsoCheck, self.qso_line)
         if res:
-            for key in self.qsoFields.keys():
+            for key in self.qsoFields:
                 self.qsoFields[key] = res.group(key)
 
     @classmethod
@@ -384,48 +383,48 @@ class LogQso(object):
         # validate date format
         try:
             datetime.datetime.strptime(self.qsoFields['date'], '%y%m%d')
-        except ValueError as e:
-            return 'Qso date is invalid: {}'.format(str(e))
+        except ValueError as why:
+            return 'Qso date is invalid: {}'.format(str(why))
 
         # validate time format
         try:
             datetime.datetime.strptime(self.qsoFields['hour'], '%H%M')
-        except ValueError as e:
-            return 'Qso hour is invalid: {}'.format(str(e))
+        except ValueError as why:
+            return 'Qso hour is invalid: {}'.format(str(why))
 
         # validate callsign format
-        reCall = "^\w+/?\w+$"
-        result = re.match(reCall, self.qsoFields['call'])
+        re_call = r'^\w+/?\w+$'
+        result = re.match(re_call, self.qsoFields['call'])
         if not result:
             return 'Callsign is invalid: {}'.format(self.qsoFields['call'])
 
         # validate mode format
-        reMode = "^[0-9]$"
-        result = re.match(reMode, self.qsoFields['mode'])
+        re_mode = "^[0-9]$"
+        result = re.match(re_mode, self.qsoFields['mode'])
         if not result:
             return 'QSO mode is invalid: {}'.format(self.qsoFields['mode'])
 
         # validate RST (sent & recv) format
-        reRST = "^[1-5][1-9][aA]?$"
-        result = re.match(reRST, self.qsoFields['rst_sent'])
+        re_rst = "^[1-5][1-9][aA]?$"
+        result = re.match(re_rst, self.qsoFields['rst_sent'])
         if not result:
             return 'RST is invalid: {}'.format(self.qsoFields['rst_sent'])
-        result = re.match(reRST, self.qsoFields['rst_recv'])
+        result = re.match(re_rst, self.qsoFields['rst_recv'])
         if not result:
             return 'RST is invalid: {}'.format(self.qsoFields['rst_recv'])
 
         # validate NR (sent & recv) format
-        reSentRecvNr = "^\d{1,4}$"
-        result = re.match(reSentRecvNr, self.qsoFields['nr_sent'])
+        re_sent_recv_nr = r'^\d{1,4}$'
+        result = re.match(re_sent_recv_nr, self.qsoFields['nr_sent'])
         if not result:
             return 'Sent Qso number is invalid: {}'.format(self.qsoFields['nr_sent'])
-        result = re.match(reSentRecvNr, self.qsoFields['nr_recv'])
+        result = re.match(re_sent_recv_nr, self.qsoFields['nr_recv'])
         if not result:
             return 'Received Qso number is invalid: {}'.format(self.qsoFields['nr_recv'])
 
         # validate 'exchange_recv' format
-        reExchange = "^\w{0,6}$"
-        result = re.match(reExchange, self.qsoFields['exchange_recv'])
+        re_exchange = r'^\w{0,6}$'
+        result = re.match(re_exchange, self.qsoFields['exchange_recv'])
         if not result:
             return 'Received exchange is invalid: {}'.format(self.qsoFields['exchange_recv'])
 

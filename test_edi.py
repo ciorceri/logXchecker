@@ -19,7 +19,7 @@ from unittest import mock
 from unittest.mock import mock_open, patch
 
 import rules
-from test_rules import valid_rules
+from test_rules import VALID_RULES
 
 import edi
 
@@ -377,7 +377,7 @@ class TestEdiLog(TestCase):
     @mock.patch('os.path.isfile')
     def test_init_with_rules(self, mock_isfile):
         mock_isfile.return_value = True
-        mo_rules = mock.mock_open(read_data=valid_rules)
+        mo_rules = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo_rules, create=True):
             _rules = rules.Rules('some_rule_file.rules')
 
@@ -488,7 +488,7 @@ class TestEdiLog(TestCase):
         positive_tests = ['144', '145', '144mhz', '145mhz', '430', '432', '430mhz', '432mhz', '432.2']
         negative_tests = ['143', '146', '431', '433', '435']
 
-        mo = mock.mock_open(read_data=valid_rules)
+        mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
             _rules = rules.Rules('some_rule_file.rules')
         for test in positive_tests:
@@ -512,7 +512,7 @@ class TestEdiLog(TestCase):
                           'single-op', 'single-operator', 'single operator',
                           'multi-op', 'multi-operator' 'multi operator']
         negative_tests = ['operator', 'band']
-        mo = mock.mock_open(read_data=valid_rules)
+        mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
             _rules = rules.Rules('some_rule_file.rules')
         for test in positive_tests:
@@ -563,7 +563,7 @@ class TestEdiLogQso(TestCase):
     @mock.patch('os.path.isfile')
     def test_rules_based_qso_validator(self, mock_isfile):
         mock_isfile.return_value = True
-        mo = mock.mock_open(read_data=valid_rules)
+        mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
             _rules = rules.Rules('some_rule_file.rules')
 

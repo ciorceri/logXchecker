@@ -107,19 +107,19 @@ class Rules(object):
     @staticmethod
     def read_config_file_content(path):
         content = None
-        with open(path, 'r') as f:
-            content = f.read()
+        with open(path, 'r') as _file:
+            content = _file.read()
         return content
 
     def validate_rules(self):
         # validate contest fields
         # in case of error it will print it and exit with exitcode = 10,11,12,13
         try:
-            self.contest_bands_nr
-            self.contest_periods_nr
-            self.contest_categories_nr
-            self.contest_qso_modes
-        except KeyError as e:
+            _ = self.contest_bands_nr
+            _ = self.contest_periods_nr
+            _ = self.contest_categories_nr
+            _ = self.contest_qso_modes
+        except KeyError as why:
             print('ERROR: Rules has missing fields from [contest] section')
             sys.exit(10)
 
@@ -129,10 +129,10 @@ class Rules(object):
             sys.exit(10)
         try:
             for band in range(1, self.contest_bands_nr+1):
-                self.contest_band(band)
-                self.contest_band(band)['band']
-                self.contest_band(band)['regexp']
-        except KeyError as e:
+                _ = self.contest_band(band)
+                _ = self.contest_band(band)['band']
+                _ = self.contest_band(band)['regexp']
+        except KeyError as why:
             print('ERROR: Rules file has invalid settings for band', band)
             sys.exit(11)
 
@@ -142,13 +142,13 @@ class Rules(object):
             sys.exit(10)
         try:
             for period in range(1, self.contest_periods_nr+1):
-                self.contest_period(period)
-                self.contest_period(period)['begindate']
-                self.contest_period(period)['enddate']
-                self.contest_period(period)['beginhour']
-                self.contest_period(period)['endhour']
-                self.contest_period(period)['bands']
-        except KeyError as e:
+                _ = self.contest_period(period)
+                _ = self.contest_period(period)['begindate']
+                _ = self.contest_period(period)['enddate']
+                _ = self.contest_period(period)['beginhour']
+                _ = self.contest_period(period)['endhour']
+                _ = self.contest_period(period)['bands']
+        except KeyError as why:
             print('ERROR: Rules file has invalid settings for period', period)
             sys.exit(12)
 
@@ -158,11 +158,11 @@ class Rules(object):
             sys.exit(10)
         try:
             for category in range(1, self.contest_categories_nr+1):
-                self.contest_category(category)
-                self.contest_category(category)['name']
-                self.contest_category(category)['regexp']
-                self.contest_category(category)['bands']
-        except KeyError as e:
+                _ = self.contest_category(category)
+                _ = self.contest_category(category)['name']
+                _ = self.contest_category(category)['regexp']
+                _ = self.contest_category(category)['bands']
+        except KeyError as why:
             print('ERROR: Rules file has invalid settings for category', category)
             sys.exit(13)
 
@@ -186,7 +186,7 @@ class Rules(object):
                 datetime.strptime(self.contest_period(period)['beginhour'], '%H%M')
                 msg = 'period {} end hour'.format(period)
                 datetime.strptime(self.contest_period(period)['endhour'], '%H%M')
-        except ValueError as e:
+        except ValueError as why:
             print('ERROR: Rules file has invalid', msg)
             sys.exit(12)
 
@@ -238,9 +238,9 @@ class Rules(object):
         :return: number of contest bands
         """
         try:
-            self.config['contest']['bands']
-            nr = int(self.config['contest']['bands'])
-            return nr
+            _ = self.config['contest']['bands']
+            _nr = int(self.config['contest']['bands'])
+            return _nr
         except KeyError:
             raise KeyError("Rules has missing field 'bands' in [contest] section")
         except ValueError:
@@ -249,7 +249,7 @@ class Rules(object):
     def contest_band(self, number):
         """
         :param number: the band number to query
-        :return: an instance of the config[bandX] 
+        :return: an instance of the config[bandX]
         """
         return self.config['band'+str(number)]
 
@@ -259,9 +259,9 @@ class Rules(object):
         :return: number of periods
         """
         try:
-            self.config['contest']['periods']
-            nr = int(self.config['contest']['periods'])
-            return nr
+            _ = self.config['contest']['periods']
+            _nr = int(self.config['contest']['periods'])
+            return _nr
         except KeyError:
             raise KeyError("Rules has missing field 'periods' in [contest] section")
         except ValueError:
@@ -270,7 +270,7 @@ class Rules(object):
     def contest_period(self, number):
         """
         :param number: the period number to query
-        :return: an instance of config[periodX] 
+        :return: an instance of config[periodX]
         """
         return self.config['period'+str(number)]
 
@@ -278,16 +278,16 @@ class Rules(object):
         """
         This will return a list of bands used in a period
         :param number: the period number to query
-        :return: a list with bands names from config[periodX][bands] 
+        :return: a list with bands names from config[periodX][bands]
         """
         return [band for band in self.contest_period(number)['bands'].split(',')]
 
     @property
     def contest_categories_nr(self):
         try:
-            self.config['contest']['categories']
-            nr = int(self.config['contest']['categories'])
-            return nr
+            _ = self.config['contest']['categories']
+            _nr = int(self.config['contest']['categories'])
+            return _nr
         except KeyError:
             raise KeyError("Rules has missing field 'categories' in [contest] section")
         except ValueError:
@@ -295,14 +295,14 @@ class Rules(object):
 
     def contest_category(self, number):
         """
-        :param number: 
-        :return: an instance of config[categoryX] 
+        :param number:
+        :return: an instance of config[categoryX]
         """
         return self.config['category'+str(number)]
 
     def contest_category_bands(self, number):
         """
-        :param number: 
+        :param number:
         :return: a list with bands names from config[categoryX][bands]
         """
         return [band for band in self.contest_category(number)['bands'].split(',')]

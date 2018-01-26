@@ -20,7 +20,7 @@ from unittest.mock import mock_open, patch
 
 import rules
 
-valid_contest_section = """
+VALID_CONTEST_SECTION = r"""
 [contest]
 name=Cupa Nasaud
 begindate=20130803
@@ -32,21 +32,21 @@ periods=2
 categories=4
 modes=1,2,6
 """
-valid_log_section = """
+VALID_LOG_SECTION = r"""
 [log]
 format=edi
 """
-valid_band1_section = """
+VALID_BAND1_SECTION = r"""
 [band1]
 band=144
 regexp=144|145|2m
 """
-valid_band2_section = """
+VALID_BAND2_SECTION = r"""
 [band2]
 band=432
 regexp=430|432|70cm
 """
-valid_period1_section = """
+VALID_PERIOD1_SECTION = r"""
 [period1]
 begindate=20130803
 enddate=20130803
@@ -54,7 +54,7 @@ beginhour=1200
 endhour=1759
 bands=band1,band2
 """
-valid_period2_section = """
+VALID_PERIOD2_SECTION = r"""
 [period2]
 begindate=20130804
 enddate=20130806
@@ -62,46 +62,46 @@ beginhour=0600
 endhour=1159
 bands=band1,band2
 """
-valid_category1_section = """
+VALID_CATEGORY1_SECTION = r"""
 [category1]
 name=Single Operator 144
 regexp=so|single
 bands=band1
 """
-valid_category2_section = """
+VALID_CATEGORY2_SECTION = r"""
 [category2]
 name=Single Operator 432
 regexp=so|single
 bands=band2
 """
-valid_category3_section = """
+VALID_CATEGORY3_SECTION = r"""
 [category3]
 name=Single Operator Multi Band
 regexp=somb
 bands=band1,band2
 """
-valid_category4_section = """
+VALID_CATEGORY4_SECTION = """
 [category4]
 name=Multi Operator
 regexp=mo|multi
 bands=band1,band2
 """
 
-valid_rules = valid_contest_section + \
-              valid_log_section + \
-              valid_band1_section + \
-              valid_band2_section + \
-              valid_period1_section + \
-              valid_period2_section + \
-              valid_category1_section + \
-              valid_category2_section + \
-              valid_category3_section + \
-              valid_category4_section
+VALID_RULES = VALID_CONTEST_SECTION + \
+              VALID_LOG_SECTION + \
+              VALID_BAND1_SECTION + \
+              VALID_BAND2_SECTION + \
+              VALID_PERIOD1_SECTION + \
+              VALID_PERIOD2_SECTION + \
+              VALID_CATEGORY1_SECTION + \
+              VALID_CATEGORY2_SECTION + \
+              VALID_CATEGORY3_SECTION + \
+              VALID_CATEGORY4_SECTION
 
-valid_rules_sections = ['contest', 'log', 'band1', 'band2', 'period1', 'period2', 'category1', 'category2',
+VALID_RULES_SECTIONS = ['contest', 'log', 'band1', 'band2', 'period1', 'period2', 'category1', 'category2',
                         'category3', 'category4']
 
-missing_contest_section_fields = [
+MISSING_CONTEST_SECTION_FIELDS = [
     """
 [contest]
 """,
@@ -131,7 +131,7 @@ modes=1
 """
 ]
 
-invalid_modes_value = [
+INVALID_MODES_VALUE = [
     """
 [contest]
 bands=1
@@ -148,7 +148,7 @@ modes=X
 """
 ]
 
-invalid_bands_value = [
+INVALID_BANDS_VALUE = [
     """
 [contest]
 bands=
@@ -159,7 +159,7 @@ bands=X
 """
 ]
 
-missing_band_section = [
+MISSING_BAND_SECTION = [
     ("""
 [contest]
 bands=0
@@ -176,7 +176,7 @@ modes=1
 """, 11)
 ]
 
-invalid_periods_value = [
+INVALID_PERIODS_VALUE = [
     """
 [contest]
 bands=1
@@ -191,44 +191,44 @@ categories=1
 """
 ]
 
-missing_period_section = [
+MISSING_PERIOD_SECTION = [
     ("""
 [contest]
 bands=1
 periods=0
 categories=1
 modes=1
-""" + valid_band1_section, 10),
+""" + VALID_BAND1_SECTION, 10),
     ("""
 [contest]
 bands=1
 periods=1
 categories=1
 modes=1
-""" + valid_band1_section, 12)
+""" + VALID_BAND1_SECTION, 12)
 
 ]
 
-invalid_rules_categories_syntax = [
+INVALID_RULES_CATEGORIES_SYNTAX = [
     """
 [contest]
 bands=1
 categories=
 periods=1
 """ +
-    valid_band1_section +
-    valid_period1_section,
+    VALID_BAND1_SECTION +
+    VALID_PERIOD1_SECTION,
     """
 [contest]
 bands=1
 periods=1
 categories=X
 """ +
-    valid_band1_section +
-    valid_period1_section
+    VALID_BAND1_SECTION +
+    VALID_PERIOD1_SECTION
 ]
 
-valid_minimal_contest_section = """
+VALID_MINIMAL_CONTEST_SECTION = """
 [contest]
 name=Cupa Nasaud
 begindate=20130803
@@ -241,10 +241,10 @@ categories=1
 modes=1
 """
 
-missing_band_section_in_period = [
-    valid_minimal_contest_section +
-    valid_band1_section +
-    valid_category1_section +
+MISSING_BAND_SECTION_IN_PERIOD = [
+    VALID_MINIMAL_CONTEST_SECTION +
+    VALID_BAND1_SECTION +
+    VALID_CATEGORY1_SECTION +
     """
 [period1]
 begindate=20130803
@@ -255,10 +255,10 @@ bands=band10
 """
 ]
 
-missing_band_section_in_category = [
-    valid_minimal_contest_section +
-    valid_band1_section +
-    valid_period1_section +
+MISSING_BAND_SECTION_IN_CATEGORY = [
+    VALID_MINIMAL_CONTEST_SECTION +
+    VALID_BAND1_SECTION +
+    VALID_PERIOD1_SECTION +
     """
 [category1]
 name=Single Operator 144
@@ -273,11 +273,11 @@ class TestRules(TestCase):
     @mock.patch('os.path.isfile')
     def test_init(self, mock_isfile):
         mock_isfile.return_value = True
-        mo = mock.mock_open(read_data=valid_rules)
+        mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
             _rules = rules.Rules('some_rule_file.rules')
 
-        self.assertEqual(_rules.config.sections(), valid_rules_sections)
+        self.assertEqual(_rules.config.sections(), VALID_RULES_SECTIONS)
         self.assertEqual(_rules.contest_begin_date, '20130803')
 
         self.assertEqual(_rules.contest_end_date, '20130806')
@@ -319,15 +319,15 @@ class TestRules(TestCase):
     @mock.patch('os.path.isfile')
     def test_read_config_file_content(self, mock_isfile):
         mock_isfile.return_value = True
-        mo = mock.mock_open(read_data=valid_rules)
+        mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
             _content = rules.Rules.read_config_file_content('some_rule_file.rules')
-            self.assertEqual(_content, valid_rules)
+            self.assertEqual(_content, VALID_RULES)
 
     @mock.patch('os.path.isfile')
     def test_missing_contest_section_fields(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_band in missing_contest_section_fields:
+        for rule_band in MISSING_CONTEST_SECTION_FIELDS:
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
                 self.assertRaisesRegex(SystemExit, '^10$', rules.Rules, 'some_rule_file.rules')
@@ -335,7 +335,7 @@ class TestRules(TestCase):
     @mock.patch('os.path.isfile')
     def test_invalid_modes_value(self, mock_isfile):
         mock_isfile.return_value = True
-        for mode_value in invalid_modes_value:
+        for mode_value in INVALID_MODES_VALUE:
             mo = mock.mock_open(read_data=mode_value)
             with patch('builtins.open', mo, create=True):
                 self.assertRaisesRegex(ValueError, "The rules have invalid 'modes' value in \[contest\] section", rules.Rules, 'some_rule_file.rules')
@@ -343,7 +343,7 @@ class TestRules(TestCase):
     @mock.patch('os.path.isfile')
     def test_invalid_bands_value(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_band in invalid_bands_value:
+        for rule_band in INVALID_BANDS_VALUE:
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
                 self.assertRaisesRegex(ValueError, "The rules have invalid 'bands' value in \[contest\] section",
@@ -352,7 +352,7 @@ class TestRules(TestCase):
     @mock.patch('os.path.isfile')
     def test_missing_band_section(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_band, exit_code in missing_band_section:
+        for rule_band, exit_code in MISSING_BAND_SECTION:
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
                 self.assertRaisesRegex(SystemExit, str(exit_code), rules.Rules, 'some_rule_file.rules')
@@ -360,7 +360,7 @@ class TestRules(TestCase):
     @mock.patch('os.path.isfile')
     def test_periods_value(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_period in invalid_periods_value:
+        for rule_period in INVALID_PERIODS_VALUE:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
                 self.assertRaisesRegex(ValueError, "The rules have invalid 'periods' value in \[contest\] section",
@@ -369,7 +369,7 @@ class TestRules(TestCase):
     @mock.patch('os.path.isfile')
     def test_missing_period_section(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_period, exit_code in missing_period_section:
+        for rule_period, exit_code in MISSING_PERIOD_SECTION:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
                 self.assertRaisesRegex(SystemExit, str(exit_code), rules.Rules, 'some_rule_file.rules')
@@ -377,7 +377,7 @@ class TestRules(TestCase):
     @mock.patch('os.path.isfile')
     def test_rules_category_syntax(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_period in invalid_rules_categories_syntax:
+        for rule_period in INVALID_RULES_CATEGORIES_SYNTAX:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
                 self.assertRaisesRegex(ValueError, "The rules have invalid 'categories' value in \[contest\] section",
@@ -386,7 +386,7 @@ class TestRules(TestCase):
     @mock.patch('os.path.isfile')
     def test_missing_band_section_in_period(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_period in missing_band_section_in_period:
+        for rule_period in MISSING_BAND_SECTION_IN_PERIOD:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
                 self.assertRaisesRegex(SystemExit, '^12$',
@@ -395,7 +395,7 @@ class TestRules(TestCase):
     @mock.patch('os.path.isfile')
     def test_missing_band_section_in_category(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_period in missing_band_section_in_category:
+        for rule_period in MISSING_BAND_SECTION_IN_CATEGORY:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
                 self.assertRaisesRegex(SystemExit, '^12$',
