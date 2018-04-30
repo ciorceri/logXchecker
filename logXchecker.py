@@ -24,7 +24,7 @@ import version
 import rules as _rules
 
 
-class ArgumentParser():
+class ArgumentParser(object):
     """
     Parses the parameters from command line
     """
@@ -142,7 +142,7 @@ def load_log_format_module(module_name):
 
 
 def main():
-    print(version.__project__,  version.__version__)
+    print('{} - v{}'.format(version.__project__,  version.__version__))
     args = ArgumentParser().parse(sys.argv[1:])
 
     operator = None
@@ -157,22 +157,26 @@ def main():
     elif args.format:
         log_format = args.format
 
-    # lfmodule = load_log_format_module(args.format)
-    lfmodule = edi  # FIXME: temporary hardcode log format
     if log_format == 'EDI':
-        operator = lfmodule.Operator
-        log = lfmodule.Log
-        logQso = lfmodule.LogQso
+        lfmodule = edi
+    else:
+        print('Invalid log type selected : {}'.format(log_format))
+        return 1
+
+    operator = lfmodule.Operator
+    log = lfmodule.Log
+    logQso = lfmodule.LogQso
 
     # TODO : move upper 3 lines here based on log type
     # TODO : and use the proper log type checks
 
     # if 'validate one log'
     if args.singlelogcheck:
-        print('Validate log: ', args.singlelogcheck)
+        print('Validate log: {}'.format(args.singlelogcheck))
         if not os.path.isfile(args.singlelogcheck):
             raise FileNotFoundError(args.singlelogcheck)
-        _log = log.Log(args.singlelogcheck)
+        _log = log(args.singlelogcheck)
+        print(_log.valid)
     elif args.multilogcheck:
         print('Validate folder: ', args.multilogcheck)
         if not os.path.isdir(args.multilogcheck):

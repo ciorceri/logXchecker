@@ -18,6 +18,9 @@ import re
 import datetime
 from collections import namedtuple
 
+ERR_FILE = 'file'
+ERR_HEADER = 'header'
+ERR_QSO = 'qso'
 
 class Operator(object):
     """
@@ -40,79 +43,130 @@ class Log(object):
     Keep a single EDI log information:
     log path, log raw content, callsign, qth, band, section, qsos tuple (raw content)
     and a list with LogQso() instances
+
+    errors format :
+    {
+        'file': [ (line or None, 'error: Cannot open file'), ... ],
+        'header': [ (line or None, 'error: message'), ... ],
+        'qso': [ (line, 'error: message'), ...],
+    }
     """
     path = None
-    log_content = None  # a list with log lines
+    rules = None
+    use_as_checklog = False
+    log_lines = None
+
+    valid = None
+    errors = {}
+
     callsign = None
     maidenhead_locator = None
     band = None
     section = None
+    date = None
+
     qsos_tuple = namedtuple('qso_tuple', ['linenr', 'qso', 'valid', 'error'])
     qsos = []   # list with LogQso instances
 
     def __init__(self, path, rules=None, checklog=False):
         self.path = path
-        self.log_content = self.read_file_content(self.path)
+        self.rules = rules
+        self.use_as_checklog = checklog
 
-        # get & validate callsign
-        _callsign = self.get_field('PCall')
-        if not _callsign:
-            raise ValueError('The PCall field is not present')
-        if len(_callsign) > 1:
-            raise ValueError('The PCall field is present multiple times')
-        self.callsign = _callsign[0]
+        self.validate()
 
-        # get & validate maidenhead locator
-        _qthlocator = self.get_field('PWWLo')
-        if not _qthlocator:
-            raise ValueError('The PWWLo field is not present')
-        if len(_qthlocator) > 1:
-            raise ValueError('The PWWLo field is present multiple times')
-        if not self.validate_qth_locator(_qthlocator[0]):
-            raise ValueError('The PWWLo field value is not valid')
-        self.maidenhead_locator = _qthlocator
-
-        # get & validate band based on generic rules and by custom rules if provided (rules.contest_band['regexp'])
-        _band = self.get_field('PBand')
-        if not _band:
-            raise ValueError('The PBand field is not present')
-        if len(_band) > 1:
-            raise ValueError('The PBand field is present multiple times')
-        if not rules and not self.validate_band(_band[0]):
-            raise ValueError('The PBand field value is not valid')
-        elif rules and not self.rules_based_validate_band(_band[0], rules):
-            raise ValueError('The PBand field value has an invalid value ({}). Not as defined in contest '
-                             'rules'.format(_band[0]))
-        self.band = _band
-
-        # get & validate PSect based on generic rules and by custom rules if provided (rules.contest_category['regexp']
-        _section = self.get_field('PSect')
-        if not _section:
-            raise ValueError('The PSect field is not present')
-        if len(_section) > 1:
-            raise ValueError('The PSect field is present multiple times')
-        if not rules and not self.validate_section(_section[0]):
-            raise ValueError('The PSect field value is not valid')
-        elif rules and not self.rules_based_validate_section(_section[0], rules):
-            raise ValueError('The PSect field value has an invalid value ({}). Not as defined in contest '
-                             'rules'.format(_section[0]))
-        self.section = _section
-
-        # get & validate TDate based on generic rules format and by custom rules if provided
-        # (rules.contest_begin_date & rules.contest_end_date)
-        _date = self.get_field('TDate')
-        if not _date:
-            raise ValueError('The TDate field is not present')
-        if len(_date) > 1:
-            raise ValueError('The TDate field is present multiple times')
-        if not self.validate_date(_date[0]):
-            raise ValueError('The TDate field value is not valid ({})'.format(_date[0]))
-        if rules and not self.rules_based_validate_date(_date[0], rules):
-            raise ValueError('The TDate field value has an invalid value ({}). Not as defined in contest '
-                             'rules'.format(_date[0]))
+        if not self.valid:
+            return
 
         self.qsos = []
         self.get_qsos()
+
+    def validate(self):
+        """ Validate edi log.
+        If errors are found they will be written in self.errors dictionary
+        :return: True or False
+        """
+
+        self.errors[ERR_FILE] = []
+        self.errors[ERR_HEADER] = []
+        self.errors[ERR_QSO] = []
+        self.valid = False
+
+        try:
+            self.log_lines = self.read_file_content(self.path)
+        except Exception as e:
+            self.errors[ERR_FILE].append((None, 'Cannot read edi log'))
+            return
+
+        if self.log_lines is None:
+            self.errors[ERR_FILE].append((None, 'Log is empty'))
+            return
+
+        # get & validate callsign
+        _callsign, line_nr = self.get_field('PCall')
+        if not _callsign:
+            self.errors[ERR_HEADER].append((line_nr, 'PCall field is not present'))
+        elif len(_callsign) > 1:
+            self.errors[ERR_HEADER].append((line_nr, 'PCall field is present multiple times'))
+        else:
+            self.callsign = _callsign[0]
+
+        # get & validate maidenhead locator
+        _qthlocator, line_nr = self.get_field('PWWLo')
+        if not _qthlocator:
+            self.errors[ERR_HEADER].append((line_nr, 'PWWLo field is not present'))
+        elif len(_qthlocator) > 1:
+            self.errors[ERR_HEADER].append((line_nr, 'PWWLo field is present multiple times'))
+        elif not self.validate_qth_locator(_qthlocator[0]):
+            self.errors[ERR_HEADER].append((line_nr, 'PWWLo field value is not valid'))
+        else:
+            self.maidenhead_locator = _qthlocator[0]
+
+        # get & validate band based on generic rules and by custom rules if provided (rules.contest_band['regexp'])
+        _band, line_nr = self.get_field('PBand')
+        if not _band:
+            self.errors[ERR_HEADER].append((line_nr, 'PBand field is not present'))
+        elif len(_band) > 1:
+            self.errors[ERR_HEADER].append((line_nr, 'PBand field is present multiple times'))
+        elif not self.rules and not self.validate_band(_band[0]):
+            self.errors[ERR_HEADER].append((line_nr, 'PBand field value is not valid'))
+        elif self.rules and not self.rules_based_validate_band(_band[0], self.rules):
+            self.errors[ERR_HEADER].append((line_nr, 'PBand field value has an invalid value ({}). '
+                                                  'Not as defined in contest rules'.format(_band[0])))
+        else:
+            self.band = _band[0]
+
+        # get & validate PSect based on generic rules and by custom rules if provided (rules.contest_category['regexp']
+        _section, line_nr = self.get_field('PSect')
+        if not _section:
+            self.errors[ERR_HEADER].append((line_nr, 'PSect field is not present'))
+        elif len(_section) > 1:
+            self.errors[ERR_HEADER].append((line_nr, 'PSect field is present multiple times'))
+        elif not self.rules and not self.validate_section(_section[0]):
+            self.errors[ERR_HEADER].append((line_nr, 'PSect field value is not valid'))
+        elif self.rules and not self.rules_based_validate_section(_section[0], self.rules):
+            self.errors[ERR_HEADER].append((line_nr, 'PSect field value has an invalid value ({}). '
+                                          'Not as defined in contest rules'.format(_section[0])))
+        else:
+            self.section = _section[0]
+
+        # get & validate TDate based on generic rules format and by custom rules if provided
+        # (rules.contest_begin_date & rules.contest_end_date)
+        _date, line_nr = self.get_field('TDate')
+        if not _date:
+            self.errors[ERR_HEADER].append((line_nr, 'TDate field is not present'))
+        elif len(_date) > 1:
+            self.errors[ERR_HEADER].append((line_nr, 'TDate field is present multiple times'))
+        elif not self.validate_date(_date[0]):
+            self.errors[ERR_HEADER].append((line_nr, 'TDate field value is not valid ({})'.format(_date[0])))
+        elif self.rules and not self.rules_based_validate_date(_date[0], self.rules):
+            self.errors[ERR_HEADER].append((line_nr, 'TDate field value has an invalid value ({}). '
+                                                  'Not as defined in contest rules'.format(_date[0])))
+        else:
+            self.date = _date[0]
+
+        if all((self.callsign, self.maidenhead_locator, self.band, self.section, self.date)):
+            self.valid = True
 
     @staticmethod
     def read_file_content(path):
@@ -125,24 +179,20 @@ class Log(object):
             raise
         return content
 
-    def validate_log_content(self):
-        # TODO: to see later if we have to do a generic validation or not
-        pass
-
     def get_field(self, field):
         """
-        Will read the log_content and will return field value in a list
+        Search log content for a field
+        :param field: field name (PCall, TDate, ...)
+        :return: tuple(value, line_number or None)
         """
-
-        if self.log_content is None:
-            raise FileNotFoundError("Log content is not available")
-
         value = []
+        line_nr = None
         _field = str(field).upper() + '='
-        for line in self.log_content:
-            if line.upper().startswith(_field):
-                value.append(line.split('=', 1)[1].strip())
-        return value
+        for (nr, line_content) in enumerate(self.log_lines):
+            if line_content.upper().startswith(_field):
+                value.append(line_content.split('=', 1)[1].strip())
+                line_nr = nr+1
+        return value, line_nr
 
     def get_qsos(self):
         """
@@ -154,7 +204,7 @@ class Log(object):
         do_read_qso = False
 
         # read qso lines
-        for (index, line) in enumerate(self.log_content):
+        for (index, line) in enumerate(self.log_lines):
             if line.upper().startswith(qso_record_start):
                 do_read_qso = True
                 continue
