@@ -174,14 +174,16 @@ def main():
     if args.singlelogcheck:
         print('Validate log: {}'.format(args.singlelogcheck))
         if not os.path.isfile(args.singlelogcheck):
-            raise FileNotFoundError(args.singlelogcheck)
+            print('Cannot open file: {}'.format(args.singlelogcheck))
+            return 1
         _log = log(args.singlelogcheck)
         print(_log.errors)
         print(_log.valid)
     elif args.multilogcheck:
         print('Validate folder: ', args.multilogcheck)
         if not os.path.isdir(args.multilogcheck):
-            raise FileNotFoundError(args.multilogcheck)
+            print('Cannot open folder: {}'.format(args.multilogcheck))
+            return 1
 
 if __name__ == '__main__':
     main()
