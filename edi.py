@@ -73,16 +73,16 @@ class Log(object):
         self.rules = rules
         self.use_as_checklog = checklog
 
-        self.validate()
-
+        self.validate_header()
         if not self.valid:
             return
 
-        self.qsos = []
         self.get_qsos()
+        # TODO : validate individual QSO's
+        # TODO ...
 
-    def validate(self):
-        """ Validate edi log.
+    def validate_header(self):
+        """ Validate edi log header.
         If errors are found they will be written in self.errors dictionary
         :return: True or False
         """
@@ -387,6 +387,9 @@ class LogQso(object):
     def __init__(self, qso_line, qso_line_number, rules=None):
         self.qso_line = qso_line
         self.qso_line_number = qso_line_number
+
+        # TODO : call qso validator and add errors to self.error like it's in Log class
+
         self.error_message = self.regexp_qso_validator(qso_line) or None
         self.valid_qso = False if self.error_message else True
 
