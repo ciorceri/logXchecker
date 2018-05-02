@@ -252,7 +252,7 @@ class Log(object):
         """
         This will validate PBand based on generic rules
         """
-        validated = False
+        is_valid = False
 
         regexp_band_check = ['144.*', '145.*',
                              '430.*', '432.*', '435.*',
@@ -260,15 +260,15 @@ class Log(object):
         for _regex in regexp_band_check:
             res = re.match(_regex, band_value)
             if res:
-                validated = True
-        return validated
+                is_valid = True
+        return is_valid
 
     @staticmethod
     def rules_based_validate_band(band_value, rules):
         """
         This will validate PBand based on Rules class instance
         """
-        validated = False
+        is_valid = False
 
         if rules is None:
             raise ValueError('No contest rules provided !')
@@ -276,15 +276,15 @@ class Log(object):
             _regex = r'\s*(' + rules.contest_band(_nr)['regexp'] + r')\s*'
             res = re.match(_regex, band_value)
             if res:
-                validated = True
-        return validated
+                is_valid = True
+        return is_valid
 
     @staticmethod
     def validate_section(section_value):
         """
         This will validate PSect based on generic rules
         """
-        validated = False
+        is_valid = False
 
         regexpSectCheck = ['.*SOSB.*', '.*SOMB.*', '.*Single.*', '^SO$',
                            '.*MOSB.*', '.*MOMB.*', '.*Multi.*', '^MO$',
@@ -292,15 +292,15 @@ class Log(object):
         for _regex in regexpSectCheck:
             res = re.match(_regex, section_value, re.IGNORECASE)
             if res:
-                validated = True
-        return validated
+                is_valid = True
+        return is_valid
 
     @staticmethod
     def rules_based_validate_section(section_value, rules):
         """
         This will validate PSect based on Rules class instance
         """
-        validated = False
+        is_valid = False
 
         if rules is None:
             raise ValueError('No contest rules provided !')
@@ -308,38 +308,39 @@ class Log(object):
             _regex = r'\s*(' + rules.contest_category(_nr)['regexp'] + r')\s*'
             res = re.match(_regex, section_value, re.IGNORECASE)
             if res:
-                validated = True
-        return validated
+                is_valid = True
+        return is_valid
 
     @staticmethod
     def validate_date(date_value):
         """
         This will validate TDate based on generic rules
         """
-        validated = False
+        is_valid = False
         dates = date_value.split(';')
         if len(dates) != 2:
-            return validated
+            return is_valid
+        is_valid = True
         for _date in dates:
             try:
                 datetime.datetime.strptime(_date, '%Y%m%d')
-                validated = True
             except ValueError:
+                is_valid = False
                 break
-        return validated
+        return is_valid
 
     def rules_based_validate_date(self, date_value, rules):
         """
         This will validate TDate based on Ruless class instance
         """
-        validated = False
+        is_valid = False
 
         if rules is None:
             raise ValueError('No contest rules provided !')
         _begin_date, _end_date = date_value.split(';')
         if _begin_date == rules.contest_begin_date and _end_date == rules.contest_end_date:
-            validated = True
-        return validated
+            is_valid = True
+        return is_valid
 
     def dump_summary(self):
         """

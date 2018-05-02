@@ -176,6 +176,7 @@ def main():
         if not os.path.isfile(args.singlelogcheck):
             raise FileNotFoundError(args.singlelogcheck)
         _log = log(args.singlelogcheck)
+        print(_log.errors)
         print(_log.valid)
     elif args.multilogcheck:
         print('Validate folder: ', args.multilogcheck)

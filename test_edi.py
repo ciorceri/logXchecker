@@ -386,8 +386,8 @@ class TestEdiLog(TestCase):
                                  {ERR_FILE: [], ERR_HEADER: [(None, 'TDate field is not present')], ERR_QSO: []})
 
         # test with invalid TDate
-        invalid_edi_log = 'TDate=20170101,20170102\n' + invalid_edi_log
-        mo = mock.mock_open(read_data=invalid_edi_log)
+        invalid_edi_log2 = 'TDate=20170101,20170102\n' + invalid_edi_log
+        mo = mock.mock_open(read_data=invalid_edi_log2)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid)
@@ -395,14 +395,26 @@ class TestEdiLog(TestCase):
                                  {ERR_FILE: [], ERR_HEADER: [(1, 'TDate field value is not valid (20170101,20170102)')],
                                   ERR_QSO: []})
 
-        # test with multiple TDate
-        invalid_edi_log = 'TDate=test\n' + valid_edi_log
-        mo = mock.mock_open(read_data=invalid_edi_log)
+        invalid_edi_log2 = 'TDate=20170101;201701020\n' + invalid_edi_log
+        mo = mock.mock_open(read_data=invalid_edi_log2)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid)
             self.assertDictEqual(log.errors,
-                                 {ERR_FILE: [], ERR_HEADER: [(4, 'TDate field is present multiple times')], ERR_QSO: []})
+                                 {ERR_FILE: [],
+                                  ERR_HEADER: [(1, 'TDate field value is not valid (20170101;201701020)')],
+                                  ERR_QSO: []})
+
+        # test with multiple TDate
+        invalid_edi_log2 = 'TDate=test\n' + valid_edi_log
+        mo = mock.mock_open(read_data=invalid_edi_log2)
+        with patch('builtins.open', mo, create=True):
+            log = edi.Log('some_log_file.edi')
+            self.assertFalse(log.valid)
+            self.assertDictEqual(log.errors,
+                                 {ERR_FILE: [],
+                                  ERR_HEADER: [(4, 'TDate field is present multiple times')],
+                                  ERR_QSO: []})
 
     @mock.patch('os.path.isfile')
     def test_init_with_rules(self, mock_isfile):
