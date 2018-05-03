@@ -1,5 +1,5 @@
 """
-Copyright 2016-2017 Ciorceri Petru Sorin
+Copyright 2016-2018 Ciorceri Petru Sorin
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,8 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from unittest import TestCase
-from unittest import mock
+from unittest import TestCase, mock
 from unittest.mock import mock_open, patch
 
 import rules
@@ -493,7 +492,7 @@ class TestEdiLog(TestCase):
             _qso1 = qso1.qso
             _valid1 = qso1.valid
             _error1 = qso1.error
-            _ln2 = qso2.qso_line_number
+            _ln2 = qso2.line_nr
             _qso2 = qso2.qso_line
             _valid2 = qso2.valid
             _error2 = qso2.error
@@ -581,10 +580,10 @@ class TestEdiLogQso(TestCase):
     def test_init(self):
         for (linenr, qso, valid, error) in test_logQso_qsos:
             lq = edi.LogQso(qso, linenr)
-            self.assertEqual(lq.qso_line_number, linenr)
+            self.assertEqual(lq.line_nr, linenr)
             self.assertEqual(lq.qso_line, qso)
             self.assertEqual(lq.valid, valid)
-            self.assertEqual(lq.error, error)
+            self.assertEqual(lq.errors, error)
 
     def test_qso_parser(self):
         lqlist = []
@@ -604,18 +603,18 @@ class TestEdiLogQso(TestCase):
     def test_regexp_qso_validator(self):
         for (linenr, qso, valid, error) in test_logQso_regexp_qso_validator:
             lq = edi.LogQso(qso, linenr)
-            self.assertEqual(lq.qso_line_number, linenr)
+            self.assertEqual(lq.line_nr, linenr)
             self.assertEqual(lq.qso_line, qso)
             self.assertEqual(lq.valid, valid)
-            self.assertEqual(lq.error, error)
+            self.assertEqual(lq.errors, error)
 
     def test_generic_qso_validator(self):
         for (linenr, qso, valid, error) in test_logQso_generic_qso_validator:
             lq = edi.LogQso(qso, linenr)
-            self.assertEqual(lq.qso_line_number, linenr)
+            self.assertEqual(lq.line_nr, linenr)
             self.assertEqual(lq.qso_line, qso)
             self.assertEqual(lq.valid, valid)
-            self.assertEqual(lq.error, error)
+            self.assertEqual(lq.errors, error)
 
     @mock.patch('os.path.isfile')
     def test_rules_based_qso_validator(self, mock_isfile):
@@ -627,7 +626,7 @@ class TestEdiLogQso(TestCase):
         # test qso date&time based on
         for (linenr, qso, valid, error) in test_logQso_rules_based_qso_validator:
             lq = edi.LogQso(qso, linenr, rules=_rules)
-            self.assertEqual(lq.qso_line_number, linenr)
+            self.assertEqual(lq.line_nr, linenr)
             self.assertEqual(lq.qso_line, qso)
             self.assertEqual(lq.valid, valid)
-            self.assertEqual(lq.error, error)
+            self.assertEqual(lq.errors, error)

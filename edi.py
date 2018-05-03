@@ -1,5 +1,5 @@
 """
-Copyright 2016-2017 Ciorceri Petru Sorin
+Copyright 2016-2018 Ciorceri Petru Sorin
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -364,10 +364,10 @@ class LogQso(object):
     #                          date  time   id  m    rst       nr      rst       nr    .  qth  km  .   .   .   .
 
     qso_line = None
-    qso_line_number = None
+    line_nr = None
     rules = None
     valid = None
-    error = None
+    errors = {}
 
     qso_fields = {'date': None,
                   'hour': None,
@@ -388,28 +388,35 @@ class LogQso(object):
 
     def __init__(self, qso_line=None, qso_line_number=None, rules=None):
         self.qso_line = qso_line
-        self.qso_line_number = qso_line_number
+        self.line_nr = qso_line_number
         self.rules = rules
 
-        self.validate_qso()
+        self.errors[ERR_QSO] = []
 
+        # 1st validation
+        self.validate_qso_format()
         if not self.valid:
             return
+        self.parse_qso()
 
-        self.qso_parser()
-        self.error = self.generic_qso_validator()
-        if (self.error is None) and (rules is not None):
-            self.error = self.rules_based_qso_validator(rules)
-        self.valid = False if self.error else True
+        # 2nd validation
+        self.generic_qso_validator()
+        # self.error = self.generic_qso_validator()
 
-    def validate_qso(self):
+        if (self.errors is None) and (rules is not None):
+            self.errors = self.rules_based_qso_validator(rules)
+        self.valid = False if self.errors else True
+
+    def validate_qso_format(self):
         """ Validate qso line.
         If errors are found they will be written in self.errors string
         """
-        self.error = self.regexp_qso_validator(self.qso_line) or None
-        self.valid = False if self.error else True
+        err = self.regexp_qso_validator(self.qso_line) or None
+        if err:
+            self.errors[ERR_QSO].append(self.line_nr, err)
+            self.valid = False
 
-    def qso_parser(self):
+    def parse_qso(self):
         """
         This should parse a qso based on log format
         """
