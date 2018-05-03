@@ -161,14 +161,14 @@ test_valid_qso_fields = [
 
 test_invalid_qso_lines = [
     ('123456789012345678', 'QSO line is too short'),
-    ('130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;', 'Minimal QSO checks didn\'t pass'),
-    ('30803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
-    ('130803;319;YO5BTZ;;59;001;59;001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
-    ('130803;1319;YO5BTZ;6;9;001;59;001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
-    ('130803;1319;YO5BTZ;6;59;1;59;001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
-    ('130803;1319;YO5BTZ;6;59;00001;59;001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
-    ('130803;1319;YO5BTZ;6;59;001;9;001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
-    ('130803;1319;YO5BTZ;6;59;001;59;00001;;KN16SS;1;;;;', 'QSO checks didn\'t pass'),
+    ('130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;', 'Incorrect QSO line format (minimal QSO checks didn\'t pass).'),
+    ('30803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', 'Incorrect QSO line format. (QSO checks didn\'t pass).'),
+    ('130803;319;YO5BTZ;;59;001;59;001;;KN16SS;1;;;;', 'Incorrect QSO line format. (QSO checks didn\'t pass).'),
+    ('130803;1319;YO5BTZ;6;9;001;59;001;;KN16SS;1;;;;', 'Incorrect QSO line format. (QSO checks didn\'t pass).'),
+    ('130803;1319;YO5BTZ;6;59;1;59;001;;KN16SS;1;;;;', 'Incorrect QSO line format. (QSO checks didn\'t pass).'),
+    ('130803;1319;YO5BTZ;6;59;00001;59;001;;KN16SS;1;;;;', 'Incorrect QSO line format. (QSO checks didn\'t pass).'),
+    ('130803;1319;YO5BTZ;6;59;001;9;001;;KN16SS;1;;;;', 'Incorrect QSO line format. (QSO checks didn\'t pass).'),
+    ('130803;1319;YO5BTZ;6;59;001;59;00001;;KN16SS;1;;;;', 'Incorrect QSO line format. (QSO checks didn\'t pass).'),
 ]
 
 test_logQso_qsos = [
@@ -191,11 +191,11 @@ test_logQso_qsos = [
 
 test_logQso_regexp_qso_validator = [
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;0016SS;1;;;;', valid=False,
-                       error='QSO checks didn\'t pass'),
+                       error='Incorrect QSO line format. (QSO checks didn\'t pass).'),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN1600;1;;;;', valid=False,
-                       error='QSO checks didn\'t pass'),
+                       error='Incorrect QSO line format. (QSO checks didn\'t pass).'),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KNAASS;1;;;;', valid=False,
-                       error='QSO checks didn\'t pass'),
+                       error='Incorrect QSO line format. (QSO checks didn\'t pass).'),
 ]
 
 test_logQso_generic_qso_validator = [
@@ -495,8 +495,8 @@ class TestEdiLog(TestCase):
             _error1 = qso1.error
             _ln2 = qso2.qso_line_number
             _qso2 = qso2.qso_line
-            _valid2 = qso2.valid_qso
-            _error2 = qso2.error_message
+            _valid2 = qso2.valid
+            _error2 = qso2.error
             self.assertEqual(_ln1, _ln2)
             self.assertEqual(_qso1, _qso2)
             self.assertEqual(_valid1, _valid2)
@@ -583,13 +583,13 @@ class TestEdiLogQso(TestCase):
             lq = edi.LogQso(qso, linenr)
             self.assertEqual(lq.qso_line_number, linenr)
             self.assertEqual(lq.qso_line, qso)
-            self.assertEqual(lq.valid_qso, valid)
-            self.assertEqual(lq.error_message, error)
+            self.assertEqual(lq.valid, valid)
+            self.assertEqual(lq.error, error)
 
     def test_qso_parser(self):
         lqlist = []
         for qso in test_valid_qso_lines:
-            lq = edi.LogQso(qso, 1).qsoFields
+            lq = edi.LogQso(qso, 1).qso_fields
             lqlist.append(lq.copy())
         self.assertEqual(lqlist, test_valid_qso_fields)
 
@@ -606,16 +606,16 @@ class TestEdiLogQso(TestCase):
             lq = edi.LogQso(qso, linenr)
             self.assertEqual(lq.qso_line_number, linenr)
             self.assertEqual(lq.qso_line, qso)
-            self.assertEqual(lq.valid_qso, valid)
-            self.assertEqual(lq.error_message, error)
+            self.assertEqual(lq.valid, valid)
+            self.assertEqual(lq.error, error)
 
     def test_generic_qso_validator(self):
         for (linenr, qso, valid, error) in test_logQso_generic_qso_validator:
             lq = edi.LogQso(qso, linenr)
             self.assertEqual(lq.qso_line_number, linenr)
             self.assertEqual(lq.qso_line, qso)
-            self.assertEqual(lq.valid_qso, valid)
-            self.assertEqual(lq.error_message, error)
+            self.assertEqual(lq.valid, valid)
+            self.assertEqual(lq.error, error)
 
     @mock.patch('os.path.isfile')
     def test_rules_based_qso_validator(self, mock_isfile):
@@ -629,5 +629,5 @@ class TestEdiLogQso(TestCase):
             lq = edi.LogQso(qso, linenr, rules=_rules)
             self.assertEqual(lq.qso_line_number, linenr)
             self.assertEqual(lq.qso_line, qso)
-            self.assertEqual(lq.valid_qso, valid)
-            self.assertEqual(lq.error_message, error)
+            self.assertEqual(lq.valid, valid)
+            self.assertEqual(lq.error, error)
