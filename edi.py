@@ -102,6 +102,7 @@ class Log(object):
             self.errors[ERR_FILE].append((None, 'Log is empty'))
             return
 
+
         # get & validate callsign
         _callsign, line_nr = self.get_field('PCall')
         if not _callsign:
@@ -215,6 +216,7 @@ class Log(object):
                 qso_lines.append((index, line.strip()))
 
         # validate qso lines
+        self.qsos = []
         for qso in qso_lines:
             message = LogQso.regexp_qso_validator(qso[1])
             self.qsos.append(
