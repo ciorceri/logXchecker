@@ -178,7 +178,6 @@ def main():
             return 1
         _log = log(args.singlelogcheck)
         print(_log.errors)
-        print(_log.valid)
     elif args.multilogcheck:
         print('Validate folder: ', args.multilogcheck)
         if not os.path.isdir(args.multilogcheck):

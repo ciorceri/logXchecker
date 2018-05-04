@@ -172,114 +172,114 @@ test_invalid_qso_lines = [
 
 test_logQso_qsos = [
     edi.Log.qsos_tuple(linenr=40, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=41, qso='130803;1321;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=42, qso='130803;1322;YO5TP;6;59;003;59;002;;KN16SS;1;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=43, qso='130803;1335;YO5CRQ/M;6;59;004;59;006;;KN17WP;100;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=44, qso='130803;1337;YO5CKZ;6;59;005;59;007;;KN27EG;84;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=45, qso='130803;1438;YO8SSB;6;59;006;59;016;;KN27OD;133;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=46, qso='130803;1438;YO5OO;6;59;007;59;004;;KN16RS;6;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=47, qso='130803;1446;YO6PVT;6;59;008;59;012;;KN16TR;7;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=48, qso='130803;1459;YO6POK;6;59;009;59;015;;KN27JG;109;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=49, qso='130804;0632;YO5TP;6;59;010;59;018;;KN16SS;1;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=50, qso='130804;0632;YO5OO;6;59;011;59;011;;KN16RS;6;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=51, qso='130804;0635;YO5PLP/P;6;59;012;59;031;;KN27HM;116;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=52, qso='130804;0635;YO5CKZ;6;59;013;59;036;;KN27EG;84;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=53, qso='130804;0642;YO6POK;6;59;014;59;030;;KN27JG;109;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=54, qso='130804;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
 ]
 
 test_logQso_regexp_qso_validator = [
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;0016SS;1;;;;', valid=False,
-                       errors={'qso': [(5, "Incorrect QSO line format. (QSO checks didn't pass).")]}),
+                       errors=[(5, "Incorrect QSO line format. (QSO checks didn't pass).")]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN1600;1;;;;', valid=False,
-                       errors={'qso': [(5, "Incorrect QSO line format. (QSO checks didn't pass).")]}),
+                       errors=[(5, "Incorrect QSO line format. (QSO checks didn't pass).")]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KNAASS;1;;;;', valid=False,
-                       errors={'qso': [(5, "Incorrect QSO line format. (QSO checks didn't pass).")]}),
+                       errors=[(5, "Incorrect QSO line format. (QSO checks didn't pass).")]),
 ]
 
 test_logQso_generic_qso_validator = [
     edi.Log.qsos_tuple(linenr=1, qso='999999;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(1, 'QSO date is invalid: unconverted data remains: 99')]}),
+                       errors=[(1, 'QSO date is invalid: unconverted data remains: 99')]),
     edi.Log.qsos_tuple(linenr=2, qso='130803;9999;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(2, 'QSO hour is invalid: unconverted data remains: 99')]}),
+                       errors=[(2, 'QSO hour is invalid: unconverted data remains: 99')]),
     edi.Log.qsos_tuple(linenr=3, qso='130803;1319;YO5BTZ/P/P;6;59;001;59;001;;KN16SS;1;;;;;', valid=False,
-                       errors={'qso': [(3, 'Callsign is invalid: YO5BTZ/P/P')]}),
+                       errors=[(3, 'Callsign is invalid: YO5BTZ/P/P')]),
     edi.Log.qsos_tuple(linenr=4, qso='130803;1319;YO5BTZ;A;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(4, 'QSO mode is invalid: A')]}),
+                       errors=[(4, 'QSO mode is invalid: A')]),
 
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;09;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(5, 'RST is invalid: 09')]}),
+                       errors=[(5, 'RST is invalid: 09')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59A;001;59;001;;KN16SS;1;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59A;001;;KN16SS;1;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;69;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(5, 'RST is invalid: 69')]}),
+                       errors=[(5, 'RST is invalid: 69')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;50;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(5, 'RST is invalid: 50')]}),
+                       errors=[(5, 'RST is invalid: 50')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59Z;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(5, 'RST is invalid: 59Z')]}),
+                       errors=[(5, 'RST is invalid: 59Z')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;69A;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(5, 'RST is invalid: 69A')]}),
+                       errors=[(5, 'RST is invalid: 69A')]),
 
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;09;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(5, 'RST is invalid: 09')]}),
+                       errors=[(5, 'RST is invalid: 09')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;69;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(5, 'RST is invalid: 69')]}),
+                       errors=[(5, 'RST is invalid: 69')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;50;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(5, 'RST is invalid: 50')]}),
+                       errors=[(5, 'RST is invalid: 50')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59Z;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(5, 'RST is invalid: 59Z')]}),
+                       errors=[(5, 'RST is invalid: 59Z')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;69A;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(5, 'RST is invalid: 69A')]}),
+                       errors=[(5, 'RST is invalid: 69A')]),
 
     edi.Log.qsos_tuple(linenr=6, qso='130803;1319;YO5BTZ;6;59;001;59;001;1234567;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(6, 'Received exchange is invalid: 1234567')]}),
+                       errors=[(6, 'Received exchange is invalid: 1234567')]),
     edi.Log.qsos_tuple(linenr=7, qso='130803;1319;YO5BTZ;6;59;001;59;001;;ZZ27HM;1;;;;', valid=False,
-                       errors={'qso': [(7, 'QSO WWL is invalid: ZZ27HM')]}),
+                       errors=[(7, 'QSO WWL is invalid: ZZ27HM')]),
     edi.Log.qsos_tuple(linenr=7, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN27ZZ;1;;;;', valid=False,
-                       errors={'qso': [(7, 'QSO WWL is invalid: KN27ZZ')]}),
+                       errors=[(7, 'QSO WWL is invalid: KN27ZZ')]),
 ]
 
 test_logQso_rules_based_qso_validator = [
     edi.Log.qsos_tuple(linenr=1, qso='130802;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(1, 'QSO date is invalid: before contest starts (<130803)'), (1, 'QSO date/hour is invalid: not inside contest periods')]}),
+                       errors=[(1, 'QSO date is invalid: before contest starts (<130803)'), (1, 'QSO date/hour is invalid: not inside contest periods')]),
     edi.Log.qsos_tuple(linenr=2, qso='130803;1159;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(2, 'QSO hour is invalid: before contest start hour (<1200)'), (2, 'QSO date/hour is invalid: not inside contest periods')]}),
+                       errors=[(2, 'QSO hour is invalid: before contest start hour (<1200)'), (2, 'QSO date/hour is invalid: not inside contest periods')]),
     edi.Log.qsos_tuple(linenr=3, qso='130803;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=4, qso='130803;1759;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1800;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(5, 'QSO date/hour is invalid: not inside contest periods')]}),
+                       errors=[(5, 'QSO date/hour is invalid: not inside contest periods')]),
     edi.Log.qsos_tuple(linenr=6, qso='130804;0559;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(6, 'QSO date/hour is invalid: not inside contest periods')]}),
+                       errors=[(6, 'QSO date/hour is invalid: not inside contest periods')]),
     edi.Log.qsos_tuple(linenr=7, qso='130804;0600;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=8, qso='130805;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=9, qso='130806;1159;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
-                       errors={'qso': []}),
+                       errors=[]),
     edi.Log.qsos_tuple(linenr=10, qso='130806;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(10, 'QSO hour is invalid: after contest end hour (>1159)'), (10, 'QSO date/hour is invalid: not inside contest periods')]}),
+                       errors=[(10, 'QSO hour is invalid: after contest end hour (>1159)'), (10, 'QSO date/hour is invalid: not inside contest periods')]),
 
     edi.Log.qsos_tuple(linenr=11, qso='130803;1200;YO5BTZ;7;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(11, 'QSO mode is invalid: not in defined modes ([1, 2, 6])')]}),
+                       errors=[(11, 'QSO mode is invalid: not in defined modes ([1, 2, 6])')]),
 ]
 
 
@@ -292,7 +292,7 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [], ERR_HEADER: [(None, 'PCall field is not present')], ERR_QSO: []})
 
@@ -301,7 +301,7 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [], ERR_HEADER: [(5, 'PCall field is present multiple times')], ERR_QSO: []})
 
@@ -311,7 +311,7 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [], ERR_HEADER: [(None, 'PWWLo field is not present')], ERR_QSO: []})
 
@@ -320,7 +320,7 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [], ERR_HEADER: [(1, 'PWWLo field value is not valid')], ERR_QSO: []})
 
@@ -329,7 +329,7 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [], ERR_HEADER: [(6, 'PWWLo field is present multiple times')], ERR_QSO: []})
 
@@ -339,7 +339,7 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [], ERR_HEADER: [(None, 'PBand field is not present')], ERR_QSO: []})
 
@@ -348,7 +348,7 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [], ERR_HEADER: [(1, 'PBand field value is not valid')], ERR_QSO: []})
 
@@ -357,7 +357,7 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [], ERR_HEADER: [(11, 'PBand field is present multiple times')], ERR_QSO: []})
 
@@ -367,7 +367,7 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [], ERR_HEADER: [(None, 'PSect field is not present')], ERR_QSO: []})
 
@@ -376,7 +376,7 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [], ERR_HEADER: [(1, 'PSect field value is not valid')], ERR_QSO: []})
 
@@ -385,7 +385,7 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [], ERR_HEADER: [(10, 'PSect field is present multiple times')], ERR_QSO: []})
 
@@ -395,7 +395,7 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [], ERR_HEADER: [(None, 'TDate field is not present')], ERR_QSO: []})
 
@@ -404,7 +404,7 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log2)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [], ERR_HEADER: [(1, 'TDate field value is not valid (20170101,20170102)')],
                                   ERR_QSO: []})
@@ -413,7 +413,7 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log2)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [],
                                   ERR_HEADER: [(1, 'TDate field value is not valid (20170101;201701020)')],
@@ -424,7 +424,7 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log2)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [],
                                   ERR_HEADER: [(4, 'TDate field is present multiple times')],
@@ -446,7 +446,7 @@ class TestEdiLog(TestCase):
         mo_log = mock.mock_open(read_data=invalid_edi_log_PBand)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [], ERR_HEADER: [(4, 'PBand field value has an invalid value (200 MHz). '
                                                              'Not as defined in contest rules'),
@@ -457,7 +457,7 @@ class TestEdiLog(TestCase):
         mo_log = mock.mock_open(read_data=invalid_edi_log_PSect)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [],
                                   ERR_HEADER: [(5, 'PSect field value has an invalid value (extraterrestrial). '
@@ -469,7 +469,7 @@ class TestEdiLog(TestCase):
         mo_log = mock.mock_open(read_data=invalid_edi_log_TDate)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
-            self.assertFalse(log.valid)
+            self.assertFalse(log.valid_header)
             self.assertDictEqual(log.errors,
                                  {ERR_FILE: [],
                                   ERR_HEADER: [(2, 'TDate field value has an invalid value (20250101;20250102). '
@@ -485,7 +485,7 @@ class TestEdiLog(TestCase):
 
         # test 'read_file_content' exceptions
         log = edi.Log('non-existing-log-file.edi')
-        self.assertFalse(log.valid)
+        self.assertFalse(log.valid_header)
         self.assertDictEqual(log.errors,
                              {ERR_FILE: [(None, 'Cannot read edi log')], ERR_HEADER: [], ERR_QSO: []})
 
