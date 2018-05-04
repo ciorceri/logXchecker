@@ -1,5 +1,5 @@
 """
-Copyright 2016-2017 Ciorceri Petru Sorin
+Copyright 2016-2018 Ciorceri Petru Sorin
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ class Log(object):
     section = None
     date = None
 
-    qsos_tuple = namedtuple('qso_tuple', ['linenr', 'qso', 'valid', 'error'])
+    qsos_tuple = namedtuple('qso_tuple', ['linenr', 'qso', 'valid', 'errors'])
     qsos = []   # list with LogQso instances
 
     def __init__(self, path, rules=None, checklog=False):
@@ -364,10 +364,10 @@ class LogQso(object):
     #                          date  time   id  m    rst       nr      rst       nr    .  qth  km  .   .   .   .
 
     qso_line = None
-    qso_line_number = None
+    line_nr = None
     rules = None
     valid = None
-    error = None
+    errors = {}
 
     qso_fields = {'date': None,
                   'hour': None,
@@ -388,28 +388,36 @@ class LogQso(object):
 
     def __init__(self, qso_line=None, qso_line_number=None, rules=None):
         self.qso_line = qso_line
-        self.qso_line_number = qso_line_number
+        self.line_nr = qso_line_number
         self.rules = rules
+        self.valid = True
 
-        self.validate_qso()
+        self.errors[ERR_QSO] = []
 
+        # 1st validation
+        self.validate_qso_format()
+        if not self.valid:
+            return
+        self.parse_qso()
+
+        # 2nd validation
+        self.generic_qso_validator()
         if not self.valid:
             return
 
-        self.qso_parser()
-        self.error = self.generic_qso_validator()
-        if (self.error is None) and (rules is not None):
-            self.error = self.rules_based_qso_validator(rules)
-        self.valid = False if self.error else True
+        if self.rules:
+            self.rules_based_qso_validator()
 
-    def validate_qso(self):
+    def validate_qso_format(self):
         """ Validate qso line.
         If errors are found they will be written in self.errors string
         """
-        self.error = self.regexp_qso_validator(self.qso_line) or None
-        self.valid = False if self.error else True
+        err = self.regexp_qso_validator(self.qso_line) or None
+        if err:
+            self.errors[ERR_QSO].append((self.line_nr, err))
+            self.valid = False
 
-    def qso_parser(self):
+    def parse_qso(self):
         """
         This should parse a qso based on log format
         """
@@ -447,116 +455,143 @@ class LogQso(object):
         try:
             datetime.datetime.strptime(self.qso_fields['date'], '%y%m%d')
         except ValueError as why:
-            return 'Qso date is invalid: {}'.format(str(why))
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'QSO date is invalid: {}'.format(str(why))))
 
         # validate time format
         try:
             datetime.datetime.strptime(self.qso_fields['hour'], '%H%M')
         except ValueError as why:
-            return 'Qso hour is invalid: {}'.format(str(why))
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'QSO hour is invalid: {}'.format(str(why))))
 
         # validate callsign format
         re_call = r'^\w+/?\w+$'
         result = re.match(re_call, self.qso_fields['call'])
         if not result:
-            return 'Callsign is invalid: {}'.format(self.qso_fields['call'])
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'Callsign is invalid: {}'.format(self.qso_fields['call'])))
 
         # validate mode format
         re_mode = "^[0-9]$"
         result = re.match(re_mode, self.qso_fields['mode'])
         if not result:
-            return 'QSO mode is invalid: {}'.format(self.qso_fields['mode'])
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'QSO mode is invalid: {}'.format(self.qso_fields['mode'])))
 
         # validate RST (sent & recv) format
         re_rst = "^[1-5][1-9][aA]?$"
         result = re.match(re_rst, self.qso_fields['rst_sent'])
         if not result:
-            return 'RST is invalid: {}'.format(self.qso_fields['rst_sent'])
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'RST is invalid: {}'.format(self.qso_fields['rst_sent'])))
         result = re.match(re_rst, self.qso_fields['rst_recv'])
         if not result:
-            return 'RST is invalid: {}'.format(self.qso_fields['rst_recv'])
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'RST is invalid: {}'.format(self.qso_fields['rst_recv'])))
 
         # validate NR (sent & recv) format
         re_sent_recv_nr = r'^\d{1,4}$'
         result = re.match(re_sent_recv_nr, self.qso_fields['nr_sent'])
         if not result:
-            return 'Sent Qso number is invalid: {}'.format(self.qso_fields['nr_sent'])
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'Sent QSO number is invalid: {}'.format(self.qso_fields['nr_sent'])))
         result = re.match(re_sent_recv_nr, self.qso_fields['nr_recv'])
         if not result:
-            return 'Received Qso number is invalid: {}'.format(self.qso_fields['nr_recv'])
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'Received QSO number is invalid: {}'.format(self.qso_fields['nr_recv'])))
 
         # validate 'exchange_recv' format
         re_exchange = r'^\w{0,6}$'
         result = re.match(re_exchange, self.qso_fields['exchange_recv'])
         if not result:
-            return 'Received exchange is invalid: {}'.format(self.qso_fields['exchange_recv'])
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'Received exchange is invalid: {}'.format(self.qso_fields['exchange_recv'])))
 
         # validate QTH locator format
         if not Log.validate_qth_locator(self.qso_fields['wwl']):
-            return 'Qso WWL is invalid: {}'.format(self.qso_fields['wwl'])
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'QSO WWL is invalid: {}'.format(self.qso_fields['wwl'])))
 
         # validate 'duplicate_qso' format
         # TODO
         return None
 
-    def rules_based_qso_validator(self, rules):
+    def rules_based_qso_validator(self):
         """
         This will validate the self.qsoFields based on Rules class instance
         :param rules:
         :return:
         """
-        if rules is None:
+        if self.rules is None:
             return
 
         # validate qso date
-        if self.qso_fields['date'] < rules.contest_begin_date[2:]:
-            return 'Qso date is invalid: before contest starts (<{})'.format(rules.contest_begin_date[2:])
-        if self.qso_fields['date'] > rules.contest_end_date[2:]:
-            return 'Qso date is invalid: after contest ends (>{})'.format(rules.contest_end_date[2:])
+        if self.qso_fields['date'] < self.rules.contest_begin_date[2:]:
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'QSO date is invalid: before contest starts (<{})'.format(self.rules.contest_begin_date[2:])))
+        if self.qso_fields['date'] > self.rules.contest_end_date[2:]:
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'QSO date is invalid: after contest ends (>{})'.format(self.rules.contest_end_date[2:])))
 
         # validate qso hour
-        if self.qso_fields['date'] == rules.contest_begin_date[2:] and \
-           self.qso_fields['hour'] < rules.contest_begin_hour:
-            return 'Qso hour is invalid: before contest start hour (<{})'.format(rules.contest_begin_hour)
-        if self.qso_fields['date'] == rules.contest_end_date[2:] and \
-           self.qso_fields['hour'] > rules.contest_end_hour:
-            return 'Qso hour is invalid: after contest end hour (>{})'.format(rules.contest_end_hour)
+        if self.qso_fields['date'] == self.rules.contest_begin_date[2:] and \
+           self.qso_fields['hour'] < self.rules.contest_begin_hour:
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'QSO hour is invalid: before contest start hour (<{})'.format(self.rules.contest_begin_hour)))
+        if self.qso_fields['date'] == self.rules.contest_end_date[2:] and self.qso_fields['hour'] > self.rules.contest_end_hour:
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'QSO hour is invalid: after contest end hour (>{})'.format(self.rules.contest_end_hour)))
 
         # validate date & hour based on period
         inside_period = False
-        for period in range(1, rules.contest_periods_nr + 1):
+        for period in range(1, self.rules.contest_periods_nr + 1):
             # if date is not in period, check next period
-            if not (rules.contest_period(period)['begindate'][2:] <= self.qso_fields['date'] <= rules.contest_period(period)['enddate'][2:]):
+            if not (self.rules.contest_period(period)['begindate'][2:] <= self.qso_fields['date'] <= self.rules.contest_period(period)['enddate'][2:]):
                 continue
-            _enddate = datetime.datetime.strptime(rules.contest_period(period)['enddate'], '%Y%m%d')
-            _begindate = datetime.datetime.strptime(rules.contest_period(period)['begindate'], '%Y%m%d')
+            _enddate = datetime.datetime.strptime(self.rules.contest_period(period)['enddate'], '%Y%m%d')
+            _begindate = datetime.datetime.strptime(self.rules.contest_period(period)['begindate'], '%Y%m%d')
             delta_days = _enddate - _begindate
             # if period is in same day
-            if delta_days == datetime.timedelta(0) and \
-               rules.contest_period(period)['beginhour'] <= self.qso_fields['hour'] <= rules.contest_period(period)['endhour']:
+            if delta_days == datetime.timedelta(0) and self.rules.contest_period(period)['beginhour'] <= self.qso_fields['hour'] <= self.rules.contest_period(period)['endhour']:
                     inside_period = True
                     break
             # if period is in multiple days
             elif delta_days > datetime.timedelta(0):
-                if rules.contest_period(period)['begindate'][2:] == self.qso_fields['date'] and \
-                                rules.contest_period(period)['beginhour'] <= self.qso_fields['hour']:
+                if self.rules.contest_period(period)['begindate'][2:] == self.qso_fields['date'] and self.rules.contest_period(period)['beginhour'] <= self.qso_fields['hour']:
                     inside_period = True
                     break
-                if self.qso_fields['date'] == rules.contest_period(period)['enddate'][2:] and \
-                                self.qso_fields['hour'] <= rules.contest_period(period)['endhour']:
+                if self.qso_fields['date'] == self.rules.contest_period(period)['enddate'][2:] and self.qso_fields['hour'] <= self.rules.contest_period(period)['endhour']:
                     inside_period = True
                     break
                 # if begin_period < qso_date < end_period
-                if rules.contest_period(period)['begindate'][2:] < self.qso_fields['date'] < rules.contest_period(period)['enddate'][2:]:
+                if self.rules.contest_period(period)['begindate'][2:] < self.qso_fields['date'] < self.rules.contest_period(period)['enddate'][2:]:
                     inside_period = True
                     break
         if not inside_period:
-            return 'Qso date/hour is invalid: not inside contest periods'
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'QSO date/hour is invalid: not inside contest periods'))
 
         # validate qso mode
-        if int(self.qso_fields['mode']) not in rules.contest_qso_modes:
-            return 'Qso mode is invalid: not in defined modes ({})'.format(rules.contest_qso_modes)
-
+        if int(self.qso_fields['mode']) not in self.rules.contest_qso_modes:
+            self.valid = False
+            self.errors[ERR_QSO].append((self.line_nr,
+                                         'QSO mode is invalid: not in defined modes ({})'.format(self.rules.contest_qso_modes)))
         return None
 
 
