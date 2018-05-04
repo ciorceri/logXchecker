@@ -205,81 +205,81 @@ test_logQso_qsos = [
 
 test_logQso_regexp_qso_validator = [
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;0016SS;1;;;;', valid=False,
-                       errors='Incorrect QSO line format. (QSO checks didn\'t pass).'),
+                       errors={'qso': [(5, "Incorrect QSO line format. (QSO checks didn't pass).")]}),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN1600;1;;;;', valid=False,
-                       errors='Incorrect QSO line format. (QSO checks didn\'t pass).'),
+                       errors={'qso': [(5, "Incorrect QSO line format. (QSO checks didn't pass).")]}),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KNAASS;1;;;;', valid=False,
-                       errors='Incorrect QSO line format. (QSO checks didn\'t pass).'),
+                       errors={'qso': [(5, "Incorrect QSO line format. (QSO checks didn't pass).")]}),
 ]
 
 test_logQso_generic_qso_validator = [
     edi.Log.qsos_tuple(linenr=1, qso='999999;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
                        errors={'qso': [(1, 'QSO date is invalid: unconverted data remains: 99')]}),
     edi.Log.qsos_tuple(linenr=2, qso='130803;9999;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors={'qso': [(2, 'Qso hour is invalid: unconverted data remains: 99')]}),
+                       errors={'qso': [(2, 'QSO hour is invalid: unconverted data remains: 99')]}),
     edi.Log.qsos_tuple(linenr=3, qso='130803;1319;YO5BTZ/P/P;6;59;001;59;001;;KN16SS;1;;;;;', valid=False,
-                       errors='Callsign is invalid: YO5BTZ/P/P'),
+                       errors={'qso': [(3, 'Callsign is invalid: YO5BTZ/P/P')]}),
     edi.Log.qsos_tuple(linenr=4, qso='130803;1319;YO5BTZ;A;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors='QSO mode is invalid: A'),
+                       errors={'qso': [(4, 'QSO mode is invalid: A')]}),
 
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;09;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors='RST is invalid: 09'),
+                       errors={'qso': [(5, 'RST is invalid: 09')]}),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59A;001;59;001;;KN16SS;1;;;;', valid=True,
-                       errors=None),
+                       errors={'qso': []}),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59A;001;;KN16SS;1;;;;', valid=True,
-                       errors=None),
+                       errors={'qso': []}),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;69;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors='RST is invalid: 69'),
+                       errors={'qso': [(5, 'RST is invalid: 69')]}),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;50;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors='RST is invalid: 50'),
+                       errors={'qso': [(5, 'RST is invalid: 50')]}),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59Z;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors='RST is invalid: 59Z'),
+                       errors={'qso': [(5, 'RST is invalid: 59Z')]}),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;69A;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors='RST is invalid: 69A'),
+                       errors={'qso': [(5, 'RST is invalid: 69A')]}),
 
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;09;001;;KN16SS;1;;;;', valid=False,
-                       errors='RST is invalid: 09'),
+                       errors={'qso': [(5, 'RST is invalid: 09')]}),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;69;001;;KN16SS;1;;;;', valid=False,
-                       errors='RST is invalid: 69'),
+                       errors={'qso': [(5, 'RST is invalid: 69')]}),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;50;001;;KN16SS;1;;;;', valid=False,
-                       errors='RST is invalid: 50'),
+                       errors={'qso': [(5, 'RST is invalid: 50')]}),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59Z;001;;KN16SS;1;;;;', valid=False,
-                       errors='RST is invalid: 59Z'),
+                       errors={'qso': [(5, 'RST is invalid: 59Z')]}),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;69A;001;;KN16SS;1;;;;', valid=False,
-                       errors='RST is invalid: 69A'),
+                       errors={'qso': [(5, 'RST is invalid: 69A')]}),
 
     edi.Log.qsos_tuple(linenr=6, qso='130803;1319;YO5BTZ;6;59;001;59;001;1234567;KN16SS;1;;;;', valid=False,
-                       errors='Received exchange is invalid: 1234567'),
+                       errors={'qso': [(6, 'Received exchange is invalid: 1234567')]}),
     edi.Log.qsos_tuple(linenr=7, qso='130803;1319;YO5BTZ;6;59;001;59;001;;ZZ27HM;1;;;;', valid=False,
-                       errors='Qso WWL is invalid: ZZ27HM'),
+                       errors={'qso': [(7, 'QSO WWL is invalid: ZZ27HM')]}),
     edi.Log.qsos_tuple(linenr=7, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN27ZZ;1;;;;', valid=False,
-                       errors='Qso WWL is invalid: KN27ZZ'),
+                       errors={'qso': [(7, 'QSO WWL is invalid: KN27ZZ')]}),
 ]
 
 test_logQso_rules_based_qso_validator = [
     edi.Log.qsos_tuple(linenr=1, qso='130802;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors='Qso date is invalid: before contest starts (<130803)'),
+                       errors={'qso': [(1, 'QSO date is invalid: before contest starts (<130803)'), (1, 'QSO date/hour is invalid: not inside contest periods')]}),
     edi.Log.qsos_tuple(linenr=2, qso='130803;1159;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors='Qso hour is invalid: before contest start hour (<1200)'),
+                       errors={'qso': [(2, 'QSO hour is invalid: before contest start hour (<1200)'), (2, 'QSO date/hour is invalid: not inside contest periods')]}),
     edi.Log.qsos_tuple(linenr=3, qso='130803;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
-                       errors=None),
+                       errors={'qso': []}),
     edi.Log.qsos_tuple(linenr=4, qso='130803;1759;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
-                       errors=None),
+                       errors={'qso': []}),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1800;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors='Qso date/hour is invalid: not inside contest periods'),
+                       errors={'qso': [(5, 'QSO date/hour is invalid: not inside contest periods')]}),
     edi.Log.qsos_tuple(linenr=6, qso='130804;0559;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors='Qso date/hour is invalid: not inside contest periods'),
+                       errors={'qso': [(6, 'QSO date/hour is invalid: not inside contest periods')]}),
     edi.Log.qsos_tuple(linenr=7, qso='130804;0600;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
-                       errors=None),
+                       errors={'qso': []}),
     edi.Log.qsos_tuple(linenr=8, qso='130805;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
-                       errors=None),
+                       errors={'qso': []}),
     edi.Log.qsos_tuple(linenr=9, qso='130806;1159;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
-                       errors=None),
+                       errors={'qso': []}),
     edi.Log.qsos_tuple(linenr=10, qso='130806;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors='Qso hour is invalid: after contest end hour (>1159)'),
+                       errors={'qso': [(10, 'QSO hour is invalid: after contest end hour (>1159)'), (10, 'QSO date/hour is invalid: not inside contest periods')]}),
 
     edi.Log.qsos_tuple(linenr=11, qso='130803;1200;YO5BTZ;7;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors='Qso mode is invalid: not in defined modes ([1, 2, 6])'),
+                       errors={'qso': [(11, 'QSO mode is invalid: not in defined modes ([1, 2, 6])')]}),
 ]
 
 
@@ -630,7 +630,6 @@ class TestEdiLogQso(TestCase):
             self.assertEqual(lq.line_nr, linenr)
             self.assertEqual(lq.qso_line, qso)
             self.assertEqual(lq.valid, valid)
-            print("X = ", lq.errors)
             self.assertEqual(lq.errors, errors)
 
     @mock.patch('os.path.isfile')
