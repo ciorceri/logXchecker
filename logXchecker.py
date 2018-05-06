@@ -149,7 +149,6 @@ def main():
     log = None
     logQso = None
 
-    # do we have 'rules' ?
     rules = None
     if args.rules:
         rules = _rules.Rules(args.rules)
@@ -160,7 +159,7 @@ def main():
     if log_format == 'EDI':
         lfmodule = edi
     else:
-        print('Invalid log type selected : {}'.format(log_format))
+        print('Unsupported log type selected : {}'.format(log_format))
         return 1
 
     operator = lfmodule.Operator
@@ -172,6 +171,7 @@ def main():
 
     # if 'validate one log'
     if args.singlelogcheck:
+        # TODO : "add this 'validate log' message inside 'json/xml' message
         print('Validate log: {}'.format(args.singlelogcheck))
         if not os.path.isfile(args.singlelogcheck):
             print('Cannot open file: {}'.format(args.singlelogcheck))
