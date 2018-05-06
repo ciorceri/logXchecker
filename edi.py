@@ -349,7 +349,7 @@ class Log(object):
     def errors_to_json(self):
         return json.dumps(self.errors)
 
-    def errros_to_xml(self):
+    def errors_to_xml(self):
         return dicttoxml(self.errors)
 
 

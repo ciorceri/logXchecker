@@ -42,14 +42,14 @@ class ArgumentParser(object):
 
     def check_output_value(self, arg):
         """
-        :param arg: specifies the output format (text, html, json, yml)
+        :param arg: specifies the output format (json, xml)
         :return: arg
         :raise: ArgumentTypeError
         """
-        valid_output = ('TXT', 'TEXT', 'HTML', 'JSON', 'YML')
+        valid_output = ('JSON', 'XML')
         if arg.upper() in valid_output:
             return arg
-        raise argparse.ArgumentTypeError('Output "{}" is an invalid value'.format(arg))
+        raise argparse.ArgumentTypeError('Output "{}" is an invalid value. Use: {}'.format(arg, ','.join(valid_output)))
 
     def __init__(self):
         self.parser = argparse.ArgumentParser(description='log cross checker')
@@ -58,10 +58,10 @@ class ArgumentParser(object):
                             help="Log format: edi, adif, cabrillo")
         group1.add_argument('-r', '--rules', type=str, help='INI file with contest rules')
         group2 = self.parser.add_mutually_exclusive_group(required=True)
-        group2.add_argument('-slc', '--singlelogcheck', type=str, default=False, help='single log check')
-        group2.add_argument('-mlc', '--multilogcheck', type=str, default=False, help='multiple log check')
-        self.parser.add_argument('-o', '--output', type=self.check_output_value, required=False,
-                                 help='Output format: text, html, json, yml')
+        group2.add_argument('-slc', '--singlelogcheck', type=str, default=False, metavar='path_to_log', help='Check a single log')
+        group2.add_argument('-mlc', '--multilogcheck', type=str, default=False, metavar='path_to_folder', help='Check multiple logs')
+        self.parser.add_argument('-o', '--output', type=self.check_output_value, required=False, default='JSON',
+                                 help='Output format: json, xml (default: json)')
 
     def parse(self, args):
         return self.parser.parse_args(args)
@@ -177,7 +177,10 @@ def main():
             print('Cannot open file: {}'.format(args.singlelogcheck))
             return 1
         _log = log(args.singlelogcheck)
-        print(_log.errors)
+        if args.output.upper() == 'JSON':
+            print(_log.errors_to_json())
+        elif args.output.upper() == 'XML':
+            print(_log.errors_to_xml())
     elif args.multilogcheck:
         print('Validate folder: ', args.multilogcheck)
         if not os.path.isdir(args.multilogcheck):
