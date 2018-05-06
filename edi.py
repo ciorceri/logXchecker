@@ -13,10 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
 import re
 import datetime
 from collections import namedtuple
+import json
+from dicttoxml import dicttoxml
 
 ERR_FILE = 'file'
 ERR_HEADER = 'header'
@@ -345,11 +346,11 @@ class Log(object):
             is_valid = True
         return is_valid
 
-    def dump_summary(self):
-        """
-        Based on the output format (text, html...) this will output a summary of the log
-        """
-        pass
+    def errors_to_json(self):
+        return json.dumps(self.errors)
+
+    def errros_to_xml(self):
+        return dicttoxml(self.errors)
 
 
 class LogQso(object):
