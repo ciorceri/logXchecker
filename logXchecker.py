@@ -169,18 +169,19 @@ def main():
     # TODO : move upper 3 lines here based on log type
     # TODO : and use the proper log type checks
 
+    output = {}
     # if 'validate one log'
     if args.singlelogcheck:
-        # TODO : "add this 'validate log' message inside 'json/xml' message
-        print('Validate log: {}'.format(args.singlelogcheck))
+        output[edi.INFO_LOG] = args.singlelogcheck
         if not os.path.isfile(args.singlelogcheck):
             print('Cannot open file: {}'.format(args.singlelogcheck))
             return 1
         _log = log(args.singlelogcheck)
+        output.update(_log.errors)
         if args.output.upper() == 'JSON':
-            print(_log.errors_to_json())
+            print(edi.dict_to_json(output))
         elif args.output.upper() == 'XML':
-            print(_log.errors_to_xml())
+            print(edi.dict_to_xml(output))
     elif args.multilogcheck:
         print('Validate folder: ', args.multilogcheck)
         if not os.path.isdir(args.multilogcheck):

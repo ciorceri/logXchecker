@@ -19,9 +19,19 @@ from collections import namedtuple
 import json
 from dicttoxml import dicttoxml
 
-ERR_FILE = 'file'
+INFO_LOG = 'log'
+ERR_IO = 'io'
 ERR_HEADER = 'header'
 ERR_QSO = 'qso'
+
+
+def dict_to_json(dictionary):
+    return json.dumps(dictionary)
+
+
+def dict_to_xml(dictionary):
+    return dicttoxml(dictionary)
+
 
 class Operator(object):
     """
@@ -91,7 +101,7 @@ class Log(object):
         If errors are found they will be written in self.errors dictionary
         """
 
-        self.errors[ERR_FILE] = []
+        self.errors[ERR_IO] = []
         self.errors[ERR_HEADER] = []
         self.errors[ERR_QSO] = []
         self.valid_header = False
@@ -99,11 +109,11 @@ class Log(object):
         try:
             self.log_lines = self.read_file_content(self.path)
         except Exception as e:
-            self.errors[ERR_FILE].append((None, 'Cannot read edi log'))
+            self.errors[ERR_IO].append((None, 'Cannot read edi log'))
             return
 
         if self.log_lines is None:
-            self.errors[ERR_FILE].append((None, 'Log is empty'))
+            self.errors[ERR_IO].append((None, 'Log is empty'))
             return
 
 
@@ -345,12 +355,6 @@ class Log(object):
         if _begin_date == rules.contest_begin_date and _end_date == rules.contest_end_date:
             is_valid = True
         return is_valid
-
-    def errors_to_json(self):
-        return json.dumps(self.errors)
-
-    def errors_to_xml(self):
-        return dicttoxml(self.errors)
 
 
 class LogQso(object):
