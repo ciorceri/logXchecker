@@ -40,15 +40,18 @@ class Operator(object):
     Keep operator callsign, info and logs path
     """
     callsign = None
-    info = {}           # no idea what was this for :(
+    info = {}           # FIXME : no idea what was this for :(
     logs = []           # list with Log() instances
 
     def __init__(self, callsign):
         self.callsign = callsign
         self.logs = []
 
-    def add_log(self, path):
+    def add_log_by_path(self, path):
         self.logs.append(Log(path))
+
+    def add_log_instance(self, log):
+        self.logs.append(log)
 
 
 class Log(object):
@@ -68,11 +71,9 @@ class Log(object):
     rules = None
     use_as_checklog = False
     log_lines = None
-
     valid_header = None
     valid_qsos = None
-    errors = {}
-
+    errors = None
     callsign = None
     maidenhead_locator = None
     band = None
@@ -86,6 +87,9 @@ class Log(object):
         self.path = path
         self.rules = rules
         self.use_as_checklog = checklog
+        self.errors = {ERR_IO: [],
+                       ERR_HEADER: [],
+                       ERR_QSO: []}
 
         self.validate_header()
         if not self.valid_header:
@@ -102,10 +106,6 @@ class Log(object):
         """ Validate edi log header.
         If errors are found they will be written in self.errors dictionary
         """
-
-        self.errors[ERR_IO] = []
-        self.errors[ERR_HEADER] = []
-        self.errors[ERR_QSO] = []
         self.valid_header = False
 
         try:
@@ -185,32 +185,6 @@ class Log(object):
         if all((self.callsign, self.maidenhead_locator, self.band, self.section, self.date)):
             self.valid_header = True
 
-    @staticmethod
-    def read_file_content(path):
-        try:
-            with open(path, 'r') as _file:
-                content = _file.readlines()
-        except IOError:
-            raise
-        except Exception:
-            raise
-        return content
-
-    def get_field(self, field):
-        """
-        Search log content for a field
-        :param field: field name (PCall, TDate, ...)
-        :return: tuple(value, line_number or None)
-        """
-        value = []
-        line_nr = None
-        _field = str(field).upper() + '='
-        for (nr, line_content) in enumerate(self.log_lines):
-            if line_content.upper().startswith(_field):
-                value.append(line_content.split('=', 1)[1].strip())
-                line_nr = nr+1
-        return value, line_nr
-
     def get_qsos(self):
         """
         Will read the self.log_content and will return a list of LogQso
@@ -238,6 +212,33 @@ class Log(object):
                 # REMOVE self.qsos_tuple(linenr=qso[0], qso=qso[1], valid=False if message else True, error=message)
                 LogQso(qso[1], qso[0])  # LogQso(qso_line, qso_line_number_in_log)
             )
+
+    @staticmethod
+    def read_file_content(path):
+        try:
+            with open(path, 'r') as _file:
+                content = _file.readlines()
+        except IOError:
+            raise
+        except Exception:
+            raise
+        return content
+
+    def get_field(self, field):
+        """
+        Search log content for a field
+        :param field: field name (PCall, TDate, ...)
+        :return: tuple(value, line_number or None)
+        """
+        value = []
+        line_nr = None
+        _field = str(field).upper() + '='
+        for (nr, line_content) in enumerate(self.log_lines):
+            if line_content.upper().startswith(_field):
+                value.append(line_content.split('=', 1)[1].strip())
+                line_nr = nr+1
+        return value, line_nr
+
     @staticmethod
     def validate_qth_locator(qth):
         regex_maidenhead = r'^\s*([a-rA-R]{2}\d{2}[a-xA-X]{2})\s*$'
