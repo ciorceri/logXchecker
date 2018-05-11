@@ -46,7 +46,7 @@ class ArgumentParser(object):
         :return: arg
         :raise: ArgumentTypeError
         """
-        valid_output = ('JSON', 'XML')
+        valid_output = ('HUMAN-FRIENDLY', 'JSON', 'XML')
         if arg.upper() in valid_output:
             return arg
         raise argparse.ArgumentTypeError('Output "{}" is an invalid value. Use: {}'.format(arg, ','.join(valid_output)))
@@ -62,8 +62,8 @@ class ArgumentParser(object):
         group2.add_argument('-mlc', '--multilogcheck', type=str, default=False, metavar='path_to_folder', help='Check multiple logs')
         group2.add_argument('-cc', '--crosscheck', type=str, default=False, metavar='path_to_folder', help='Cross-check multiple logs')
         self.parser.add_argument('-cl', '--checklogs', type=str, default=False, metavar='path_to_folder', help='Checklogs used for cross-check')
-        self.parser.add_argument('-o', '--output', type=self.check_output_value, required=False, default='JSON',
-                                 help='Output format: json, xml (default: json)')
+        self.parser.add_argument('-o', '--output', type=self.check_output_value, required=False, default='human-friendly',
+                                 help='Output format: human-friendly, json, xml (default: human-friendly)')
 
     def parse(self, args):
         return self.parser.parse_args(args)
@@ -143,6 +143,35 @@ def load_log_format_module(module_name):
     #         pass
 
 
+def print_human_friendly(output):
+    """Will print a human-fiendly output for easy read"""
+    # single log
+    if output.get(edi.INFO_LOG, False):
+        print_log_human_friendly(output)
+    # multi logs
+    if output.get(edi.INFO_FOLDER, False):
+        print('Checking logs from folder : {}'.format(output[edi.INFO_FOLDER]))
+        for log in output[edi.INFO_FOLDER_LOGS]:
+            print_log_human_friendly(log)
+            print('-------------')
+
+
+def print_log_human_friendly(output):
+    """Will print human fiendly info for a log"""
+    print('Checking log : {}'.format(output[edi.INFO_LOG]))
+    if output[edi.ERR_IO]:
+        print('Input/Output : {}'.format(output[edi.ERR_IO]))
+        pass
+    if output[edi.ERR_HEADER]:
+        print('Header errors :')
+        for err in output[edi.ERR_HEADER]:
+            print('Line {} : {}'.format(err[0], err[1]))
+    if output[edi.ERR_QSO]:
+        print('QSO errors :')
+        for err in output[edi.ERR_QSO]:
+            print('Line {} : {}'.format(err[0], err[1]))
+
+
 def main():
     print('{} - v{}'.format(version.__project__,  version.__version__))
     args = ArgumentParser().parse(sys.argv[1:])
@@ -194,7 +223,9 @@ def main():
             logs_output.append(log_output)
         output[edi.INFO_FOLDER_LOGS] = logs_output
 
-    if args.output.upper() == 'JSON':
+    if args.output.upper() == 'HUMAN-FRIENDLY':
+        print_human_friendly(output)
+    elif args.output.upper() == 'JSON':
         print(edi.dict_to_json(output))
     elif args.output.upper() == 'XML':
         print(edi.dict_to_xml(output))
