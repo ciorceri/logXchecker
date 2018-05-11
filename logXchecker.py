@@ -60,6 +60,8 @@ class ArgumentParser(object):
         group2 = self.parser.add_mutually_exclusive_group(required=True)
         group2.add_argument('-slc', '--singlelogcheck', type=str, default=False, metavar='path_to_log', help='Check a single log')
         group2.add_argument('-mlc', '--multilogcheck', type=str, default=False, metavar='path_to_folder', help='Check multiple logs')
+        group2.add_argument('-cc', '--crosscheck', type=str, default=False, metavar='path_to_folder', help='Cross-check multiple logs')
+        self.parser.add_argument('-cl', '--checklogs', type=str, default=False, metavar='path_to_folder', help='Checklogs used for cross-check')
         self.parser.add_argument('-o', '--output', type=self.check_output_value, required=False, default='JSON',
                                  help='Output format: json, xml (default: json)')
 
