@@ -178,15 +178,25 @@ def main():
             return 1
         _log = log(args.singlelogcheck)
         output.update(_log.errors)
-        if args.output.upper() == 'JSON':
-            print(edi.dict_to_json(output))
-        elif args.output.upper() == 'XML':
-            print(edi.dict_to_xml(output))
     elif args.multilogcheck:
-        print('Validate folder: ', args.multilogcheck)
+        output[edi.INFO_FOLDER] = args.multilogcheck
         if not os.path.isdir(args.multilogcheck):
             print('Cannot open folder: {}'.format(args.multilogcheck))
             return 1
+        logs_output = []
+        for filename in os.listdir(args.multilogcheck):
+            log_output = {}
+            _log = log(os.path.join(args.multilogcheck, filename))
+            log_output[edi.INFO_LOG] = filename
+            log_output.update(_log.errors)
+            logs_output.append(log_output)
+        output[edi.INFO_FOLDER_LOGS] = logs_output
+
+    if args.output.upper() == 'JSON':
+        print(edi.dict_to_json(output))
+    elif args.output.upper() == 'XML':
+        print(edi.dict_to_xml(output))
+
 
 if __name__ == '__main__':
     main()

@@ -20,6 +20,8 @@ import json
 from dicttoxml import dicttoxml
 
 INFO_LOG = 'log'
+INFO_FOLDER = 'folder'
+INFO_FOLDER_LOGS = 'logs'
 ERR_IO = 'io'
 ERR_HEADER = 'header'
 ERR_QSO = 'qso'
