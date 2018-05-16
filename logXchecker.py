@@ -209,6 +209,7 @@ def main():
             return 1
         _log = log(args.singlelogcheck, rules=rules)
         output.update(_log.errors)
+    # validate multiple logs
     elif args.multilogcheck:
         output[edi.INFO_FOLDER] = args.multilogcheck
         if not os.path.isdir(args.multilogcheck):
@@ -222,7 +223,7 @@ def main():
             log_output.update(_log.errors)
             logs_output.append(log_output)
         output[edi.INFO_FOLDER_LOGS] = logs_output
-
+    # add also checklogs
     if args.multilogcheck and args.checklogs:
         if os.path.isdir(args.checklogs):
             logs_output = []

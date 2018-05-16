@@ -188,6 +188,28 @@ class Log(object):
         if all((self.callsign, self.maidenhead_locator, self.band, self.section, self.date)):
             self.valid_header = True
 
+        # get & validate email if requested by rules
+        _email, line_nr = self.get_field('RHBBS')
+        if self.rules and 'email' in self.rules.contest_extra_field:
+            if not _email:
+                self.errors[ERR_HEADER].append((line_nr, 'RHBBS field is not present'))
+            elif len(_email) > 1:
+                self.errors[ERR_HEADER].append((line_nr, 'RHBBS is present multiple times'))
+            elif not self.validate_email(_email[0]):
+                self.errors[ERR_HEADER].append((line_nr, 'RHBBS field value is not valid ({})'.format(_email[0])))
+            else:
+                self.email = _email[0]
+
+        # get & validate address presence if requested by rules
+        _address, line_nr = self.get_field('PAdr1')
+        if self.rules and 'address' in self.rules.contest_extra_field:
+            if not _address:
+                self.errors[ERR_HEADER].append((line_nr, 'PAdr1 field is not present'))
+            elif len(_address) > 1:
+                self.errors[ERR_HEADER].append((line_nr, 'PAdr1 is present multiple times'))
+            else:
+                self.address = _address[0]
+
     @staticmethod
     def read_file_content(path):
         try:

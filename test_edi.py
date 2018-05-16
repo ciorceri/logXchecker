@@ -462,7 +462,8 @@ class TestEdiLog(TestCase):
                                  {ERR_IO: [], ERR_HEADER: [(4, 'PBand field value has an invalid value (200 MHz). '
                                                              'Not as defined in contest rules'),
                                                            (None, 'PSect field is not present'),
-                                                           (None, 'TDate field is not present')], ERR_QSO: []})
+                                                           (None, 'TDate field is not present'),
+                                                           (None, 'RHBBS field is not present')], ERR_QSO: []})
 
         # test with valid rules and with invalid edi log (invalid PSect)
         mo_log = mock.mock_open(read_data=invalid_edi_log_PSect)
@@ -472,8 +473,9 @@ class TestEdiLog(TestCase):
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [(5, 'PSect field value has an invalid value (extraterrestrial). '
-                                             'Not as defined in contest rules'),
-                                             (None, 'TDate field is not present')],
+                                                   'Not as defined in contest rules'),
+                                               (None, 'TDate field is not present'),
+                                               (None, 'RHBBS field is not present')],
                                   ERR_QSO: []})
 
         # test with valid rules and with invalid edi log (invalid TDate)
@@ -484,8 +486,14 @@ class TestEdiLog(TestCase):
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [(2, 'TDate field value has an invalid value (20250101;20250102). '
-                                                 'Not as defined in contest rules')],
+                                                 'Not as defined in contest rules'),
+                                               (None, 'RHBBS field is not present')],
                                   ERR_QSO: []})
+
+        # test with valid rules and with invalid edi log (invalid RHBBS)
+        # TODO ...
+        # test with valid rules and with invalid edi log (invalid PAdr1)
+        # TODO ...
 
     def test_read_file_content(self):
         # test 'read_file_content', the buildins.open is mocked
