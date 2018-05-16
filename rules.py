@@ -88,6 +88,10 @@ class Rules(object):
         regexp=mo|multi
         bands=band1,band2
 
+        [extra]
+        email=1
+        address=1
+
         # And then we have some details about mixing categories & bands. This will need some thinking
     """
 
@@ -310,3 +314,7 @@ class Rules(object):
     @property
     def contest_log_format(self):
         return self.config['log']['format'].upper()
+
+    @property
+    def contest_extra_field(self):
+        return [x for x in self.config['extra'] if self.config['extra'][x].upper() == 'YES']

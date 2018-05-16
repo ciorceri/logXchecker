@@ -10,11 +10,11 @@
     - Validator for individual logs
         - Generic syntax validator
         - Validate logs based on predefined rules
+    - Output can have following formats: human-friendly, json, xml
     - Cross checker to generate a VHF contest results
 Future features:
 
     - Support for ADIF & Cabrillo logs with generic and rules based validator
-    - Export results in various formats: csv, json, xml
     
 Current VHF rules format (this format may be subject to change):
 ```
@@ -67,6 +67,10 @@ bands=band2
 name=Multi Operator
 regexp=(mo|multi)
 bands=band1,band2
+
+[extra]
+email=yes
+address=no
 ```
 The rules format is based on [INI file format](http://en.wikipedia.org/wiki/INI_file).
 There are the following sections:
@@ -80,22 +84,24 @@ There are the following sections:
     [period1], [period2], ... [periodN]
         rules about contest periods (begin/end date, begin/end hour, bands)
     [category1], [category2], ... [categoryN]
-        rules about contest categories (single/multi operator[s], category bands) 
+        rules about contest categories (single/multi operator[s], category bands)
+    [extra]
+        rules presence and validation of other header fields (email, address)
 
-The rules file is validated and the following errors are displayed if validation fails:
+The following errors can be displayed if validation fails:
 
-    - 'The rules file ... was not found'
-    - exitcode=10 and "ERROR: Rules has missing fields from [contest] section"
-    - exitcode=10 and "ERROR: Rules file has invalid 'bands' field setting in [contest] section"
-    - exitcode=10 and "ERROR: Rules file has invalid 'periods' field setting in [contest] section"
-    - exitcode=10 and "ERROR: Rules file has invalid 'categories' field setting in [contest] section"
-    - exitcode=11 and "ERROR: Rules file has invalid settings for band ..."
-    - exitcode=12 and "ERROR: Rules file has invalid settings for period ..."
-    - exitcode=12 and "ERROR: Rules file has invalid period begin/end date/hour"
-    - exitcode=12 and "ERROR: Rules file has invalid band settings (...) for period ..."
-    - exitcode=13 and "ERROR: Rules file has invalid settings for category ..."
-    - exitcode=13 and "ERROR: Rules file has invalid band settings (...) for category ..."
+    - Line None : PCall field is not present
+    - Line None : PWWLo field is not present
+    - Line None : PBand field is not present
+    - Line None : PSect field is not present
+    - Line None : TDate field is not present
+    - Line 4 : PCall field content is not valid
+    - Line 5 : PWWLo field value is not valid
+    - Line 3 : TDate field value is not valid (201605070;20160508)
 
+If a rules file was provided the following errors can be displayed if validation fails:
+    - ....
+    
 Notes:
 
     - This is a work in progress and there are still more things to add.
