@@ -89,8 +89,9 @@ class Rules(object):
         bands=band1,band2
 
         [extra]
-        email=1
-        address=1
+        name=yes
+        email=yes
+        address=no
 
         # And then we have some details about mixing categories & bands. This will need some thinking
     """

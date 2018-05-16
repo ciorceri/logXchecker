@@ -466,6 +466,7 @@ class LogQso(object):
         """
         This should parse a qso based on log format
         """
+        # TODO : tre sa dau detalii mai multe despre QSO si unde sunt erori !!!
         res = re.match(self.REGEX_MINIMAL_QSO_CHECK, self.qso_line)
         if res:
             for key in self.qso_fields:
