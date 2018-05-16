@@ -18,6 +18,7 @@ import datetime
 from collections import namedtuple
 import json
 from dicttoxml import dicttoxml
+from validate_email import validate_email
 
 INFO_LOG = 'log'
 INFO_FOLDER = 'folder'
@@ -125,6 +126,8 @@ class Log(object):
             self.errors[ERR_HEADER].append((line_nr, 'PCall field is not present'))
         elif len(_callsign) > 1:
             self.errors[ERR_HEADER].append((line_nr, 'PCall field is present multiple times'))
+        elif not self.validate_callsign(_callsign[0]):
+            self.errors[ERR_HEADER].append((line_nr, 'PCall field content is not valid'))
         else:
             self.callsign = _callsign[0]
 
@@ -238,6 +241,13 @@ class Log(object):
                 # REMOVE self.qsos_tuple(linenr=qso[0], qso=qso[1], valid=False if message else True, error=message)
                 LogQso(qso[1], qso[0])  # LogQso(qso_line, qso_line_number_in_log)
             )
+
+    @staticmethod
+    def validate_callsign(callsign):
+        regex_pcall = "^\s*(\w+[0-9]+\w+)\s*$"    # \s*(\w+\d+[a-zA-Z]+(/(M|AM|P|MM))?)\s*$"
+        res = re.match(regex_pcall, callsign)
+        return True if res else False
+
     @staticmethod
     def validate_qth_locator(qth):
         regex_maidenhead = r'^\s*([a-rA-R]{2}\d{2}[a-xA-X]{2})\s*$'
@@ -344,6 +354,10 @@ class Log(object):
                 is_valid = False
                 break
         return is_valid
+
+    @staticmethod
+    def validate_email(email):
+        return validate_email(email)
 
     def rules_based_validate_date(self, date_value, rules):
         """

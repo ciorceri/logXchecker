@@ -2,7 +2,7 @@ language: python
 python:
     - 3.6.1
 before_install:
-    pip install nose coverage dicttoxml
+    pip install nose coverage dicttoxml validate_email
 script:
     - python -m py_compile logXchecker.py
     - python -m py_compile edi.py

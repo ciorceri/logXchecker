@@ -305,6 +305,17 @@ class TestEdiLog(TestCase):
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(5, 'PCall field is present multiple times')], ERR_QSO: []})
 
+        # test with invalid PCall
+        invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PCall=')]
+        invalid_edi_log = 'PCall=test\n' + '\n'.join(invalid_edi_log)
+        mo = mock.mock_open(read_data=invalid_edi_log)
+        with patch('builtins.open', mo, create=True):
+            log = edi.Log('some_log_file.edi')
+            self.assertFalse(log.valid_header)
+            self.assertDictEqual(log.errors,
+                                 {ERR_IO: [], ERR_HEADER: [(1, 'PCall field content is not valid')], ERR_QSO: []})
+
+
         # test with missing PWWLo
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PWWLo=')]
         invalid_edi_log = '\n'.join(invalid_edi_log)
@@ -517,6 +528,23 @@ class TestEdiLog(TestCase):
             self.assertEqual(_valid1, _valid2)
             self.assertEqual(_error1, _error2)
         # self.assertEqual(test_logQso_qsos, log.qsos)
+
+    def test_validate_callsign(self):
+        positive_tests = ['yo5pjb', 'YO5PJB', 'YO5pjb', 'K4X', 'A22A', 'I20000X', '4X4AAA', '3DA0RS']
+        negative_tests = ['yo%pjb', 'yoSpjb']
+
+        for test in positive_tests:
+            self.assertTrue(edi.Log.validate_callsign(test))
+        for test in negative_tests:
+            self.assertFalse(edi.Log.validate_callsign(test))
+
+    def test_validate_email(self):
+        positive_tests = ['yo5pjb@mail.com']
+        negative_tests = ['yo5pjb.mail.com', 'yo5pjb', '@mail.com']
+        for test in positive_tests:
+            self.assertTrue(edi.Log.validate_email(test))
+        for test in negative_tests:
+            self.assertFalse(edi.Log.validate_email(test))
 
     def test_validate_qth_locator(self):
         positive_tests = ['KN16SS', 'kn16ss', 'AA00AA', 'RR00XX']
