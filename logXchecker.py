@@ -207,7 +207,7 @@ def main():
         if not os.path.isfile(args.singlelogcheck):
             print('Cannot open file: {}'.format(args.singlelogcheck))
             return 1
-        _log = log(args.singlelogcheck)
+        _log = log(args.singlelogcheck, rules=rules)
         output.update(_log.errors)
     elif args.multilogcheck:
         output[edi.INFO_FOLDER] = args.multilogcheck
@@ -217,11 +217,22 @@ def main():
         logs_output = []
         for filename in os.listdir(args.multilogcheck):
             log_output = {}
-            _log = log(os.path.join(args.multilogcheck, filename))
+            _log = log(os.path.join(args.multilogcheck, filename), rules=rules)
             log_output[edi.INFO_LOG] = filename
             log_output.update(_log.errors)
             logs_output.append(log_output)
         output[edi.INFO_FOLDER_LOGS] = logs_output
+
+    if args.multilogcheck and args.checklogs:
+        if os.path.isdir(args.checklogs):
+            logs_output = []
+            for filename in os.listdir(args.checklogs):
+                log_output = {}
+                _log=log(os.path.join(args.checklogs, filename), rules=rules, checklog=True)
+                log_output[edi.INFO_LOG] = filename
+                log_output.update(_log.errors)
+                logs_output.append(log_output)
+            output[edi.INFO_FOLDER_LOGS].extend(logs_output)
 
     if args.output.upper() == 'HUMAN-FRIENDLY':
         print_human_friendly(output)
@@ -229,7 +240,6 @@ def main():
         print(edi.dict_to_json(output))
     elif args.output.upper() == 'XML':
         print(edi.dict_to_xml(output))
-
 
 if __name__ == '__main__':
     main()
