@@ -293,6 +293,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(None, 'PCall field is not present')], ERR_QSO: []})
 
@@ -302,6 +303,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(5, 'PCall field is present multiple times')], ERR_QSO: []})
 
@@ -312,6 +314,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(1, 'PCall field content is not valid')], ERR_QSO: []})
 
@@ -323,6 +326,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(None, 'PWWLo field is not present')], ERR_QSO: []})
 
@@ -332,6 +336,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(1, 'PWWLo field value is not valid')], ERR_QSO: []})
 
@@ -341,6 +346,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(6, 'PWWLo field is present multiple times')], ERR_QSO: []})
 
@@ -351,6 +357,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(None, 'PBand field is not present')], ERR_QSO: []})
 
@@ -360,6 +367,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(1, 'PBand field value is not valid')], ERR_QSO: []})
 
@@ -369,6 +377,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(11, 'PBand field is present multiple times')], ERR_QSO: []})
 
@@ -379,6 +388,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(None, 'PSect field is not present')], ERR_QSO: []})
 
@@ -388,6 +398,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(1, 'PSect field value is not valid')], ERR_QSO: []})
 
@@ -397,6 +408,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(10, 'PSect field is present multiple times')], ERR_QSO: []})
 
@@ -407,6 +419,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(None, 'TDate field is not present')], ERR_QSO: []})
 
@@ -416,6 +429,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(1, 'TDate field value is not valid (20170101,20170102)')],
                                   ERR_QSO: []})
@@ -425,6 +439,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [(1, 'TDate field value is not valid (20170101;201701020)')],
@@ -436,10 +451,23 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [(4, 'TDate field is present multiple times')],
                                   ERR_QSO: []})
+
+        # test with valid header and invalid QSO
+        invalid_edi_log = valid_edi_log + '\n999999;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;'
+        mo = mock.mock_open(read_data=invalid_edi_log)
+        with patch('builtins.open', mo, create=True):
+            log = edi.Log('some_log_file.edi')
+            self.assertTrue(log.valid_header)
+            self.assertFalse(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {ERR_IO: [],
+                                  ERR_HEADER: [],
+                                  ERR_QSO: [(55, 'QSO date is invalid: unconverted data remains: 99')]})
 
     @mock.patch('os.path.isfile')
     def test_init_with_rules(self, mock_isfile):
@@ -695,7 +723,6 @@ class TestEdiOperator(TestCase):
         op = edi.Operator('yo5pjb')
         mo = mock.mock_open(read_data=valid_edi_log)
         with patch('builtins.open', mo, create=True):
-            # log = edi.Log('some_log_file.edi')
             op.add_log('some_log_file.edi')
             self.assertEqual(len(op.logs), 1)
             op.add_log('some_log_file.edi')
