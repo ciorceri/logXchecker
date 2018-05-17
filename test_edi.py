@@ -628,6 +628,7 @@ class TestEdiLog(TestCase):
         for test in negative_tests:
             self.assertFalse(edi.Log.rules_based_validate_section(test, _rules))
 
+
 class TestEdiLogQso(TestCase):
     def test_init(self):
         for (linenr, qso, valid, error) in test_logQso_qsos:
@@ -682,3 +683,36 @@ class TestEdiLogQso(TestCase):
             self.assertEqual(lq.qso_line, qso)
             self.assertEqual(lq.valid, valid)
             self.assertEqual(lq.errors, error)
+
+
+class TestEdiOperator(TestCase):
+    def test_init(self):
+        op = edi.Operator('yo5pjb')
+        self.assertEqual(op.callsign, 'yo5pjb')
+        self.assertEqual(op.logs, [])
+
+    def test_all_log(self):
+        op = edi.Operator('yo5pjb')
+        mo = mock.mock_open(read_data=valid_edi_log)
+        with patch('builtins.open', mo, create=True):
+            # log = edi.Log('some_log_file.edi')
+            op.add_log('some_log_file.edi')
+            self.assertEqual(len(op.logs), 1)
+            op.add_log('some_log_file.edi')
+            self.assertEqual(len(op.logs), 2)
+            self.assertIsInstance(op.logs[0], edi.Log)
+            self.assertIsInstance(op.logs[1], edi.Log)
+
+
+class TestEdiHelperFunctions(TestCase):
+    def test_dict_to_json(self):
+        input = {'1': '2',
+                 'Hello': 'World!'}
+        output = '{"1": "2", "Hello": "World!"}'
+        self.assertEqual(edi.dict_to_json(input), output)
+
+    def test_dict_to_xml(self):
+        input = {'1': '2',
+                 'Hello': 'World!'}
+        output = b'<?xml version="1.0" encoding="UTF-8" ?><root><n1 type="str">2</n1><Hello type="str">World!</Hello></root>'
+        self.assertEqual(edi.dict_to_xml(input), output)
