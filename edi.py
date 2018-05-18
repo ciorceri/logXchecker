@@ -81,6 +81,7 @@ class Log(object):
     date = None
     email = None
     address = None
+    name = None
 
     qsos_tuple = namedtuple('qso_tuple', ['linenr', 'qso', 'valid', 'errors']) # REMOVE
     qsos = list()   # list with LogQso instances
@@ -221,6 +222,22 @@ class Log(object):
                 self.address = _address[0]
                 _address_valid = True
             if not _address_valid:
+                self.valid_header = False
+
+        # validate name from [extra] @ rules
+        _name, line_nr = self.get_field('RName')
+        _name_valid = False
+        if self.rules and 'name' in self.rules.contest_extra_fields:
+            if not _name:
+                self.errors[ERR_HEADER].append((line_nr, 'RName field is not present'))
+            elif len(_name) > 1:
+                self.errors[ERR_HEADER].append((line_nr, 'RName is present multiple times'))
+            elif len(_name[0]) < 8:
+                self.errors[ERR_HEADER].append((line_nr, 'RName field is too short ({})'.format(_name[0])))
+            else:
+                self.name = _name[0]
+                _name_valid = True
+            if not _name_valid:
                 self.valid_header = False
 
     @staticmethod

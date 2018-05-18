@@ -71,6 +71,7 @@ bands=band1,band2
 [extra]
 email=yes
 address=no
+name=yes
 ```
 The rules format is based on [INI file format](http://en.wikipedia.org/wiki/INI_file).
 There are the following sections:
@@ -86,7 +87,7 @@ There are the following sections:
     [category1], [category2], ... [categoryN]
         rules about contest categories (single/multi operator[s], category bands)
     [extra]
-        rules presence and validation of other header fields (email, address)
+        rules presence and validation of other header fields (email, address, name)
 
 The following errors can be displayed if validation fails:
 
@@ -100,8 +101,11 @@ The following errors can be displayed if validation fails:
     - Line 3 : TDate field value is not valid (201605070;20160508)
 
 If a rules file was provided the following errors can be displayed if validation fails:
-    - ....
-    
+    - Rules validation errors:
+      - ...
+    - Log file validation errors:
+      - ...
+
 Notes:
 
     - This is a work in progress and there are still more things to add.

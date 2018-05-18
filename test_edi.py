@@ -117,6 +117,17 @@ RHBBS=name@email.com
 PAdr1=None 
 """
 
+invalid_edi_log_RName = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+RHBBS=name@email.com
+PAdr1=Sesame Street, 13
+RName=cucu
+"""
+
 test_valid_qso_lines = [
     '130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;',
     '160507;1531;YO7LBX/P;1;59;006;59;016;;KN14QW;76;;;;',
@@ -513,7 +524,8 @@ class TestEdiLog(TestCase):
                                                (None, 'PSect field is not present'),
                                                (None, 'TDate field is not present'),
                                                (None, 'RHBBS field is not present'),
-                                               (None, 'PAdr1 field is not present')],
+                                               (None, 'PAdr1 field is not present'),
+                                               (None, 'RName field is not present')],
                                   ERR_QSO: []})
 
         # test with valid rules and with invalid edi log (invalid PSect)
@@ -528,7 +540,8 @@ class TestEdiLog(TestCase):
                                                    'Not as defined in contest rules'),
                                                (None, 'TDate field is not present'),
                                                (None, 'RHBBS field is not present'),
-                                               (None, 'PAdr1 field is not present')],
+                                               (None, 'PAdr1 field is not present'),
+                                               (None, 'RName field is not present')],
                                   ERR_QSO: []})
 
         # test with valid rules and with invalid edi log (invalid TDate)
@@ -542,7 +555,8 @@ class TestEdiLog(TestCase):
                                   ERR_HEADER: [(6, 'TDate field value has an invalid value (20250101;20250102). '
                                                  'Not as defined in contest rules'),
                                                (None, 'RHBBS field is not present'),
-                                               (None, 'PAdr1 field is not present')],
+                                               (None, 'PAdr1 field is not present'),
+                                               (None, 'RName field is not present')],
                                   ERR_QSO: []})
 
         # test with valid rules and with invalid edi log (invalid RHBBS)
@@ -553,7 +567,8 @@ class TestEdiLog(TestCase):
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {'header': [(7, 'RHBBS field value is not valid (invalid email address)'),
-                                             (None, 'PAdr1 field is not present')],
+                                             (None, 'PAdr1 field is not present'),
+                                             (None, 'RName field is not present')],
                                   'io': [],
                                   'qso': []})
 
@@ -564,7 +579,19 @@ class TestEdiLog(TestCase):
             self.assertFalse(log.valid_header)
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
-                                 {'header': [(8, 'PAdr1 field is too short (None)')],
+                                 {'header': [(8, 'PAdr1 field is too short (None)'),
+                                             (None, 'RName field is not present')],
+                                  'io': [],
+                                  'qso': []})
+
+        # test with valid rules and with invalid edi log (invalid RName)
+        mo_log = mock.mock_open(read_data=invalid_edi_log_RName)
+        with patch('builtins.open', mo_log, create=True):
+            log = edi.Log('some_log_file.edi', rules=_rules)
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {'header': [(9, 'RName field is too short (cucu)')],
                                   'io': [],
                                   'qso': []})
 
