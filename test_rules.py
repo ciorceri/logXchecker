@@ -90,7 +90,7 @@ VALID_EXTRA_FIELD = """
 [extra]
 name=yes
 email=yes
-address=no
+address=yes
 """
 
 VALID_RULES = VALID_CONTEST_SECTION + \
@@ -318,7 +318,7 @@ class TestRules(TestCase):
         self.assertEqual(_rules.contest_category(4)['name'], 'Multi Operator')
         self.assertEqual(_rules.contest_category(4)['regexp'], 'mo|multi')
         self.assertEqual(_rules.contest_category(4)['bands'], 'band1,band2')
-        self.assertEqual(_rules.contest_extra_field, ['name', 'email'])
+        self.assertEqual(_rules.contest_extra_fields, ['name', 'email', 'address'])
 
     def test_init_fail(self):
         # test 'file not found'

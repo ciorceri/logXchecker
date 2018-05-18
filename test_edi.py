@@ -91,11 +91,30 @@ PBand=144 MHz
 PSect=extraterrestrial
 """
 invalid_edi_log_TDate = """
-TDate=20250101;20250102
 PCall=YO5PJB
 PWWLo=KN16SS
 PBand=144 MHz
 PSect=SOMB
+TDate=20250101;20250102
+"""
+
+invalid_edi_log_RHBBS = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+RHBBS=invalid email address
+"""
+
+invalid_edi_log_PAdr1 = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+RHBBS=name@email.com
+PAdr1=None 
 """
 
 test_valid_qso_lines = [
@@ -486,24 +505,30 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(4, 'PBand field value has an invalid value (200 MHz). '
-                                                             'Not as defined in contest rules'),
-                                                           (None, 'PSect field is not present'),
-                                                           (None, 'TDate field is not present'),
-                                                           (None, 'RHBBS field is not present')], ERR_QSO: []})
+                                 {ERR_IO: [],
+                                  ERR_HEADER: [(4, 'PBand field value has an invalid value (200 MHz). '
+                                                   'Not as defined in contest rules'),
+                                               (None, 'PSect field is not present'),
+                                               (None, 'TDate field is not present'),
+                                               (None, 'RHBBS field is not present'),
+                                               (None, 'PAdr1 field is not present')],
+                                  ERR_QSO: []})
 
         # test with valid rules and with invalid edi log (invalid PSect)
         mo_log = mock.mock_open(read_data=invalid_edi_log_PSect)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [(5, 'PSect field value has an invalid value (extraterrestrial). '
                                                    'Not as defined in contest rules'),
                                                (None, 'TDate field is not present'),
-                                               (None, 'RHBBS field is not present')],
+                                               (None, 'RHBBS field is not present'),
+                                               (None, 'PAdr1 field is not present')],
                                   ERR_QSO: []})
 
         # test with valid rules and with invalid edi log (invalid TDate)
@@ -511,17 +536,37 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
-                                  ERR_HEADER: [(2, 'TDate field value has an invalid value (20250101;20250102). '
+                                  ERR_HEADER: [(6, 'TDate field value has an invalid value (20250101;20250102). '
                                                  'Not as defined in contest rules'),
-                                               (None, 'RHBBS field is not present')],
+                                               (None, 'RHBBS field is not present'),
+                                               (None, 'PAdr1 field is not present')],
                                   ERR_QSO: []})
 
         # test with valid rules and with invalid edi log (invalid RHBBS)
-        # TODO ...
+        mo_log = mock.mock_open(read_data=invalid_edi_log_RHBBS)
+        with patch('builtins.open', mo_log, create=True):
+            log = edi.Log('some_log_file.edi', rules=_rules)
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {'header': [(7, 'RHBBS field value is not valid (invalid email address)'),
+                                             (None, 'PAdr1 field is not present')],
+                                  'io': [],
+                                  'qso': []})
+
         # test with valid rules and with invalid edi log (invalid PAdr1)
-        # TODO ...
+        mo_log = mock.mock_open(read_data=invalid_edi_log_PAdr1)
+        with patch('builtins.open', mo_log, create=True):
+            log = edi.Log('some_log_file.edi', rules=_rules)
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {'header': [(8, 'PAdr1 field is too short (None)')],
+                                  'io': [],
+                                  'qso': []})
 
     def test_read_file_content(self):
         # test 'read_file_content', the buildins.open is mocked
@@ -567,7 +612,7 @@ class TestEdiLog(TestCase):
 
     def test_validate_callsign(self):
         positive_tests = ['yo5pjb', 'YO5PJB', 'YO5pjb', 'K4X', 'A22A', 'I20000X', '4X4AAA', '3DA0RS']
-        negative_tests = ['yo%pjb', 'yoSpjb']
+        negative_tests = [None, '', 'yo%pjb', 'yoSpjb']
 
         for test in positive_tests:
             self.assertTrue(edi.Log.validate_callsign(test))
@@ -576,15 +621,24 @@ class TestEdiLog(TestCase):
 
     def test_validate_email(self):
         positive_tests = ['yo5pjb@mail.com']
-        negative_tests = ['yo5pjb.mail.com', 'yo5pjb', '@mail.com']
+        negative_tests = [None, '', 'yo5pjb.mail.com', 'yo5pjb', '@mail.com']
         for test in positive_tests:
             self.assertTrue(edi.Log.validate_email(test))
         for test in negative_tests:
             self.assertFalse(edi.Log.validate_email(test))
 
+    def test_validate_address(self):
+        positive_tests = ['Sesame Street', 'SesameStreet,13', 'SesameStreetNo.13']
+        negative_tests = [None, '', 'short', 'NewStr13']
+        for test in positive_tests:
+            self.assertTrue(edi.Log.validate_address(test))
+        for test in negative_tests:
+            self.assertFalse(edi.Log.validate_address(test))
+
+
     def test_validate_qth_locator(self):
         positive_tests = ['KN16SS', 'kn16ss', 'AA00AA', 'RR00XX']
-        negative_tests = ['0016SS', 'KNXXSS', 'KN1600', 'KN16SS00', '00KN16SS']
+        negative_tests = [None, '', '0016SS', 'KNXXSS', 'KN1600', 'KN16SS00', '00KN16SS']
 
         for test in positive_tests:
             self.assertTrue(edi.Log.validate_qth_locator(test))
@@ -593,9 +647,9 @@ class TestEdiLog(TestCase):
 
     def test_get_band(self):
         positive_tests_144 = ['144', '145', '144mhz', '145mhz']
-        negative_tests_144 = [' 144', ' 145', '143', '146']
+        negative_tests_144 = [None, '', ' 144', ' 145', '143', '146']
         positive_tests_432 = ['430', '432', '435', '430mhz', '432mhz', '432.200', '435mhz']
-        negative_tests_432 = ['431', '433', '434']
+        negative_tests_432 = [None, '', '431', '433', '434']
 
         for test in positive_tests_144:
             self.assertEqual(144, edi.Log.get_band(test))
@@ -612,7 +666,7 @@ class TestEdiLog(TestCase):
     def test_validate_band(self):
         positive_tests = ['144', '145', '144mhz', '145mhz', '430', '432', '435', '430mhz', '432mhz', '432.2',
                           '435hz', '1296', '1296mhz', '1.2g', '1.3g']
-        negative_tests = ['143', '146', '431', '433', '1200']
+        negative_tests = [None, '', '143', '146', '431', '433', '1200']
         for test in positive_tests:
             self.assertTrue(edi.Log.validate_band(test))
         for test in negative_tests:
@@ -622,7 +676,7 @@ class TestEdiLog(TestCase):
     def test_rules_based_validate_band(self, mock_isfile):
         mock_isfile.return_value = True
         positive_tests = ['144', '145', '144mhz', '145mhz', '430', '432', '430mhz', '432mhz', '432.2']
-        negative_tests = ['143', '146', '431', '433', '435']
+        negative_tests = [None, '', '143', '146', '431', '433', '435']
 
         mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
@@ -635,7 +689,7 @@ class TestEdiLog(TestCase):
     def test_validate_section(self):
         positive_tests = ['so', 'sosb', 'somb', 'single', 'single op', 'single-op',
                           'mo', 'mosb', 'momb', 'multi', 'multi op', 'multi-op']
-        negative_tests = ['operator', 'band']
+        negative_tests = [None, '', 'operator', 'band']
         for test in positive_tests:
             self.assertTrue(edi.Log.validate_section(test))
         for test in negative_tests:
@@ -647,7 +701,7 @@ class TestEdiLog(TestCase):
         positive_tests = ['so', 'sosb', 'somb', 'single', 'mo', 'multi',
                           'single-op', 'single-operator', 'single operator',
                           'multi-op', 'multi-operator' 'multi operator']
-        negative_tests = ['operator', 'band']
+        negative_tests = [None, '', 'operator', 'band']
         mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
             _rules = rules.Rules('some_rule_file.rules')

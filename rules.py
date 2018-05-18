@@ -317,5 +317,5 @@ class Rules(object):
         return self.config['log']['format'].upper()
 
     @property
-    def contest_extra_field(self):
+    def contest_extra_fields(self):
         return [x for x in self.config['extra'] if self.config['extra'][x].upper() == 'YES']
