@@ -467,8 +467,8 @@ class LogQso(object):
                               '(?P<rst_sent>.*?);(?P<nr_sent>.*?);(?P<rst_recv>.*?);(?P<nr_recv>.*?);' \
                               '(?P<exchange_recv>.*?);(?P<wwl>.*?);(?P<points>.*?);' \
                               '(?P<new_exchange>.*?);(?P<new_wwl>.*?);(?P<new_dxcc>.*?);(?P<duplicate_qso>.*?)'
-    REGEX_MEDIUM_QSO_CHECK = r'^\d{6};\d{4};.*?;.?;\d{2,3}.?;\d{2,4};\d{2,3}.?;\d{2,4};.*?;' \
-                              '[a-zA-Z]{2}\d{2}[a-zA-Z]{2};.*?;.*?;.*?;.*?;.*?'
+    REGEX_MEDIUM_QSO_CHECK = '\d{6};\d{4};.*?;.?;\d{2,3}.?;\d{2,4};\d{2,3}.?;\d{2,4};.*?;' \
+                             '[a-zA-Z]{2}\d{2}[a-zA-Z]{2};.*?;.*?;.*?;.*?;.*?'
     #                          date  time   id  m    rst       nr      rst       nr    .  qth  km  .   .   .   .
 
     qso_line = None
@@ -543,15 +543,21 @@ class LogQso(object):
         :return: None or error message
         """
         qso_min_line_length = 40
+        field_names = ('date', 'hour', 'callsign', 'mode', 'rst sent', 'rst send nr', 'rst received', 'rst received nr',
+                       'exchange received', 'wwl', 'points', 'new exchange', 'new wwl', 'new dxcc', 'duplicate_qso')
 
         if len(line) < qso_min_line_length:
             return 'QSO line is too short'
         res = re.match(cls.REGEX_MINIMAL_QSO_CHECK, line)
         if not res:
-            return 'Incorrect QSO line format (minimal QSO checks didn\'t pass).'
+            return 'Incorrect QSO line format (incorrect number of fields).'
         res = re.match(cls.REGEX_MEDIUM_QSO_CHECK, line)
         if not res:
-            return 'Incorrect QSO line format. (QSO checks didn\'t pass).'
+            for (regex, field, name) in zip(cls.REGEX_MEDIUM_QSO_CHECK.split(';'),
+                                            line.split(';'),
+                                            field_names):
+                if not re.match('^'+regex+'$', field):
+                    return 'QSO field <{}> has an invalid value : {}'.format(name, field)
         return None
 
     def generic_qso_validator(self):
