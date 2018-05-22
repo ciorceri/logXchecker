@@ -18,6 +18,7 @@ import datetime
 from collections import namedtuple
 import json
 from dicttoxml import dicttoxml
+from validate_email import validate_email
 
 INFO_LOG = 'log'
 INFO_FOLDER = 'folder'
@@ -79,6 +80,9 @@ class Log(object):
     band = None
     section = None
     date = None
+    email = None
+    address = None
+    name = None
 
     qsos_tuple = namedtuple('qso_tuple', ['linenr', 'qso', 'valid', 'errors']) # REMOVE
     qsos = list()   # list with LogQso instances
@@ -125,6 +129,8 @@ class Log(object):
             self.errors[ERR_HEADER].append((line_nr, 'PCall field is not present'))
         elif len(_callsign) > 1:
             self.errors[ERR_HEADER].append((line_nr, 'PCall field is present multiple times'))
+        elif not self.validate_callsign(_callsign[0]):
+            self.errors[ERR_HEADER].append((line_nr, 'PCall field content is not valid'))
         else:
             self.callsign = _callsign[0]
 
@@ -182,8 +188,83 @@ class Log(object):
         else:
             self.date = _date[0]
 
+        # are all mandatory fields valid ?
         if all((self.callsign, self.maidenhead_locator, self.band, self.section, self.date)):
             self.valid_header = True
+
+        # validate email from [extra] @ rules
+        _email, line_nr = self.get_field('RHBBS')
+        _email_valid = False
+        if self.rules and 'email' in self.rules.contest_extra_fields:
+            if not _email:
+                self.errors[ERR_HEADER].append((line_nr, 'RHBBS field is not present'))
+            elif len(_email) > 1:
+                self.errors[ERR_HEADER].append((line_nr, 'RHBBS is present multiple times'))
+            elif not self.validate_email(_email[0]):
+                self.errors[ERR_HEADER].append((line_nr, 'RHBBS field value is not valid ({})'.format(_email[0])))
+            else:
+                self.email = _email[0]
+                _email_valid = True
+            if not _email_valid:
+                self.valid_header = False
+
+        # validate address from [extra] @ rules
+        _address, line_nr = self.get_field('PAdr1')
+        _address_valid = False
+        if self.rules and 'address' in self.rules.contest_extra_fields:
+            if not _address:
+                self.errors[ERR_HEADER].append((line_nr, 'PAdr1 field is not present'))
+            elif len(_address) > 1:
+                self.errors[ERR_HEADER].append((line_nr, 'PAdr1 is present multiple times'))
+            elif not self.validate_address(_address[0]):
+                self.errors[ERR_HEADER].append((line_nr, 'PAdr1 field is too short ({})'.format(_address[0])))
+            else:
+                self.address = _address[0]
+                _address_valid = True
+            if not _address_valid:
+                self.valid_header = False
+
+        # validate name from [extra] @ rules
+        _name, line_nr = self.get_field('RName')
+        _name_valid = False
+        if self.rules and 'name' in self.rules.contest_extra_fields:
+            if not _name:
+                self.errors[ERR_HEADER].append((line_nr, 'RName field is not present'))
+            elif len(_name) > 1:
+                self.errors[ERR_HEADER].append((line_nr, 'RName is present multiple times'))
+            elif len(_name[0]) < 8:
+                self.errors[ERR_HEADER].append((line_nr, 'RName field is too short ({})'.format(_name[0])))
+            else:
+                self.name = _name[0]
+                _name_valid = True
+            if not _name_valid:
+                self.valid_header = False
+
+    @staticmethod
+    def read_file_content(path):
+        try:
+            with open(path, 'r') as _file:
+                content = _file.readlines()
+        except IOError:
+            raise
+        except Exception:
+            raise
+        return content
+
+    def get_field(self, field):
+        """
+        Search log content for a field
+        :param field: field name (PCall, TDate, ...)
+        :return: tuple(value, line_number or None)
+        """
+        value = []
+        line_nr = None
+        _field = str(field).upper() + '='
+        for (nr, line_content) in enumerate(self.log_lines):
+            if line_content.upper().startswith(_field):
+                value.append(line_content.split('=', 1)[1].strip())
+                line_nr = nr+1
+        return value, line_nr
 
     def get_qsos(self):
         """
@@ -214,33 +295,17 @@ class Log(object):
             )
 
     @staticmethod
-    def read_file_content(path):
-        try:
-            with open(path, 'r') as _file:
-                content = _file.readlines()
-        except IOError:
-            raise
-        except Exception:
-            raise
-        return content
-
-    def get_field(self, field):
-        """
-        Search log content for a field
-        :param field: field name (PCall, TDate, ...)
-        :return: tuple(value, line_number or None)
-        """
-        value = []
-        line_nr = None
-        _field = str(field).upper() + '='
-        for (nr, line_content) in enumerate(self.log_lines):
-            if line_content.upper().startswith(_field):
-                value.append(line_content.split('=', 1)[1].strip())
-                line_nr = nr+1
-        return value, line_nr
+    def validate_callsign(callsign):
+        if not callsign:
+            return False
+        regex_pcall = "^\s*(\w+[0-9]+\w+)\s*$"    # \s*(\w+\d+[a-zA-Z]+(/(M|AM|P|MM))?)\s*$"
+        res = re.match(regex_pcall, callsign)
+        return True if res else False
 
     @staticmethod
     def validate_qth_locator(qth):
+        if not qth:
+            return False
         regex_maidenhead = r'^\s*([a-rA-R]{2}\d{2}[a-xA-X]{2})\s*$'
         res = re.match(regex_maidenhead, qth, re.IGNORECASE)
         return True if res else False
@@ -253,6 +318,8 @@ class Log(object):
         :param band: the content of 'PBand=' field
         :return: The detected band (144,432,1296) or None
         """
+        if not band:
+            return None
 
         regexp_band = {144: ['144.*', '145.*'],
                        432: ['430.*', '432.*', '435.*'],
@@ -270,6 +337,8 @@ class Log(object):
         This will validate PBand based on generic rules
         """
         is_valid = False
+        if not band_value:
+            return is_valid
 
         regexp_band_check = ['144.*', '145.*',
                              '430.*', '432.*', '435.*',
@@ -286,6 +355,8 @@ class Log(object):
         This will validate PBand based on Rules class instance
         """
         is_valid = False
+        if not band_value:
+            return is_valid
 
         if rules is None:
             raise ValueError('No contest rules provided !')
@@ -302,6 +373,8 @@ class Log(object):
         This will validate PSect based on generic rules
         """
         is_valid = False
+        if not section_value:
+            return is_valid
 
         regexpSectCheck = ['.*SOSB.*', '.*SOMB.*', '.*Single.*', '^SO$',
                            '.*MOSB.*', '.*MOMB.*', '.*Multi.*', '^MO$',
@@ -318,6 +391,8 @@ class Log(object):
         This will validate PSect based on Rules class instance
         """
         is_valid = False
+        if not section_value:
+            return is_valid
 
         if rules is None:
             raise ValueError('No contest rules provided !')
@@ -346,6 +421,29 @@ class Log(object):
                 break
         return is_valid
 
+    @staticmethod
+    def validate_email(email):
+        if not email:
+            return False
+        return validate_email(email)
+
+    @staticmethod
+    def validate_address(address):
+        """
+        Small validation that we have some address.
+        We check to have at least 10 characters
+        and address to contain char: space or commma or period
+        """
+        if not address:
+            return False
+        if len(address) < 10:
+            return False
+        chars_to_search = (' ', ',', '.')
+        res = list(filter(lambda x: x in chars_to_search, address.strip()))
+        if not res:
+            return False
+        return True
+
     def rules_based_validate_date(self, date_value, rules):
         """
         This will validate TDate based on Ruless class instance
@@ -369,8 +467,8 @@ class LogQso(object):
                               '(?P<rst_sent>.*?);(?P<nr_sent>.*?);(?P<rst_recv>.*?);(?P<nr_recv>.*?);' \
                               '(?P<exchange_recv>.*?);(?P<wwl>.*?);(?P<points>.*?);' \
                               '(?P<new_exchange>.*?);(?P<new_wwl>.*?);(?P<new_dxcc>.*?);(?P<duplicate_qso>.*?)'
-    REGEX_MEDIUM_QSO_CHECK = r'^\d{6};\d{4};.*?;.?;\d{2,3}.?;\d{2,4};\d{2,3}.?;\d{2,4};.*?;' \
-                              '[a-zA-Z]{2}\d{2}[a-zA-Z]{2};.*?;.*?;.*?;.*?;.*?'
+    REGEX_MEDIUM_QSO_CHECK = '\d{6};\d{4};.*?;.?;\d{2,3}.?;\d{2,4};\d{2,3}.?;\d{2,4};.*?;' \
+                             '[a-zA-Z]{2}\d{2}[a-zA-Z]{2};.*?;.*?;.*?;.*?;.*?'
     #                          date  time   id  m    rst       nr      rst       nr    .  qth  km  .   .   .   .
 
     qso_line = None
@@ -408,7 +506,7 @@ class LogQso(object):
         self.validate_qso_format()
         if not self.valid:
             return
-        self.parse_qso()
+        self.parse_qso_fields()
 
         # 2nd validation
         self.generic_qso_validator()
@@ -427,7 +525,7 @@ class LogQso(object):
             self.errors.append((self.line_nr, err))
             self.valid = False
 
-    def parse_qso(self):
+    def parse_qso_fields(self):
         """
         This should parse a qso based on log format
         """
@@ -444,15 +542,21 @@ class LogQso(object):
         :return: None or error message
         """
         qso_min_line_length = 40
+        field_names = ('date', 'hour', 'callsign', 'mode', 'rst sent', 'rst send nr', 'rst received', 'rst received nr',
+                       'exchange received', 'wwl', 'points', 'new exchange', 'new wwl', 'new dxcc', 'duplicate_qso')
 
         if len(line) < qso_min_line_length:
             return 'QSO line is too short'
         res = re.match(cls.REGEX_MINIMAL_QSO_CHECK, line)
         if not res:
-            return 'Incorrect QSO line format (minimal QSO checks didn\'t pass).'
+            return 'Incorrect QSO line format (incorrect number of fields).'
         res = re.match(cls.REGEX_MEDIUM_QSO_CHECK, line)
         if not res:
-            return 'Incorrect QSO line format. (QSO checks didn\'t pass).'
+            for (regex, field, name) in zip(cls.REGEX_MEDIUM_QSO_CHECK.split(';'),
+                                            line.split(';'),
+                                            field_names):
+                if not re.match('^'+regex+'$', field):
+                    return 'QSO field <{}> has an invalid value : {}'.format(name, field)
         return None
 
     def generic_qso_validator(self):
@@ -540,22 +644,22 @@ class LogQso(object):
         if self.qso_fields['date'] < self.rules.contest_begin_date[2:]:
             self.valid = False
             self.errors.append((self.line_nr,
-                                         'QSO date is invalid: before contest starts (<{})'.format(self.rules.contest_begin_date[2:])))
+                                'QSO date is invalid: before contest starts (<{})'.format(self.rules.contest_begin_date[2:])))
         if self.qso_fields['date'] > self.rules.contest_end_date[2:]:
             self.valid = False
             self.errors.append((self.line_nr,
-                                         'QSO date is invalid: after contest ends (>{})'.format(self.rules.contest_end_date[2:])))
+                                'QSO date is invalid: after contest ends (>{})'.format(self.rules.contest_end_date[2:])))
 
         # validate qso hour
         if self.qso_fields['date'] == self.rules.contest_begin_date[2:] and \
            self.qso_fields['hour'] < self.rules.contest_begin_hour:
             self.valid = False
             self.errors.append((self.line_nr,
-                                         'QSO hour is invalid: before contest start hour (<{})'.format(self.rules.contest_begin_hour)))
+                                'QSO hour is invalid: before contest start hour (<{})'.format(self.rules.contest_begin_hour)))
         if self.qso_fields['date'] == self.rules.contest_end_date[2:] and self.qso_fields['hour'] > self.rules.contest_end_hour:
             self.valid = False
             self.errors.append((self.line_nr,
-                                         'QSO hour is invalid: after contest end hour (>{})'.format(self.rules.contest_end_hour)))
+                                'QSO hour is invalid: after contest end hour (>{})'.format(self.rules.contest_end_hour)))
 
         # validate date & hour based on period
         inside_period = False
@@ -585,13 +689,13 @@ class LogQso(object):
         if not inside_period:
             self.valid = False
             self.errors.append((self.line_nr,
-                                         'QSO date/hour is invalid: not inside contest periods'))
+                                'QSO date/hour is invalid: not inside contest periods'))
 
         # validate qso mode
         if int(self.qso_fields['mode']) not in self.rules.contest_qso_modes:
             self.valid = False
             self.errors.append((self.line_nr,
-                                         'QSO mode is invalid: not in defined modes ({})'.format(self.rules.contest_qso_modes)))
+                                'QSO mode is invalid: not in defined modes ({})'.format(self.rules.contest_qso_modes)))
         return None
 
 

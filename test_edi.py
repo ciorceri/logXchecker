@@ -91,11 +91,41 @@ PBand=144 MHz
 PSect=extraterrestrial
 """
 invalid_edi_log_TDate = """
-TDate=20250101;20250102
 PCall=YO5PJB
 PWWLo=KN16SS
 PBand=144 MHz
 PSect=SOMB
+TDate=20250101;20250102
+"""
+
+invalid_edi_log_RHBBS = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+RHBBS=invalid email address
+"""
+
+invalid_edi_log_PAdr1 = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+RHBBS=name@email.com
+PAdr1=None 
+"""
+
+invalid_edi_log_RName = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+RHBBS=name@email.com
+PAdr1=Sesame Street, 13
+RName=cucu
 """
 
 test_valid_qso_lines = [
@@ -160,14 +190,14 @@ test_valid_qso_fields = [
 
 test_invalid_qso_lines = [
     ('123456789012345678', 'QSO line is too short'),
-    ('130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;', 'Incorrect QSO line format (minimal QSO checks didn\'t pass).'),
-    ('30803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', 'Incorrect QSO line format. (QSO checks didn\'t pass).'),
-    ('130803;319;YO5BTZ;;59;001;59;001;;KN16SS;1;;;;', 'Incorrect QSO line format. (QSO checks didn\'t pass).'),
-    ('130803;1319;YO5BTZ;6;9;001;59;001;;KN16SS;1;;;;', 'Incorrect QSO line format. (QSO checks didn\'t pass).'),
-    ('130803;1319;YO5BTZ;6;59;1;59;001;;KN16SS;1;;;;', 'Incorrect QSO line format. (QSO checks didn\'t pass).'),
-    ('130803;1319;YO5BTZ;6;59;00001;59;001;;KN16SS;1;;;;', 'Incorrect QSO line format. (QSO checks didn\'t pass).'),
-    ('130803;1319;YO5BTZ;6;59;001;9;001;;KN16SS;1;;;;', 'Incorrect QSO line format. (QSO checks didn\'t pass).'),
-    ('130803;1319;YO5BTZ;6;59;001;59;00001;;KN16SS;1;;;;', 'Incorrect QSO line format. (QSO checks didn\'t pass).'),
+    ('130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;', 'Incorrect QSO line format (incorrect number of fields).'),
+    ('30803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', 'QSO field <date> has an invalid value : 30803'),
+    ('130803;319;YO5BTZ;;59;001;59;001;;KN16SS;1;;;;', 'QSO field <hour> has an invalid value : 319'),
+    ('130803;1319;YO5BTZ;6;9;001;59;001;;KN16SS;1;;;;', 'QSO field <rst sent> has an invalid value : 9'),
+    ('130803;1319;YO5BTZ;6;59;1;59;001;;KN16SS;1;;;;', 'QSO field <rst send nr> has an invalid value : 1'),
+    ('130803;1319;YO5BTZ;6;59;00001;59;001;;KN16SS;1;;;;', 'QSO field <rst send nr> has an invalid value : 00001'),
+    ('130803;1319;YO5BTZ;6;59;001;9;001;;KN16SS;1;;;;', 'QSO field <rst received> has an invalid value : 9'),
+    ('130803;1319;YO5BTZ;6;59;001;59;00002;;KN16SS;1;;;;', 'QSO field <rst received nr> has an invalid value : 00002'),
 ]
 
 test_logQso_qsos = [
@@ -205,11 +235,11 @@ test_logQso_qsos = [
 
 test_logQso_regexp_qso_validator = [
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;0016SS;1;;;;', valid=False,
-                       errors=[(5, "Incorrect QSO line format. (QSO checks didn't pass).")]),
+                       errors=[(5, 'QSO field <wwl> has an invalid value : 0016SS')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN1600;1;;;;', valid=False,
-                       errors=[(5, "Incorrect QSO line format. (QSO checks didn't pass).")]),
+                       errors=[(5, 'QSO field <wwl> has an invalid value : KN1600')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KNAASS;1;;;;', valid=False,
-                       errors=[(5, "Incorrect QSO line format. (QSO checks didn't pass).")]),
+                       errors=[(5, 'QSO field <wwl> has an invalid value : KNAASS')]),
 ]
 
 test_logQso_generic_qso_validator = [
@@ -293,6 +323,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(None, 'PCall field is not present')], ERR_QSO: []})
 
@@ -302,8 +333,21 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(5, 'PCall field is present multiple times')], ERR_QSO: []})
+
+        # test with invalid PCall
+        invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PCall=')]
+        invalid_edi_log = 'PCall=test\n' + '\n'.join(invalid_edi_log)
+        mo = mock.mock_open(read_data=invalid_edi_log)
+        with patch('builtins.open', mo, create=True):
+            log = edi.Log('some_log_file.edi')
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {ERR_IO: [], ERR_HEADER: [(1, 'PCall field content is not valid')], ERR_QSO: []})
+
 
         # test with missing PWWLo
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PWWLo=')]
@@ -312,6 +356,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(None, 'PWWLo field is not present')], ERR_QSO: []})
 
@@ -321,6 +366,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(1, 'PWWLo field value is not valid')], ERR_QSO: []})
 
@@ -330,6 +376,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(6, 'PWWLo field is present multiple times')], ERR_QSO: []})
 
@@ -340,6 +387,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(None, 'PBand field is not present')], ERR_QSO: []})
 
@@ -349,6 +397,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(1, 'PBand field value is not valid')], ERR_QSO: []})
 
@@ -358,6 +407,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(11, 'PBand field is present multiple times')], ERR_QSO: []})
 
@@ -368,6 +418,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(None, 'PSect field is not present')], ERR_QSO: []})
 
@@ -377,6 +428,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(1, 'PSect field value is not valid')], ERR_QSO: []})
 
@@ -386,6 +438,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(10, 'PSect field is present multiple times')], ERR_QSO: []})
 
@@ -396,6 +449,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(None, 'TDate field is not present')], ERR_QSO: []})
 
@@ -405,6 +459,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(1, 'TDate field value is not valid (20170101,20170102)')],
                                   ERR_QSO: []})
@@ -414,6 +469,7 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [(1, 'TDate field value is not valid (20170101;201701020)')],
@@ -425,10 +481,23 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [(4, 'TDate field is present multiple times')],
                                   ERR_QSO: []})
+
+        # test with valid header and invalid QSO
+        invalid_edi_log = valid_edi_log + '\n999999;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;'
+        mo = mock.mock_open(read_data=invalid_edi_log)
+        with patch('builtins.open', mo, create=True):
+            log = edi.Log('some_log_file.edi')
+            self.assertTrue(log.valid_header)
+            self.assertFalse(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {ERR_IO: [],
+                                  ERR_HEADER: [],
+                                  ERR_QSO: [(55, 'QSO date is invalid: unconverted data remains: 99')]})
 
     @mock.patch('os.path.isfile')
     def test_init_with_rules(self, mock_isfile):
@@ -447,22 +516,32 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(4, 'PBand field value has an invalid value (200 MHz). '
-                                                             'Not as defined in contest rules'),
-                                                           (None, 'PSect field is not present'),
-                                                           (None, 'TDate field is not present')], ERR_QSO: []})
+                                 {ERR_IO: [],
+                                  ERR_HEADER: [(4, 'PBand field value has an invalid value (200 MHz). '
+                                                   'Not as defined in contest rules'),
+                                               (None, 'PSect field is not present'),
+                                               (None, 'TDate field is not present'),
+                                               (None, 'RHBBS field is not present'),
+                                               (None, 'PAdr1 field is not present'),
+                                               (None, 'RName field is not present')],
+                                  ERR_QSO: []})
 
         # test with valid rules and with invalid edi log (invalid PSect)
         mo_log = mock.mock_open(read_data=invalid_edi_log_PSect)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [(5, 'PSect field value has an invalid value (extraterrestrial). '
-                                             'Not as defined in contest rules'),
-                                             (None, 'TDate field is not present')],
+                                                   'Not as defined in contest rules'),
+                                               (None, 'TDate field is not present'),
+                                               (None, 'RHBBS field is not present'),
+                                               (None, 'PAdr1 field is not present'),
+                                               (None, 'RName field is not present')],
                                   ERR_QSO: []})
 
         # test with valid rules and with invalid edi log (invalid TDate)
@@ -470,11 +549,51 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
             self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
-                                  ERR_HEADER: [(2, 'TDate field value has an invalid value (20250101;20250102). '
-                                                 'Not as defined in contest rules')],
+                                  ERR_HEADER: [(6, 'TDate field value has an invalid value (20250101;20250102). '
+                                                   'Not as defined in contest rules'),
+                                               (None, 'RHBBS field is not present'),
+                                               (None, 'PAdr1 field is not present'),
+                                               (None, 'RName field is not present')],
                                   ERR_QSO: []})
+
+        # test with valid rules and with invalid edi log (invalid RHBBS)
+        mo_log = mock.mock_open(read_data=invalid_edi_log_RHBBS)
+        with patch('builtins.open', mo_log, create=True):
+            log = edi.Log('some_log_file.edi', rules=_rules)
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {'header': [(7, 'RHBBS field value is not valid (invalid email address)'),
+                                             (None, 'PAdr1 field is not present'),
+                                             (None, 'RName field is not present')],
+                                  'io': [],
+                                  'qso': []})
+
+        # test with valid rules and with invalid edi log (invalid PAdr1)
+        mo_log = mock.mock_open(read_data=invalid_edi_log_PAdr1)
+        with patch('builtins.open', mo_log, create=True):
+            log = edi.Log('some_log_file.edi', rules=_rules)
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {'header': [(8, 'PAdr1 field is too short (None)'),
+                                             (None, 'RName field is not present')],
+                                  'io': [],
+                                  'qso': []})
+
+        # test with valid rules and with invalid edi log (invalid RName)
+        mo_log = mock.mock_open(read_data=invalid_edi_log_RName)
+        with patch('builtins.open', mo_log, create=True):
+            log = edi.Log('some_log_file.edi', rules=_rules)
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {'header': [(9, 'RName field is too short (cucu)')],
+                                  'io': [],
+                                  'qso': []})
 
     def test_read_file_content(self):
         # test 'read_file_content', the buildins.open is mocked
@@ -518,9 +637,34 @@ class TestEdiLog(TestCase):
             self.assertEqual(_error1, _error2)
         # self.assertEqual(test_logQso_qsos, log.qsos)
 
+    def test_validate_callsign(self):
+        positive_tests = ['yo5pjb', 'YO5PJB', 'YO5pjb', 'K4X', 'A22A', 'I20000X', '4X4AAA', '3DA0RS']
+        negative_tests = [None, '', 'yo%pjb', 'yoSpjb']
+
+        for test in positive_tests:
+            self.assertTrue(edi.Log.validate_callsign(test))
+        for test in negative_tests:
+            self.assertFalse(edi.Log.validate_callsign(test))
+
+    def test_validate_email(self):
+        positive_tests = ['yo5pjb@mail.com']
+        negative_tests = [None, '', 'yo5pjb.mail.com', 'yo5pjb', '@mail.com']
+        for test in positive_tests:
+            self.assertTrue(edi.Log.validate_email(test))
+        for test in negative_tests:
+            self.assertFalse(edi.Log.validate_email(test))
+
+    def test_validate_address(self):
+        positive_tests = ['Sesame Street', 'SesameStreet,13', 'SesameStreetNo.13']
+        negative_tests = [None, '', 'short', 'NewStr13']
+        for test in positive_tests:
+            self.assertTrue(edi.Log.validate_address(test))
+        for test in negative_tests:
+            self.assertFalse(edi.Log.validate_address(test))
+
     def test_validate_qth_locator(self):
         positive_tests = ['KN16SS', 'kn16ss', 'AA00AA', 'RR00XX']
-        negative_tests = ['0016SS', 'KNXXSS', 'KN1600', 'KN16SS00', '00KN16SS']
+        negative_tests = [None, '', '0016SS', 'KNXXSS', 'KN1600', 'KN16SS00', '00KN16SS']
 
         for test in positive_tests:
             self.assertTrue(edi.Log.validate_qth_locator(test))
@@ -529,9 +673,9 @@ class TestEdiLog(TestCase):
 
     def test_get_band(self):
         positive_tests_144 = ['144', '145', '144mhz', '145mhz']
-        negative_tests_144 = [' 144', ' 145', '143', '146']
+        negative_tests_144 = [None, '', ' 144', ' 145', '143', '146']
         positive_tests_432 = ['430', '432', '435', '430mhz', '432mhz', '432.200', '435mhz']
-        negative_tests_432 = ['431', '433', '434']
+        negative_tests_432 = [None, '', '431', '433', '434']
 
         for test in positive_tests_144:
             self.assertEqual(144, edi.Log.get_band(test))
@@ -548,7 +692,7 @@ class TestEdiLog(TestCase):
     def test_validate_band(self):
         positive_tests = ['144', '145', '144mhz', '145mhz', '430', '432', '435', '430mhz', '432mhz', '432.2',
                           '435hz', '1296', '1296mhz', '1.2g', '1.3g']
-        negative_tests = ['143', '146', '431', '433', '1200']
+        negative_tests = [None, '', '143', '146', '431', '433', '1200']
         for test in positive_tests:
             self.assertTrue(edi.Log.validate_band(test))
         for test in negative_tests:
@@ -558,7 +702,7 @@ class TestEdiLog(TestCase):
     def test_rules_based_validate_band(self, mock_isfile):
         mock_isfile.return_value = True
         positive_tests = ['144', '145', '144mhz', '145mhz', '430', '432', '430mhz', '432mhz', '432.2']
-        negative_tests = ['143', '146', '431', '433', '435']
+        negative_tests = [None, '', '143', '146', '431', '433', '435']
 
         mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
@@ -571,7 +715,7 @@ class TestEdiLog(TestCase):
     def test_validate_section(self):
         positive_tests = ['so', 'sosb', 'somb', 'single', 'single op', 'single-op',
                           'mo', 'mosb', 'momb', 'multi', 'multi op', 'multi-op']
-        negative_tests = ['operator', 'band']
+        negative_tests = [None, '', 'operator', 'band']
         for test in positive_tests:
             self.assertTrue(edi.Log.validate_section(test))
         for test in negative_tests:
@@ -583,7 +727,7 @@ class TestEdiLog(TestCase):
         positive_tests = ['so', 'sosb', 'somb', 'single', 'mo', 'multi',
                           'single-op', 'single-operator', 'single operator',
                           'multi-op', 'multi-operator' 'multi operator']
-        negative_tests = ['operator', 'band']
+        negative_tests = [None, '', 'operator', 'band']
         mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
             _rules = rules.Rules('some_rule_file.rules')
@@ -591,6 +735,7 @@ class TestEdiLog(TestCase):
             self.assertTrue(edi.Log.rules_based_validate_section(test, _rules))
         for test in negative_tests:
             self.assertFalse(edi.Log.rules_based_validate_section(test, _rules))
+
 
 class TestEdiLogQso(TestCase):
     def test_init(self):
@@ -646,3 +791,35 @@ class TestEdiLogQso(TestCase):
             self.assertEqual(lq.qso_line, qso)
             self.assertEqual(lq.valid, valid)
             self.assertEqual(lq.errors, error)
+
+
+class TestEdiOperator(TestCase):
+    def test_init(self):
+        op = edi.Operator('yo5pjb')
+        self.assertEqual(op.callsign, 'yo5pjb')
+        self.assertEqual(op.logs, [])
+
+    def test_all_log(self):
+        op = edi.Operator('yo5pjb')
+        mo = mock.mock_open(read_data=valid_edi_log)
+        with patch('builtins.open', mo, create=True):
+            op.add_log_by_path('some_log_file.edi')
+            self.assertEqual(len(op.logs), 1)
+            op.add_log_by_path('some_log_file.edi')
+            self.assertEqual(len(op.logs), 2)
+            self.assertIsInstance(op.logs[0], edi.Log)
+            self.assertIsInstance(op.logs[1], edi.Log)
+
+
+class TestEdiHelperFunctions(TestCase):
+    def test_dict_to_json(self):
+        input = {'1': '2',
+                 'Hello': 'World!'}
+        output = '{"1": "2", "Hello": "World!"}'
+        self.assertEqual(edi.dict_to_json(input), output)
+
+    def test_dict_to_xml(self):
+        input = {'1': '2',
+                 'Hello': 'World!'}
+        output = b'<?xml version="1.0" encoding="UTF-8" ?><root><n1 type="str">2</n1><Hello type="str">World!</Hello></root>'
+        self.assertEqual(edi.dict_to_xml(input), output)

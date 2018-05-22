@@ -2,7 +2,7 @@ language: python
 python:
     - 3.6.1
 before_install:
-    pip install nose coverage dicttoxml
+    pip install nose coverage dicttoxml validate_email
 script:
     - python -m py_compile logXchecker.py
     - python -m py_compile edi.py
@@ -10,4 +10,4 @@ script:
     - python -m py_compile test_edi.py
     - python -m py_compile test_rules.py
     - python -m py_compile test_parser.py
-    - nosetests -v --with-coverage --cover-erase --cover-html --cover-xml --cover-xml-file=cov.xml --cover-package=. --cover-min-percentage=80
+    - nosetests -v --with-coverage --cover-erase --cover-html --cover-xml --cover-xml-file=cov.xml --cover-package=. --cover-min-percentage=88

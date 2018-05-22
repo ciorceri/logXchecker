@@ -86,6 +86,12 @@ name=Multi Operator
 regexp=mo|multi
 bands=band1,band2
 """
+VALID_EXTRA_FIELD = """
+[extra]
+name=yes
+email=yes
+address=yes
+"""
 
 VALID_RULES = VALID_CONTEST_SECTION + \
               VALID_LOG_SECTION + \
@@ -96,10 +102,11 @@ VALID_RULES = VALID_CONTEST_SECTION + \
               VALID_CATEGORY1_SECTION + \
               VALID_CATEGORY2_SECTION + \
               VALID_CATEGORY3_SECTION + \
-              VALID_CATEGORY4_SECTION
+              VALID_CATEGORY4_SECTION + \
+              VALID_EXTRA_FIELD
 
 VALID_RULES_SECTIONS = ['contest', 'log', 'band1', 'band2', 'period1', 'period2', 'category1', 'category2',
-                        'category3', 'category4']
+                        'category3', 'category4', 'extra']
 
 MISSING_CONTEST_SECTION_FIELDS = [
     """
@@ -311,6 +318,7 @@ class TestRules(TestCase):
         self.assertEqual(_rules.contest_category(4)['name'], 'Multi Operator')
         self.assertEqual(_rules.contest_category(4)['regexp'], 'mo|multi')
         self.assertEqual(_rules.contest_category(4)['bands'], 'band1,band2')
+        self.assertEqual(_rules.contest_extra_fields, ['name', 'email', 'address'])
 
     def test_init_fail(self):
         # test 'file not found'
