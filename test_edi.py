@@ -553,7 +553,7 @@ class TestEdiLog(TestCase):
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [(6, 'TDate field value has an invalid value (20250101;20250102). '
-                                                 'Not as defined in contest rules'),
+                                                   'Not as defined in contest rules'),
                                                (None, 'RHBBS field is not present'),
                                                (None, 'PAdr1 field is not present'),
                                                (None, 'RName field is not present')],
@@ -661,7 +661,6 @@ class TestEdiLog(TestCase):
             self.assertTrue(edi.Log.validate_address(test))
         for test in negative_tests:
             self.assertFalse(edi.Log.validate_address(test))
-
 
     def test_validate_qth_locator(self):
         positive_tests = ['KN16SS', 'kn16ss', 'AA00AA', 'RR00XX']

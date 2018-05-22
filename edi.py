@@ -506,7 +506,7 @@ class LogQso(object):
         self.validate_qso_format()
         if not self.valid:
             return
-        self.parse_qso()
+        self.parse_qso_fields()
 
         # 2nd validation
         self.generic_qso_validator()
@@ -525,11 +525,10 @@ class LogQso(object):
             self.errors.append((self.line_nr, err))
             self.valid = False
 
-    def parse_qso(self):
+    def parse_qso_fields(self):
         """
         This should parse a qso based on log format
         """
-        # TODO : tre sa dau detalii mai multe despre QSO si unde sunt erori !!!
         res = re.match(self.REGEX_MINIMAL_QSO_CHECK, self.qso_line)
         if res:
             for key in self.qso_fields:
@@ -645,22 +644,22 @@ class LogQso(object):
         if self.qso_fields['date'] < self.rules.contest_begin_date[2:]:
             self.valid = False
             self.errors.append((self.line_nr,
-                                         'QSO date is invalid: before contest starts (<{})'.format(self.rules.contest_begin_date[2:])))
+                                'QSO date is invalid: before contest starts (<{})'.format(self.rules.contest_begin_date[2:])))
         if self.qso_fields['date'] > self.rules.contest_end_date[2:]:
             self.valid = False
             self.errors.append((self.line_nr,
-                                         'QSO date is invalid: after contest ends (>{})'.format(self.rules.contest_end_date[2:])))
+                                'QSO date is invalid: after contest ends (>{})'.format(self.rules.contest_end_date[2:])))
 
         # validate qso hour
         if self.qso_fields['date'] == self.rules.contest_begin_date[2:] and \
            self.qso_fields['hour'] < self.rules.contest_begin_hour:
             self.valid = False
             self.errors.append((self.line_nr,
-                                         'QSO hour is invalid: before contest start hour (<{})'.format(self.rules.contest_begin_hour)))
+                                'QSO hour is invalid: before contest start hour (<{})'.format(self.rules.contest_begin_hour)))
         if self.qso_fields['date'] == self.rules.contest_end_date[2:] and self.qso_fields['hour'] > self.rules.contest_end_hour:
             self.valid = False
             self.errors.append((self.line_nr,
-                                         'QSO hour is invalid: after contest end hour (>{})'.format(self.rules.contest_end_hour)))
+                                'QSO hour is invalid: after contest end hour (>{})'.format(self.rules.contest_end_hour)))
 
         # validate date & hour based on period
         inside_period = False
@@ -690,13 +689,13 @@ class LogQso(object):
         if not inside_period:
             self.valid = False
             self.errors.append((self.line_nr,
-                                         'QSO date/hour is invalid: not inside contest periods'))
+                                'QSO date/hour is invalid: not inside contest periods'))
 
         # validate qso mode
         if int(self.qso_fields['mode']) not in self.rules.contest_qso_modes:
             self.valid = False
             self.errors.append((self.line_nr,
-                                         'QSO mode is invalid: not in defined modes ({})'.format(self.rules.contest_qso_modes)))
+                                'QSO mode is invalid: not in defined modes ({})'.format(self.rules.contest_qso_modes)))
         return None
 
 
