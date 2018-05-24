@@ -191,13 +191,13 @@ test_valid_qso_fields = [
 test_invalid_qso_lines = [
     ('123456789012345678', 'QSO line is too short'),
     ('130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;', 'Incorrect QSO line format (incorrect number of fields).'),
-    ('30803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', 'QSO field <date> has an invalid value : 30803'),
-    ('130803;319;YO5BTZ;;59;001;59;001;;KN16SS;1;;;;', 'QSO field <hour> has an invalid value : 319'),
-    ('130803;1319;YO5BTZ;6;9;001;59;001;;KN16SS;1;;;;', 'QSO field <rst sent> has an invalid value : 9'),
-    ('130803;1319;YO5BTZ;6;59;1;59;001;;KN16SS;1;;;;', 'QSO field <rst send nr> has an invalid value : 1'),
-    ('130803;1319;YO5BTZ;6;59;00001;59;001;;KN16SS;1;;;;', 'QSO field <rst send nr> has an invalid value : 00001'),
-    ('130803;1319;YO5BTZ;6;59;001;9;001;;KN16SS;1;;;;', 'QSO field <rst received> has an invalid value : 9'),
-    ('130803;1319;YO5BTZ;6;59;001;59;00002;;KN16SS;1;;;;', 'QSO field <rst received nr> has an invalid value : 00002'),
+    ('30803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', 'QSO field <date> has an invalid value (30803)'),
+    ('130803;319;YO5BTZ;;59;001;59;001;;KN16SS;1;;;;', 'QSO field <hour> has an invalid value (319)'),
+    ('130803;1319;YO5BTZ;6;9;001;59;001;;KN16SS;1;;;;', 'QSO field <rst sent> has an invalid value (9)'),
+    ('130803;1319;YO5BTZ;6;59;1;59;001;;KN16SS;1;;;;', 'QSO field <rst send nr> has an invalid value (1)'),
+    ('130803;1319;YO5BTZ;6;59;00001;59;001;;KN16SS;1;;;;', 'QSO field <rst send nr> has an invalid value (00001)'),
+    ('130803;1319;YO5BTZ;6;59;001;9;001;;KN16SS;1;;;;', 'QSO field <rst received> has an invalid value (9)'),
+    ('130803;1319;YO5BTZ;6;59;001;59;00002;;KN16SS;1;;;;', 'QSO field <rst received nr> has an invalid value (00002)'),
 ]
 
 test_logQso_qsos = [
@@ -235,11 +235,11 @@ test_logQso_qsos = [
 
 test_logQso_regexp_qso_validator = [
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;0016SS;1;;;;', valid=False,
-                       errors=[(5, 'QSO field <wwl> has an invalid value : 0016SS')]),
+                       errors=[(5, 'QSO field <wwl> has an invalid value (0016SS)')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN1600;1;;;;', valid=False,
-                       errors=[(5, 'QSO field <wwl> has an invalid value : KN1600')]),
+                       errors=[(5, 'QSO field <wwl> has an invalid value (KN1600)')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KNAASS;1;;;;', valid=False,
-                       errors=[(5, 'QSO field <wwl> has an invalid value : KNAASS')]),
+                       errors=[(5, 'QSO field <wwl> has an invalid value (KNAASS)')]),
 ]
 
 test_logQso_generic_qso_validator = [

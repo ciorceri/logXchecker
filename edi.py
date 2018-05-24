@@ -556,7 +556,7 @@ class LogQso(object):
                                             line.split(';'),
                                             field_names):
                 if not re.match('^'+regex+'$', field):
-                    return 'QSO field <{}> has an invalid value : {}'.format(name, field)
+                    return 'QSO field <{}> has an invalid value ({})'.format(name, field)
         return None
 
     def generic_qso_validator(self):
