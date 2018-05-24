@@ -343,6 +343,8 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
+            print(">>>>>>>>>", log.callsign)
+
             self.assertFalse(log.valid_header)
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
@@ -638,7 +640,8 @@ class TestEdiLog(TestCase):
         # self.assertEqual(test_logQso_qsos, log.qsos)
 
     def test_validate_callsign(self):
-        positive_tests = ['yo5pjb', 'YO5PJB', 'YO5pjb', 'K4X', 'A22A', 'I20000X', '4X4AAA', '3DA0RS']
+        positive_tests = ['yo5pjb', 'YO5PJB', 'YO5pjb', 'K4X', 'A22A', 'I20000X', '4X4AAA', '3DA0RS',
+                          'yo5pjb/p', 'yo5pjb/m', 'yo5pjb/am', 'yo5pjb/mm']
         negative_tests = [None, '', 'yo%pjb', 'yoSpjb']
 
         for test in positive_tests:

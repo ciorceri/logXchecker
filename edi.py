@@ -298,7 +298,7 @@ class Log(object):
     def validate_callsign(callsign):
         if not callsign:
             return False
-        regex_pcall = "^\s*(\w+[0-9]+\w+)\s*$"    # \s*(\w+\d+[a-zA-Z]+(/(M|AM|P|MM))?)\s*$"
+        regex_pcall = '^\s*(\w+[0-9]+\w+/?\w*)\s*$'  # \s*(\w+\d+[a-zA-Z]+(/(M|AM|P|MM))?)\s*$"
         res = re.match(regex_pcall, callsign)
         return True if res else False
 
