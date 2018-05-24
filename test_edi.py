@@ -77,7 +77,7 @@ CODXC=YO8SSB;KN27OD;133
 130804;0635;YO5PLP/P;6;59;012;59;031;;KN27HM;116;;;;
 130804;0635;YO5CKZ;6;59;013;59;036;;KN27EG;84;;;;
 130804;0642;YO6POK;6;59;014;59;030;;KN27JG;109;;;;
-130804;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;"""
+130804;0657;YO8SSB;2;599;015;599;035;;KN27OD;133;;;;"""
 
 invalid_edi_log_PBand = """
 PCall=YO5PJB
@@ -229,7 +229,7 @@ test_logQso_qsos = [
                        errors=[]),
     edi.Log.qsos_tuple(linenr=53, qso='130804;0642;YO6POK;6;59;014;59;030;;KN27JG;109;;;;', valid=True,
                        errors=[]),
-    edi.Log.qsos_tuple(linenr=54, qso='130804;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;', valid=True,
+    edi.Log.qsos_tuple(linenr=54, qso='130804;0657;YO8SSB;2;599;015;599;035;;KN27OD;133;;;;', valid=True,
                        errors=[]),
 ]
 
@@ -632,7 +632,6 @@ class TestEdiLog(TestCase):
             _qso2 = qso2.qso_line
             _valid2 = qso2.valid
             _error2 = qso2.errors
-            print("DEBUG : ", _error1, _error2)
             self.assertEqual(_ln1, _ln2)
             self.assertEqual(_qso1, _qso2)
             self.assertEqual(_valid1, _valid2)

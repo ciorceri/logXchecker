@@ -594,7 +594,7 @@ class LogQso(object):
             self.errors.append((self.line_nr, 'QSO mode is invalid: {}'.format(self.qso_fields['mode'])))
 
         # validate RST (sent & recv) format
-        re_rst = "^[1-5][1-9][aA]?$"
+        re_rst = "^[1-5][1-9][1-9]?[aA]?$"
         result = re.match(re_rst, self.qso_fields['rst_sent'])
         if not result:
             self.valid = False
