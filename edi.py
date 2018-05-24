@@ -41,15 +41,18 @@ class Operator(object):
     Keep operator callsign, info and logs path
     """
     callsign = None
-    info = {}           # no idea what was this for :(
+    info = {}           # FIXME : no idea what was this for :(
     logs = []           # list with Log() instances
 
     def __init__(self, callsign):
         self.callsign = callsign
         self.logs = []
 
-    def add_log(self, path):
+    def add_log_by_path(self, path):
         self.logs.append(Log(path))
+
+    def add_log_instance(self, log):
+        self.logs.append(log)
 
 
 class Log(object):
@@ -69,11 +72,9 @@ class Log(object):
     rules = None
     use_as_checklog = False
     log_lines = None
-
     valid_header = None
     valid_qsos = None
-    errors = {}
-
+    errors = None
     callsign = None
     maidenhead_locator = None
     band = None
@@ -90,6 +91,9 @@ class Log(object):
         self.path = path
         self.rules = rules
         self.use_as_checklog = checklog
+        self.errors = {ERR_IO: [],
+                       ERR_HEADER: [],
+                       ERR_QSO: []}
 
         self.validate_header()
         if not self.valid_header:
@@ -106,10 +110,6 @@ class Log(object):
         """ Validate edi log header.
         If errors are found they will be written in self.errors dictionary
         """
-
-        self.errors[ERR_IO] = []
-        self.errors[ERR_HEADER] = []
-        self.errors[ERR_QSO] = []
         self.valid_header = False
 
         try:
@@ -298,7 +298,7 @@ class Log(object):
     def validate_callsign(callsign):
         if not callsign:
             return False
-        regex_pcall = "^\s*(\w+[0-9]+\w+)\s*$"    # \s*(\w+\d+[a-zA-Z]+(/(M|AM|P|MM))?)\s*$"
+        regex_pcall = '^\s*(\w+[0-9]+\w+/?\w*)\s*$'  # \s*(\w+\d+[a-zA-Z]+(/(M|AM|P|MM))?)\s*$"
         res = re.match(regex_pcall, callsign)
         return True if res else False
 
@@ -594,7 +594,7 @@ class LogQso(object):
             self.errors.append((self.line_nr, 'QSO mode is invalid: {}'.format(self.qso_fields['mode'])))
 
         # validate RST (sent & recv) format
-        re_rst = "^[1-5][1-9][aA]?$"
+        re_rst = "^[1-5][1-9][1-9]?[aA]?$"
         result = re.match(re_rst, self.qso_fields['rst_sent'])
         if not result:
             self.valid = False

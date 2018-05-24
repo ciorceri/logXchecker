@@ -61,7 +61,7 @@ class ArgumentParser(object):
         group2.add_argument('-slc', '--singlelogcheck', type=str, default=False, metavar='path_to_log', help='Check a single log')
         group2.add_argument('-mlc', '--multilogcheck', type=str, default=False, metavar='path_to_folder', help='Check multiple logs')
         group2.add_argument('-cc', '--crosscheck', type=str, default=False, metavar='path_to_folder', help='Cross-check multiple logs')
-        self.parser.add_argument('-cl', '--checklogs', type=str, default=False, metavar='path_to_folder', help='Checklogs used for cross-check')
+        self.parser.add_argument('-cl', '--checklogs', type=str, default=None, metavar='path_to_folder', help='Checklogs used for cross-check')
         self.parser.add_argument('-o', '--output', type=self.check_output_value, required=False, default='human-friendly',
                                  help='Output format: human-friendly, json, xml (default: human-friendly)')
 
@@ -172,6 +172,47 @@ def print_log_human_friendly(output):
             print('Line {} : {}'.format(err[0], err[1]))
 
 
+def crosscheck_logs(log_class, logs_folder=None, checklogs_folder=None, rules=None):
+
+    ignored_logs = []
+
+    # create instances for all logs
+    logs_instances = []
+    if not logs_folder:
+        print('Logs folder was not provided')
+        return 1
+    if logs_folder and not os.path.isdir(logs_folder):
+        print('Cannot open logs folder : {}'.format(logs_folder))
+        return 1
+    for filename in os.listdir(logs_folder):
+        logs_instances.append(log_class(os.path.join(logs_folder, filename), rules=rules))
+
+    if checklogs_folder:
+        if os.path.isdir(checklogs_folder):
+            for filename in os.listdir(checklogs_folder):
+                logs_instances.append(log_class(os.path.join(checklogs_folder, filename), rules=rules, checklog=True))
+        else:
+            print('Cannot open checklogs folder : {}'.format(checklogs_folder))
+
+    # create instances for all hams and add logs with valid header
+    operator_instances = {}
+    for log in logs_instances:
+        if not log.valid_header:
+            ignored_logs.append(log)
+            continue
+        callsign = log.callsign.upper()
+        if not operator_instances.get(callsign):
+            operator_instances[callsign] = edi.Operator(callsign)
+        operator_instances[callsign].add_log_instance(log)
+
+    # check for duplicate logs
+
+    for x in operator_instances:
+        print("OPERATOR:", x)
+        for y in operator_instances[x].logs:
+            print("-", y.band, y.errors)
+
+
 def main():
     print('{} - v{}'.format(version.__project__,  version.__version__))
     args = ArgumentParser().parse(sys.argv[1:])
@@ -205,7 +246,7 @@ def main():
     if args.singlelogcheck:
         output[edi.INFO_LOG] = args.singlelogcheck
         if not os.path.isfile(args.singlelogcheck):
-            print('Cannot open file: {}'.format(args.singlelogcheck))
+            print('Cannot open file : {}'.format(args.singlelogcheck))
             return 1
         _log = log(args.singlelogcheck, rules=rules)
         output.update(_log.errors)
@@ -213,7 +254,7 @@ def main():
     elif args.multilogcheck:
         output[edi.INFO_FOLDER] = args.multilogcheck
         if not os.path.isdir(args.multilogcheck):
-            print('Cannot open folder: {}'.format(args.multilogcheck))
+            print('Cannot open logs folder : {}'.format(args.multilogcheck))
             return 1
         logs_output = []
         for filename in os.listdir(args.multilogcheck):
@@ -223,6 +264,9 @@ def main():
             log_output.update(_log.errors)
             logs_output.append(log_output)
         output[edi.INFO_FOLDER_LOGS] = logs_output
+    elif args.crosscheck:
+        li = crosscheck_logs(log, logs_folder=args.crosscheck, checklogs_folder=args.checklogs, rules=None)
+
     # add also checklogs
     if args.multilogcheck and args.checklogs:
         if os.path.isdir(args.checklogs):

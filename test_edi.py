@@ -77,7 +77,7 @@ CODXC=YO8SSB;KN27OD;133
 130804;0635;YO5PLP/P;6;59;012;59;031;;KN27HM;116;;;;
 130804;0635;YO5CKZ;6;59;013;59;036;;KN27EG;84;;;;
 130804;0642;YO6POK;6;59;014;59;030;;KN27JG;109;;;;
-130804;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;"""
+130804;0657;YO8SSB;2;599;015;599;035;;KN27OD;133;;;;"""
 
 invalid_edi_log_PBand = """
 PCall=YO5PJB
@@ -229,7 +229,7 @@ test_logQso_qsos = [
                        errors=[]),
     edi.Log.qsos_tuple(linenr=53, qso='130804;0642;YO6POK;6;59;014;59;030;;KN27JG;109;;;;', valid=True,
                        errors=[]),
-    edi.Log.qsos_tuple(linenr=54, qso='130804;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;', valid=True,
+    edi.Log.qsos_tuple(linenr=54, qso='130804;0657;YO8SSB;2;599;015;599;035;;KN27OD;133;;;;', valid=True,
                        errors=[]),
 ]
 
@@ -343,6 +343,8 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
+            print(">>>>>>>>>", log.callsign)
+
             self.assertFalse(log.valid_header)
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
@@ -630,7 +632,6 @@ class TestEdiLog(TestCase):
             _qso2 = qso2.qso_line
             _valid2 = qso2.valid
             _error2 = qso2.errors
-            print("DEBUG : ", _error1, _error2)
             self.assertEqual(_ln1, _ln2)
             self.assertEqual(_qso1, _qso2)
             self.assertEqual(_valid1, _valid2)
@@ -638,7 +639,8 @@ class TestEdiLog(TestCase):
         # self.assertEqual(test_logQso_qsos, log.qsos)
 
     def test_validate_callsign(self):
-        positive_tests = ['yo5pjb', 'YO5PJB', 'YO5pjb', 'K4X', 'A22A', 'I20000X', '4X4AAA', '3DA0RS']
+        positive_tests = ['yo5pjb', 'YO5PJB', 'YO5pjb', 'K4X', 'A22A', 'I20000X', '4X4AAA', '3DA0RS',
+                          'yo5pjb/p', 'yo5pjb/m', 'yo5pjb/am', 'yo5pjb/mm']
         negative_tests = [None, '', 'yo%pjb', 'yoSpjb']
 
         for test in positive_tests:
@@ -803,9 +805,9 @@ class TestEdiOperator(TestCase):
         op = edi.Operator('yo5pjb')
         mo = mock.mock_open(read_data=valid_edi_log)
         with patch('builtins.open', mo, create=True):
-            op.add_log('some_log_file.edi')
+            op.add_log_by_path('some_log_file.edi')
             self.assertEqual(len(op.logs), 1)
-            op.add_log('some_log_file.edi')
+            op.add_log_by_path('some_log_file.edi')
             self.assertEqual(len(op.logs), 2)
             self.assertIsInstance(op.logs[0], edi.Log)
             self.assertIsInstance(op.logs[1], edi.Log)
