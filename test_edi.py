@@ -432,7 +432,7 @@ class TestEdiLog(TestCase):
             self.assertFalse(log.valid_header)
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(1, 'PSect field value is not valid')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(1, 'PSect field value is not valid (test)')], ERR_QSO: []})
 
         # test with multiple PSect
         invalid_edi_log = 'PSect=test\n' + valid_edi_log

@@ -166,7 +166,7 @@ class Log(object):
         elif len(_section) > 1:
             self.errors[ERR_HEADER].append((line_nr, 'PSect field is present multiple times'))
         elif not self.rules and not self.validate_section(_section[0]):
-            self.errors[ERR_HEADER].append((line_nr, 'PSect field value is not valid'))
+            self.errors[ERR_HEADER].append((line_nr, 'PSect field value is not valid ({})'.format(_section[0])))
         elif self.rules and not self.rules_based_validate_section(_section[0], self.rules):
             self.errors[ERR_HEADER].append((line_nr, 'PSect field value has an invalid value ({}). '
                                           'Not as defined in contest rules'.format(_section[0])))
@@ -271,7 +271,7 @@ class Log(object):
         Will read the self.log_content and will return a list of LogQso
         """
         qso_record_start = "[QSORECORDS"
-        qso_record_end = "[END;"
+        qso_record_end = "[END"
         qso_lines = []
         do_read_qso = False
 
