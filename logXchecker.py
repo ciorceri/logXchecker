@@ -172,7 +172,7 @@ def print_log_human_friendly(output):
             print('Line {} : {}'.format(err[0], err[1]))
 
 
-def crosscheck_logs(log_class, logs_folder=None, checklogs_folder=None, rules=None):
+def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_folder=None):
 
     ignored_logs = []
 
@@ -206,7 +206,9 @@ def crosscheck_logs(log_class, logs_folder=None, checklogs_folder=None, rules=No
         operator_instances[callsign].add_log_instance(log)
 
     # check for duplicate logs
+    # TODO ...
 
+    # DEBUG : print logs errors and ignored logs
     for x in operator_instances:
         print('OPERATOR:', x)
         for y in operator_instances[x].logs:
@@ -215,6 +217,13 @@ def crosscheck_logs(log_class, logs_folder=None, checklogs_folder=None, rules=No
     for x in ignored_logs:
         print('IGNORED: {} @ {} @ {}'.format(x.callsign, x.band, x.path))
         print('- {}'.format(x.errors))
+
+    crosscheck_logs(operator_instances, rules)
+
+
+def crosscheck_logs(operator_instances, rules):
+    # TODO
+    pass
 
 
 def main():
@@ -269,7 +278,7 @@ def main():
             logs_output.append(log_output)
         output[edi.INFO_FOLDER_LOGS] = logs_output
     elif args.crosscheck:
-        li = crosscheck_logs(log, logs_folder=args.crosscheck, checklogs_folder=args.checklogs, rules=None)
+        li = crosscheck_logs_filter(log, rules=None, logs_folder=args.crosscheck, checklogs_folder=args.checklogs)
 
     # add also checklogs
     if args.multilogcheck and args.checklogs:
