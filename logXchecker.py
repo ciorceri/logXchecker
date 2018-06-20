@@ -208,9 +208,13 @@ def crosscheck_logs(log_class, logs_folder=None, checklogs_folder=None, rules=No
     # check for duplicate logs
 
     for x in operator_instances:
-        print("OPERATOR:", x)
+        print('OPERATOR:', x)
         for y in operator_instances[x].logs:
             print("-", y.band, y.errors)
+
+    for x in ignored_logs:
+        print('IGNORED: {} @ {} @ {}'.format(x.callsign, x.band, x.path))
+        print('- {}'.format(x.errors))
 
 
 def main():

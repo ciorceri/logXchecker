@@ -608,7 +608,8 @@ class TestEdiLog(TestCase):
         log = edi.Log('non-existing-log-file.edi')
         self.assertFalse(log.valid_header)
         self.assertDictEqual(log.errors,
-                             {ERR_IO: [(None, 'Cannot read edi log')], ERR_HEADER: [], ERR_QSO: []})
+                             {ERR_IO: [(None, 'Cannot read edi log. Error: [Errno 2] No such file or directory: '
+                                              "'non-existing-log-file.edi'")], ERR_HEADER: [], ERR_QSO: []})
 
     @mock.patch.object(edi.Log, 'read_file_content')
     def test_get_field(self, mock_read_file_content):

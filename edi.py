@@ -115,7 +115,7 @@ class Log(object):
         try:
             self.log_lines = self.read_file_content(self.path)
         except Exception as e:
-            self.errors[ERR_IO].append((None, 'Cannot read edi log'))
+            self.errors[ERR_IO].append((None, 'Cannot read edi log. Error: {}'.format(e)))
             return
 
         if self.log_lines is None:
