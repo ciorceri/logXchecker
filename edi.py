@@ -477,6 +477,9 @@ class LogQso(object):
     valid = None
     errors = []
 
+    confirmed = None  # possible values: True, False or some error message
+    points = None     # if qso is confirmed we store here the calculated points (multiplier included)
+
     qso_fields = {'date': None,
                   'hour': None,
                   'call': None,

@@ -205,8 +205,11 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
             operator_instances[callsign] = edi.Operator(callsign)
         operator_instances[callsign].add_log_instance(log)
 
-    # check for duplicate logs
-    # TODO ...
+    # TODO check for duplicate logs (on same band)
+    # find a way to select from dupplicate logs or just ignore them all
+
+    # TODO check if a ham has logs with different sections
+    # but ignore
 
     # DEBUG : print logs errors and ignored logs
     for x in operator_instances:
