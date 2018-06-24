@@ -221,12 +221,13 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
         print('IGNORED: {} @ {} @ {}'.format(x.callsign, x.band, x.path))
         print('- {}'.format(x.errors))
 
-    crosscheck_logs(operator_instances, rules)
+    for band in range(rules.contest_bands_nr):
+        crosscheck_logs(operator_instances, rules, band)
 
 
-def crosscheck_logs(operator_instances, rules):
+def crosscheck_logs(operator_instances, rules, band):
     # TODO
-    pass
+    return None
 
 
 def main():
@@ -281,7 +282,7 @@ def main():
             logs_output.append(log_output)
         output[edi.INFO_FOLDER_LOGS] = logs_output
     elif args.crosscheck:
-        li = crosscheck_logs_filter(log, rules=None, logs_folder=args.crosscheck, checklogs_folder=args.checklogs)
+        li = crosscheck_logs_filter(log, rules=rules, logs_folder=args.crosscheck, checklogs_folder=args.checklogs)
 
     # add also checklogs
     if args.multilogcheck and args.checklogs:

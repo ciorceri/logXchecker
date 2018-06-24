@@ -318,4 +318,8 @@ class Rules(object):
 
     @property
     def contest_extra_fields(self):
+        try:
+            assert self.config['extra']
+        except KeyError:
+            return []
         return [x for x in self.config['extra'] if self.config['extra'][x].upper() == 'YES']
