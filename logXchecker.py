@@ -221,7 +221,8 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
         print('IGNORED: {} @ {} @ {}'.format(x.callsign, x.band, x.path))
         print('- {}'.format(x.errors))
 
-    for band in range(rules.contest_bands_nr):
+    for band in range(1, rules.contest_bands_nr+1):
+        print("DEBUG banda : ", band, rules.contest_band(band)['band'], rules.contest_band(band)['regexp'])
         crosscheck_logs(operator_instances, rules, band)
 
 
