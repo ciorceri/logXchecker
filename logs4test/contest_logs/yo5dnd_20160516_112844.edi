@@ -1,0 +1,47 @@
+[REG1TEST;1]
+TName=Cupa Napoca
+TDate=20160507;20160508
+PCall=YO5DND
+PWWLo=KN17RQ
+PExch=
+PAdr1=
+PAdr2=
+PSect=A. Individual
+PBand=432 MHz
+PClub=YO5KAD Baia Mare
+RName=Gaz Emil
+RCall=
+Radr1=Tautii Magheraus Str.31/10, MM
+Radr2=Maramures
+RPoCo=
+RCity=
+RCoun=Romania
+RPhon=
+RHBBS=yo5dnd@yahoo.com
+MOpe1=
+MOpe2=
+STXEq=TS 2000
+SPowe=100W
+SRXEq=
+SAnte= Diamond X-510
+SAntH=220m
+CQSOs=5,2
+CQSOP=634
+CWWLs=
+CWWLB=
+CExcs=
+CExcB=
+CDXCs=
+CDXCB=
+CToSc=634
+CODXC=YO5KAS;KN16SQ;111
+[Remarks]
+
+
+
+[QSORecords;5]
+160508;0647;YO5KAS;1;59;001;59;009;;KN16SQ;222;;;;
+160508;0654;YO5PVA/P;1;59;002;59;009;;KN27FH;170;;;;
+160508;0655;YO5PLP/P;1;59;003;59;005;;KN27FH;170;;;;
+160508;0711;YO5OHY;1;59;004;59;006;;KN17SP;14;;;;
+160508;0724;YO5KLD;1;59;005;59;015;;KN17UL;58;;;;
