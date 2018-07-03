@@ -681,13 +681,13 @@ class TestEdiLog(TestCase):
         negative_tests_432 = [None, '', '431', '433', '434']
 
         for test in positive_tests_144:
-            self.assertEqual(144, edi.Log.get_band(test))
+            self.assertEqual('144', edi.Log.get_band(test))
 
         for test in negative_tests_144:
             self.assertIsNone(edi.Log.get_band(test))
 
         for test in positive_tests_432:
-            self.assertEqual(432, edi.Log.get_band(test))
+            self.assertEqual('432', edi.Log.get_band(test))
 
         for test in negative_tests_432:
             self.assertIsNone(edi.Log.get_band(test))

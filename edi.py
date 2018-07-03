@@ -57,6 +57,8 @@ class Operator(object):
     def logs_by_band_regexp(self, band_regexp):
         logs = []
         for log in self.logs:
+            if not log.valid_header:
+                continue
             res = re.match(band_regexp, log.band, re.IGNORECASE)
             if res:
                 logs.append(log)

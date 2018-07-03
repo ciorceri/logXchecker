@@ -240,6 +240,17 @@ def crosscheck_logs(operator_instances, rules, band_nr):
         logs = op_inst.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
         print('   DEBUG : ', logs)
 
+        if not logs:
+            continue
+        log = logs[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
+
+        for qso in log.qsos:
+            ham2 = qso.qso_fields['call']
+            if not operator_instances.get(ham2, False):
+                qso.confirmed = False
+
+        # TODO : to continue this code ...
+
     return None
 
 
