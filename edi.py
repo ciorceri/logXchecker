@@ -54,6 +54,14 @@ class Operator(object):
     def add_log_instance(self, log):
         self.logs.append(log)
 
+    def logs_by_band_regexp(self, band_regexp):
+        logs = []
+        for log in self.logs:
+            res = re.match(band_regexp, log.band, re.IGNORECASE)
+            if res:
+                logs.append(log)
+        return logs
+
 
 class Log(object):
     """
@@ -321,9 +329,9 @@ class Log(object):
         if not band:
             return None
 
-        regexp_band = {144: ['144.*', '145.*'],
-                       432: ['430.*', '432.*', '435.*'],
-                       1296: ['1296.*', '1[.,][23].*']}
+        regexp_band = {'144': ['144.*', '145.*'],
+                       '432': ['430.*', '432.*', '435.*'],
+                       '1296': ['1296.*', '1[.,][23].*']}
         for _band in regexp_band:
             for regexp in regexp_band[_band]:
                 res = re.match(regexp, band)

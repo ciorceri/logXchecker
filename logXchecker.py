@@ -17,6 +17,7 @@ limitations under the License.
 import argparse
 import importlib
 import os
+import re
 import sys
 
 import edi
@@ -222,12 +223,23 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
         print('- {}'.format(x.errors))
 
     for band in range(1, rules.contest_bands_nr+1):
-        print("DEBUG banda : ", band, rules.contest_band(band)['band'], rules.contest_band(band)['regexp'])
+        print("DEBUG banda nr={} name={} regexp={}".format(band, rules.contest_band(band)['band'], rules.contest_band(band)['regexp']))
         crosscheck_logs(operator_instances, rules, band)
 
 
-def crosscheck_logs(operator_instances, rules, band):
-    # TODO
+def crosscheck_logs(operator_instances, rules, band_nr):
+    """
+    :param operator_instances: dictionary {key=callsign, value=edi.Operator(callsign)}
+    :param band_nr: number of contest band
+    :return: TODO
+    """
+    for callsign, op_inst in operator_instances.items():
+        print('DEBUG HAVE LOGS FROM : ', callsign, op_inst.callsign, end='')
+
+        # get logs for band
+        logs = op_inst.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
+        print('   DEBUG : ', logs)
+
     return None
 
 
