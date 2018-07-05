@@ -202,9 +202,15 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
             ignored_logs.append(log)
             continue
         callsign = log.callsign.upper()
-        if not operator_instances.get(callsign):
+        if not operator_instances.get(callsign, None):
             operator_instances[callsign] = edi.Operator(callsign)
         operator_instances[callsign].add_log_instance(log)
+        print('### HAM {} WITH LOG {} AND BAND {}'.format(callsign, log.path, log.band))
+
+    # TODO only debug
+    for _not_used, op in operator_instances.items():
+        for log in op.logs:
+            print('$$$ HAM {} WITH LOG {} AND BAND {}'.format(op.callsign, log.path, log.band))
 
     # TODO check for duplicate logs (on same band)
     # find a way to select from dupplicate logs or just ignore them all
@@ -233,25 +239,76 @@ def crosscheck_logs(operator_instances, rules, band_nr):
     :param band_nr: number of contest band
     :return: TODO
     """
-    for callsign, op_inst in operator_instances.items():
-        print('DEBUG HAVE LOGS FROM : ', callsign, op_inst.callsign, end='')
+    for callsign1, ham1 in operator_instances.items():
+        print('CHECK LOGS OF : ', callsign1, ham1.callsign)
 
         # get logs for band
-        logs = op_inst.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
-        print('   DEBUG : ', logs)
+        _logs1 = ham1.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
+        print('  LOG PATH : ', [x.path for x in _logs1])
 
-        if not logs:
+        if not _logs1:
             continue
-        log = logs[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
+        logs1 = _logs1[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
 
-        for qso in log.qsos:
-            ham2 = qso.qso_fields['call']
-            if not operator_instances.get(ham2, False):
-                qso.confirmed = False
+        for qso1 in logs1.qsos:
+            print('    LOG QSO : ', qso1.qso_line, qso1.qso_fields['call'])
+            if qso1.valid == False:
+                continue
+
+            # check if we have some logs from 2nd ham
+            callsign2 = qso1.qso_fields['call']
+            ham2 = operator_instances.get(callsign2, None)
+            if not ham2:
+                qso1.confirmed = False
+                continue
+
+            # check if we have proper band logs from 2nd ham
+            _logs2 = ham2.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
+            print('      HAM2 LOGS : ', [x.path for x in _logs2])
+            if not _logs2:
+                qso1.confirmed = False
+                continue
+            logs2 = _logs2[0]
+
+            # get 2nd ham qsos and compare them with 1st ham qso
+            for qso2 in logs2.qsos:
+                if qso2.valid == False:
+                    continue
+
+                _callsign = qso2.qso_fields['call']
+                if callsign1 != _callsign:
+                    continue
+                distance = compare_qso(qso1, qso2)
+                print('      *** COMPARAM : {} vs {} SI {} cu {}'.format(callsign1, callsign2, qso1.qso_line, qso2.qso_line))
+            # also ignore duplicates
+            # ...
 
         # TODO : to continue this code ...
 
     return None
+
+
+def compare_qso(qso1, qso2):
+    """
+    Generic comparision of 2 QSO's
+    :param qso1:
+    :param qso2:
+    :return: distance if QSO's are valid or -1/None
+    """
+
+    # compare callsign
+
+    # calculate absolute date+time
+
+    # compare & check date+time delta between QSO's is less than 5 minutes
+
+    # compare rst
+
+    # compare qth
+
+    # calculate & return distance
+
+    pass
 
 
 def main():

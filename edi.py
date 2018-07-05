@@ -490,22 +490,7 @@ class LogQso(object):
     confirmed = None  # possible values: True, False or some error message
     points = None     # if qso is confirmed we store here the calculated points (multiplier included)
 
-    qso_fields = {'date': None,
-                  'hour': None,
-                  'call': None,
-                  'mode': None,
-                  'rst_sent': None,
-                  'nr_sent': None,
-                  'rst_recv': None,
-                  'nr_recv': None,
-                  'exchange_recv': None,
-                  'wwl': None,
-                  'points': None,
-                  'new_exchange': None,
-                  'new_wwl': None,
-                  'new_dxcc': None,
-                  'duplicate_qso': None,
-                  }
+    qso_fields = {}
 
     def __init__(self, qso_line=None, qso_line_number=None, rules=None):
         self.qso_line = qso_line
@@ -514,6 +499,23 @@ class LogQso(object):
         self.valid = True
 
         self.errors = []
+
+        self.qso_fields = {'date': None,
+                           'hour': None,
+                           'call': None,
+                           'mode': None,
+                           'rst_sent': None,
+                           'nr_sent': None,
+                           'rst_recv': None,
+                           'nr_recv': None,
+                           'exchange_recv': None,
+                           'wwl': None,
+                           'points': None,
+                           'new_exchange': None,
+                           'new_wwl': None,
+                           'new_dxcc': None,
+                           'duplicate_qso': None,
+                           }
 
         # 1st validation
         self.validate_qso_format()
