@@ -278,8 +278,11 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 _callsign = qso2.qso_fields['call']
                 if callsign1 != _callsign:
                     continue
-                distance = compare_qso(qso1, qso2)
                 print('      *** COMPARAM : {} vs {} SI {} cu {}'.format(callsign1, callsign2, qso1.qso_line, qso2.qso_line))
+                distance = compare_qso(qso1, qso2)
+                if distance < 0:
+                    continue
+                qso1.points = distance * 1  # TODO : remove hardcoded band multiplier
             # also ignore duplicates
             # ...
 
@@ -308,7 +311,7 @@ def compare_qso(qso1, qso2):
 
     # calculate & return distance
 
-    pass
+    return 1
 
 
 def main():
