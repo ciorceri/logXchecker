@@ -255,6 +255,8 @@ def crosscheck_logs(operator_instances, rules, band_nr):
             if qso1.valid == False:
                 continue
 
+            # TODO : ignore duplicate qso
+
             # check if we have some logs from 2nd ham
             callsign2 = qso1.qso_fields['call']
             ham2 = operator_instances.get(callsign2, None)
@@ -268,12 +270,14 @@ def crosscheck_logs(operator_instances, rules, band_nr):
             if not _logs2:
                 qso1.confirmed = False
                 continue
-            logs2 = _logs2[0]
+            logs2 = _logs2[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
 
             # get 2nd ham qsos and compare them with 1st ham qso
             for qso2 in logs2.qsos:
                 if qso2.valid == False:
                     continue
+
+                # TODO : ignore duplicate qso
 
                 _callsign = qso2.qso_fields['call']
                 if callsign1 != _callsign:
@@ -283,8 +287,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 if distance < 0:
                     continue
                 qso1.points = distance * 1  # TODO : remove hardcoded band multiplier
-            # also ignore duplicates
-            # ...
+
 
         # TODO : to continue this code ...
 
@@ -298,6 +301,8 @@ def compare_qso(qso1, qso2):
     :param qso2:
     :return: distance if QSO's are valid or -1/None
     """
+
+    # TODO : ...
 
     # compare callsign
 
