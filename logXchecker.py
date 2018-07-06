@@ -19,6 +19,7 @@ import importlib
 import os
 import re
 import sys
+from datetime import datetime, timedelta
 
 import edi
 import version
@@ -252,7 +253,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
 
         for qso1 in logs1.qsos:
             print('    LOG QSO : ', qso1.qso_line, qso1.qso_fields['call'])
-            if qso1.valid == False:
+            if qso1.valid is False:
                 continue
 
             # TODO : ignore duplicate qso
@@ -274,7 +275,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
 
             # get 2nd ham qsos and compare them with 1st ham qso
             for qso2 in logs2.qsos:
-                if qso2.valid == False:
+                if qso2.valid is False:
                     continue
 
                 # TODO : ignore duplicate qso
@@ -283,7 +284,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 if callsign1 != _callsign:
                     continue
                 print('      *** COMPARAM : {} vs {} SI {} cu {}'.format(callsign1, callsign2, qso1.qso_line, qso2.qso_line))
-                distance = compare_qso(qso1, qso2)
+                distance = compare_qso(callsign1, qso1, callsign2, qso2)
                 if distance < 0:
                     continue
                 qso1.points = distance * 1  # TODO : remove hardcoded band multiplier
@@ -294,7 +295,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
     return None
 
 
-def compare_qso(qso1, qso2):
+def compare_qso(callsign1, qso1, callsign2, qso2):
     """
     Generic comparision of 2 QSO's
     :param qso1:
@@ -305,10 +306,34 @@ def compare_qso(qso1, qso2):
     # TODO : ...
 
     # compare callsign
+    if callsign1 != qso2.qso_fields['call'] or callsign2 != qso1.qso_fields['call']:
+        return -1
+
 
     # calculate absolute date+time
+    REGEX_DATE = '(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})'
+    REGEX_HOUR = '(?P<hour>\d{2})(?P<minute>\d{2})'
 
-    # compare & check date+time delta between QSO's is less than 5 minutes
+    date_res1 = re.match(REGEX_DATE, qso1.qso_fields['date'])
+    hour_res1 = re.match(REGEX_HOUR, qso1.qso_fields['hour'])
+    if not date_res1 or not hour_res1:
+        return -1
+    absolute_time1 = datetime(int(date_res1.group('year')), int(date_res1.group('month')), int(date_res1.group('day')),
+                              int(hour_res1.group('hour')), int(hour_res1.group('minute')))
+
+    date_res2 = re.match(REGEX_DATE, qso2.qso_fields['date'])
+    hour_res2 = re.match(REGEX_HOUR, qso2.qso_fields['hour'])
+    if not date_res2 or not hour_res2:
+        return -1
+    absolute_time2 = datetime(int(date_res2.group('year')), int(date_res2.group('month')), int(date_res2.group('day')),
+                              int(hour_res2.group('hour')), int(hour_res2.group('minute')))
+
+    # check if time1 and time2 difference is less than 5 minutes
+    # TODO : I THINK THIS STILL HAS A BUG ! I HAVE TO CHECK THIS CODE IN DEPTH !
+    diff1 = absolute_time1 < absolute_time2 + timedelta(minutes=5)
+    diff2 = absolute_time2 < absolute_time1 + timedelta(minutes=5)
+    if not (diff1 or diff2):
+        return -1
 
     # compare rst
 
