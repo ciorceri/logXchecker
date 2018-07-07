@@ -1,5 +1,5 @@
 """
-Copyright 2016 Ciorceri Petru Sorin
+Copyright 2016-2018 Ciorceri Petru Sorin (yo5pjb)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import argparse
-import importlib
 import os
 import re
 import sys
+import math
+import argparse
+import importlib
 from datetime import datetime, timedelta
 
 import edi
@@ -249,11 +250,13 @@ def crosscheck_logs(operator_instances, rules, band_nr):
 
         if not _logs1:
             continue
-        logs1 = _logs1[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
+        log1 = _logs1[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
 
-        for qso1 in logs1.qsos:
+        for qso1 in log1.qsos:
             print('    LOG QSO : ', qso1.qso_line, qso1.qso_fields['call'])
             if qso1.valid is False:
+                continue
+            if qso1.confirmed is True:
                 continue
 
             # TODO : ignore duplicate qso
@@ -271,10 +274,10 @@ def crosscheck_logs(operator_instances, rules, band_nr):
             if not _logs2:
                 qso1.confirmed = False
                 continue
-            logs2 = _logs2[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
+            log2 = _logs2[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
 
             # get 2nd ham qsos and compare them with 1st ham qso
-            for qso2 in logs2.qsos:
+            for qso2 in log2.qsos:
                 if qso2.valid is False:
                     continue
 
@@ -283,19 +286,16 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 _callsign = qso2.qso_fields['call']
                 if callsign1 != _callsign:
                     continue
-                print('      *** COMPARAM : {} vs {} SI {} cu {}'.format(callsign1, callsign2, qso1.qso_line, qso2.qso_line))
-                distance = compare_qso(callsign1, qso1, callsign2, qso2)
+                distance = compare_qso(log1, qso1, log2, qso2)
+                print('      *** COMPARAM : {} vs {} SI {} cu {} = {}'.format(callsign1, callsign2, qso1.qso_line, qso2.qso_line, distance))
                 if distance < 0:
                     continue
                 qso1.points = distance * 1  # TODO : remove hardcoded band multiplier
 
-
-        # TODO : to continue this code ...
-
     return None
 
 
-def compare_qso(callsign1, qso1, callsign2, qso2):
+def compare_qso(log1, qso1, log2, qso2):
     """
     Generic comparision of 2 QSO's
     :param qso1:
@@ -303,12 +303,9 @@ def compare_qso(callsign1, qso1, callsign2, qso2):
     :return: distance if QSO's are valid or -1/None
     """
 
-    # TODO : ...
-
     # compare callsign
-    if callsign1 != qso2.qso_fields['call'] or callsign2 != qso1.qso_fields['call']:
+    if log1.callsign != qso2.qso_fields['call'] or log2.callsign != qso1.qso_fields['call']:
         return -1
-
 
     # calculate absolute date+time
     REGEX_DATE = '(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})'
@@ -329,19 +326,91 @@ def compare_qso(callsign1, qso1, callsign2, qso2):
                               int(hour_res2.group('hour')), int(hour_res2.group('minute')))
 
     # check if time1 and time2 difference is less than 5 minutes
-    # TODO : I THINK THIS STILL HAS A BUG ! I HAVE TO CHECK THIS CODE IN DEPTH !
-    diff1 = absolute_time1 < absolute_time2 + timedelta(minutes=5)
-    diff2 = absolute_time2 < absolute_time1 + timedelta(minutes=5)
-    if not (diff1 or diff2):
+    if abs(absolute_time1 - absolute_time2) > timedelta(minutes=5):
         return -1
 
     # compare rst
+    if (qso1.qso_fields['rst_sent'] != qso2.qso_fields['rst_recv'] or \
+        qso1.qso_fields['rst_recv'] != qso2.qso_fields['rst_sent']):
+        return -1
+    if (qso1.qso_fields['nr_sent'] != qso2.qso_fields['nr_recv'] or \
+        qso1.qso_fields['nr_recv'] != qso2.qso_fields['nr_sent']):
+        return -1
 
     # compare qth
+    if (log1.maidenhead_locator != qso2.qso_fields['wwl'] or \
+        log2.maidenhead_locator != qso1.qso_fields['wwl']):
+        return -1
 
     # calculate & return distance
+    return qth_distance(log1.maidenhead_locator, log2.maidenhead_locator)
 
-    return 1
+
+def delta_ord(letter):
+    """
+    This will return an character number in alphabet and same for numbers.
+    The order number starts from 0.
+    Ex: for input '5' will return '5'-'0' = 5
+        for input 'C' will return 'C'-'A' = 3
+    """
+    if (letter>='0') & (letter<='9'):
+        return ord(letter)-ord('0')
+    if (letter>='A') & (letter<='Z'):
+        return ord(letter)-ord('A')
+    return -1
+
+
+def conv_maidenhead_to_latlong(maiden):
+    """
+    Will convert he Maidenhead location to Latitude/Longitude location
+    """
+    long = -180.0 + 20 * delta_ord(maiden[0]) + 2.0 * delta_ord(maiden[2]) + 5.0 * delta_ord(maiden[4]) / 60.0
+    lat = -90.0 + 10 * delta_ord(maiden[1]) + 1.0 * delta_ord(maiden[3]) + 2.5 * delta_ord(maiden[5]) / 60.0
+    return long, lat
+
+
+def qth_distance(qth1, qth2):
+    """
+    Math to calculate the distance (in kilometers) between 2 Maindehead locators
+    see : https://en.wikipedia.org/wiki/Maidenhead_Locator_System
+    """
+    if qth1 == qth2:
+        return 1
+
+    # Convert Maidenhead to latitude and longitude
+    long1, lat1 = conv_maidenhead_to_latlong(qth1)
+    long2, lat2 = conv_maidenhead_to_latlong(qth2)
+
+    # Convert latitude and longitude to
+    # spherical coordinates in radians.
+    degrees_to_radians = math.pi/180.0
+
+    # phi = 90 - latitude
+    phi1 = (90.0 - lat1)*degrees_to_radians
+    phi2 = (90.0 - lat2)*degrees_to_radians
+
+    # theta = longitude
+    theta1 = long1*degrees_to_radians
+    theta2 = long2*degrees_to_radians
+
+    # Compute spherical distance from spherical coordinates.
+
+    # For two locations in spherical coordinates
+    # (1, theta, phi) and (1, theta, phi)
+    # cosine( arc length ) =
+    #    sin phi sin phi' cos(theta-theta') + cos phi cos phi'
+    # distance = rho * arc length
+
+    cos = (math.sin(phi1)*math.sin(phi2)*math.cos(theta1 - theta2) + math.cos(phi1)*math.cos(phi2))
+    arc = math.acos( cos )
+
+    # Remember to multiply arc by the radius of the earth
+    # in your favorite set of units to get length.
+    if 0.0 == round(arc*6373):
+        return 1
+    else:
+        return int(round(arc*6373))
+        #return arc*6373
 
 
 def main():
