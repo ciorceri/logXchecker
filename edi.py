@@ -464,8 +464,9 @@ class Log(object):
         if rules is None:
             raise ValueError('No contest rules provided !')
         _begin_date, _end_date = date_value.split(';')
-        if _begin_date == rules.contest_begin_date and _end_date == rules.contest_end_date:
+        if _begin_date >= rules.contest_begin_date and _end_date <= rules.contest_end_date:
             is_valid = True
+
         return is_valid
 
 

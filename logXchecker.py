@@ -227,7 +227,7 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
             print("-", y.band, y.errors)
 
     for x in ignored_logs:
-        print('IGNORED: {} @ {} @ {}'.format(x.callsign, x.band, x.path))
+        print('IGNORED: {} @ {} @ {} @ {}'.format(x.callsign, x.use_as_checklog, x.band, x.path))
         print('- {}'.format(x.errors))
 
     for band in range(1, rules.contest_bands_nr+1):
@@ -244,8 +244,7 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
                     points += qso.points
             log.qsos_points = points
             # print every op points:
-            print('HAM: {}  LOG: {}  BAND: {}  POINTS: {}'.format(op, log.path, log.band, log.qsos_points))
-
+            print('HAM:{}  LOG:{}  CHECKLOG:{}  BAND:{}  POINTS:{}'.format(op, log.path, log.use_as_checklog, log.band, log.qsos_points))
 
 
 def crosscheck_logs(operator_instances, rules, band_nr):
@@ -255,18 +254,20 @@ def crosscheck_logs(operator_instances, rules, band_nr):
     :return: TODO
     """
     for callsign1, ham1 in operator_instances.items():
-        print('CHECK LOGS OF : ', callsign1, ham1.callsign)
+        # print('CHECK LOGS OF : ', callsign1, ham1.callsign)
 
         # get logs for band
         _logs1 = ham1.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
-        print('  LOG PATH : ', [x.path for x in _logs1])
+        # print('  LOG PATH : ', [x.path for x in _logs1])
 
         if not _logs1:
             continue
         log1 = _logs1[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
+        if log1.use_as_checklog is True:
+            continue
 
         for qso1 in log1.qsos:
-            print('    LOG QSO : ', qso1.qso_line, qso1.qso_fields['call'])
+            # print('    LOG QSO : ', qso1.qso_line, qso1.qso_fields['call'])
             if qso1.valid is False:
                 continue
             if qso1.confirmed is True:
@@ -283,7 +284,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
 
             # check if we have proper band logs from 2nd ham
             _logs2 = ham2.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
-            print('      HAM2 LOGS : ', [x.path for x in _logs2])
+            # print('      HAM2 LOGS : ', [x.path for x in _logs2])
             if not _logs2:
                 qso1.confirmed = False
                 continue
@@ -300,7 +301,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 if callsign1 != _callsign:
                     continue
                 distance = compare_qso(log1, qso1, log2, qso2)
-                print('      *** COMPARAM : {} vs {} SI {} cu {} = {}'.format(callsign1, callsign2, qso1.qso_line, qso2.qso_line, distance))
+                # print('      *** COMPARAM : {} vs {} SI {} cu {} = {}'.format(callsign1, callsign2, qso1.qso_line, qso2.qso_line, distance))
                 if distance < 0:
                     continue
                 qso1.points = distance * 1  # TODO : remove hardcoded band multiplier
