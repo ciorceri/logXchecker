@@ -129,7 +129,7 @@ class Log(object):
             self.errors[ERR_IO].append((None, 'Cannot read edi log. Error: {}'.format(e)))
             return
 
-        if self.log_lines is None:
+        if len(self.log_lines) == 0:
             self.errors[ERR_IO].append((None, 'Log is empty'))
             return
 

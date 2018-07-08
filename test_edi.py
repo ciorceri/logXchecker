@@ -107,6 +107,16 @@ TDate=20130803;20130806
 RHBBS=invalid email address
 """
 
+invalid_edi_log_RHBBS_2 = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+RHBBS=mail1@mail.com
+RHBBS=mail2@mail.com
+"""
+
 invalid_edi_log_PAdr1 = """
 PCall=YO5PJB
 PWWLo=KN16SS
@@ -117,6 +127,18 @@ RHBBS=name@email.com
 PAdr1=None 
 """
 
+invalid_edi_log_PAdr1_2 = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+RHBBS=name@email.com
+PAdr1=Address1
+PAdr1=Address1 again
+"""
+
+
 invalid_edi_log_RName = """
 PCall=YO5PJB
 PWWLo=KN16SS
@@ -126,6 +148,29 @@ TDate=20130803;20130806
 RHBBS=name@email.com
 PAdr1=Sesame Street, 13
 RName=cucu
+"""
+
+invalid_edi_log_RName_2 = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+RHBBS=name@email.com
+PAdr1=Sesame Street, 13
+RName=John Doe
+RName=John Doe's brother
+"""
+
+valid_edi_log_header = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+RHBBS=name@email.com
+PAdr1=Sesame Street, 13
+RName=John Doe
 """
 
 test_valid_qso_lines = [
@@ -315,6 +360,16 @@ test_logQso_rules_based_qso_validator = [
 
 class TestEdiLog(TestCase):
     def test_init(self):
+
+        # test with a log with no-lines
+        invalid_edi_log = ''
+        mo = mock.mock_open(read_data=invalid_edi_log)
+        with patch('builtins.open', mo, create=True):
+            log = edi.Log('some_log_file.edi')
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {ERR_IO: [(None, 'Log is empty')], ERR_HEADER: [], ERR_QSO: []})
 
         # test with missing PCall
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PCall=')]
@@ -574,6 +629,19 @@ class TestEdiLog(TestCase):
                                   'io': [],
                                   'qso': []})
 
+        # test with valid rules and with duplicate RHBBS
+        mo_log = mock.mock_open(read_data=invalid_edi_log_RHBBS_2)
+        with patch('builtins.open', mo_log, create=True):
+            log = edi.Log('some_log_file.edi', rules=_rules)
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {'header': [(8, 'RHBBS is present multiple times'),
+                                             (None, 'PAdr1 field is not present'),
+                                             (None, 'RName field is not present')],
+                                  'io': [],
+                                  'qso': []})
+
         # test with valid rules and with invalid edi log (invalid PAdr1)
         mo_log = mock.mock_open(read_data=invalid_edi_log_PAdr1)
         with patch('builtins.open', mo_log, create=True):
@@ -586,6 +654,18 @@ class TestEdiLog(TestCase):
                                   'io': [],
                                   'qso': []})
 
+        # test with valid rules and with duplicate address
+        mo_log = mock.mock_open(read_data=invalid_edi_log_PAdr1_2)
+        with patch('builtins.open', mo_log, create=True):
+            log = edi.Log('some_log_file.edi', rules=_rules)
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {'header': [(9, 'PAdr1 is present multiple times'),
+                                             (None, 'RName field is not present')],
+                                  'io': [],
+                                  'qso': []})
+
         # test with valid rules and with invalid edi log (invalid RName)
         mo_log = mock.mock_open(read_data=invalid_edi_log_RName)
         with patch('builtins.open', mo_log, create=True):
@@ -594,6 +674,28 @@ class TestEdiLog(TestCase):
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {'header': [(9, 'RName field is too short (cucu)')],
+                                  'io': [],
+                                  'qso': []})
+
+        # test with valid rules and with duplicate name
+        mo_log = mock.mock_open(read_data=invalid_edi_log_RName_2)
+        with patch('builtins.open', mo_log, create=True):
+            log = edi.Log('some_log_file.edi', rules=_rules)
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {'header': [(10, 'RName is present multiple times')],
+                                  'io': [],
+                                  'qso': []})
+
+        # test with valid rules and valid header
+        mo_log = mock.mock_open(read_data=valid_edi_log_header)
+        with patch('builtins.open', mo_log, create=True):
+            log = edi.Log('some_log_file.edi', rules=_rules)
+            self.assertTrue(log.valid_header)
+            self.assertTrue(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {'header': [],
                                   'io': [],
                                   'qso': []})
 
@@ -802,7 +904,7 @@ class TestEdiOperator(TestCase):
         self.assertEqual(op.callsign, 'yo5pjb')
         self.assertEqual(op.logs, [])
 
-    def test_all_log(self):
+    def test_add_log(self):
         op = edi.Operator('yo5pjb')
         mo = mock.mock_open(read_data=valid_edi_log)
         with patch('builtins.open', mo, create=True):
@@ -812,6 +914,35 @@ class TestEdiOperator(TestCase):
             self.assertEqual(len(op.logs), 2)
             self.assertIsInstance(op.logs[0], edi.Log)
             self.assertIsInstance(op.logs[1], edi.Log)
+
+    def test_add_log_instance(self):
+        op = edi.Operator('yo5pjb')
+        log = edi.Log('some_log_file.edi')
+
+        self.assertEqual(op.logs, [])
+        op.add_log_instance(log)
+        self.assertEqual(op.logs, [log])
+
+    def test_logs_by_band_regexp(self):
+        op = edi.Operator('yo5pjb')
+        log1 = edi.Log('log1.edi')
+        log1.band = '144 Mhz'
+        log1.valid_header = True
+        log2 = edi.Log('log2.edi')
+        log2.band = '432 MHz'
+        log2.valid_header = True
+        log3 = edi.Log('log3.edi')
+        log3.band = '2m'
+        log3.valid_header = True
+        log4 = edi.Log('log4_invalid.edi')
+        log4.band = '2m'
+
+        op.add_log_instance(log1)
+        op.add_log_instance(log2)
+        op.add_log_instance(log3)
+        op.add_log_instance(log4)
+
+        self.assertListEqual(op.logs_by_band_regexp('144|145|2m'), [log1, log3])
 
 
 class TestEdiHelperFunctions(TestCase):
