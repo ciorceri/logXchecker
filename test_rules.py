@@ -173,14 +173,18 @@ bands=0
 periods=1
 categories=1
 modes=1
-""", 10),
+""",
+     10,
+     'Rules have invalid .bands. value in .contest. section'),
     ("""
 [contest]
 bands=1
 periods=1
 categories=1
 modes=1
-""", 11)
+""",
+     11,
+     'Rules file has invalid settings for band')
 ]
 
 INVALID_PERIODS_VALUE = [
@@ -205,15 +209,20 @@ bands=1
 periods=0
 categories=1
 modes=1
-""" + VALID_BAND1_SECTION, 10),
+""" + VALID_BAND1_SECTION,
+     10,
+     ValueError,
+     'Rules file has invalid .periods. field setting in .contest. section'),
     ("""
 [contest]
 bands=1
 periods=1
 categories=1
 modes=1
-""" + VALID_BAND1_SECTION, 12)
-
+""" + VALID_BAND1_SECTION,
+     12,
+     KeyError,
+     'Rules file has invalid settings for period')
 ]
 
 INVALID_RULES_CATEGORIES_SYNTAX = [
@@ -230,6 +239,15 @@ periods=1
 bands=1
 periods=1
 categories=X
+""" +
+    VALID_BAND1_SECTION +
+    VALID_PERIOD1_SECTION,
+    """
+[contest]
+bands=1
+periods=1
+categories=0
+modes=1
 """ +
     VALID_BAND1_SECTION +
     VALID_PERIOD1_SECTION
@@ -338,7 +356,7 @@ class TestRules(TestCase):
         for rule_band in MISSING_CONTEST_SECTION_FIELDS:
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(SystemExit, '^10$', rules.Rules, 'some_rule_file.rules')
+                self.assertRaisesRegex(KeyError, 'ERROR: Rules has missing fields from .contest. section', rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_invalid_modes_value(self, mock_isfile):
@@ -360,10 +378,10 @@ class TestRules(TestCase):
     @mock.patch('os.path.isfile')
     def test_missing_band_section(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_band, exit_code in MISSING_BAND_SECTION:
+        for rule_band, exit_code, error_msg in MISSING_BAND_SECTION:
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(SystemExit, str(exit_code), rules.Rules, 'some_rule_file.rules')
+                self.assertRaisesRegex(ValueError, error_msg, rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_periods_value(self, mock_isfile):
@@ -377,10 +395,10 @@ class TestRules(TestCase):
     @mock.patch('os.path.isfile')
     def test_missing_period_section(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_period, exit_code in MISSING_PERIOD_SECTION:
+        for rule_period, exit_code, error_raise, error_msg in MISSING_PERIOD_SECTION:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(SystemExit, str(exit_code), rules.Rules, 'some_rule_file.rules')
+                self.assertRaisesRegex(error_raise, error_msg, rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_rules_category_syntax(self, mock_isfile):
@@ -388,7 +406,7 @@ class TestRules(TestCase):
         for rule_period in INVALID_RULES_CATEGORIES_SYNTAX:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, "The rules have invalid 'categories' value in \[contest\] section",
+                self.assertRaisesRegex(ValueError, 'Rules have invalid .categories. value in .contest. section',
                                        rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
@@ -397,7 +415,7 @@ class TestRules(TestCase):
         for rule_period in MISSING_BAND_SECTION_IN_PERIOD:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(SystemExit, '^12$',
+                self.assertRaisesRegex(ValueError, 'Rules file has invalid band settings .band10. for period 1',
                                        rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
@@ -406,5 +424,5 @@ class TestRules(TestCase):
         for rule_period in MISSING_BAND_SECTION_IN_CATEGORY:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(SystemExit, '^12$',
+                self.assertRaisesRegex(ValueError, 'Rules file has invalid band settings .band2. for period 1',
                                        rules.Rules, 'some_rule_file.rules')
