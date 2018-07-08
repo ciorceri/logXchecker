@@ -162,7 +162,7 @@ class Rules(object):
                 _ = self.contest_category(category)['regexp']
                 _ = self.contest_category(category)['bands']
         except KeyError as why:
-            raise KeyError('Rules file has invalid settings for category', category)
+            raise KeyError('Rules file has missing settings for category', category)
 
         # validate date and time in [periodX]. period date and time to be in [contest] date/time range
         try:
@@ -199,7 +199,7 @@ class Rules(object):
             category_bands = self.contest_category_bands(category)
             for category_band in category_bands:
                 if category_band not in self.config.sections():
-                    raise ValueError('ERROR: Rules file has invalid band settings ({}) for category {}'.format(category_band, period))
+                    raise ValueError('Rules file has invalid band settings ({}) for category {}'.format(category_band, period))
 
     @property
     def contest_begin_date(self):

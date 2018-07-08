@@ -226,31 +226,48 @@ modes=1
 ]
 
 INVALID_RULES_CATEGORIES_SYNTAX = [
-    """
+    ("""
 [contest]
 bands=1
 categories=
 periods=1
 """ +
-    VALID_BAND1_SECTION +
-    VALID_PERIOD1_SECTION,
-    """
+     VALID_BAND1_SECTION +
+     VALID_PERIOD1_SECTION,
+     ValueError,
+     'Rules have invalid .categories. value in .contest. section'),
+    ("""
 [contest]
 bands=1
 periods=1
 categories=X
 """ +
-    VALID_BAND1_SECTION +
-    VALID_PERIOD1_SECTION,
-    """
+     VALID_BAND1_SECTION +
+     VALID_PERIOD1_SECTION,
+     ValueError,
+     'Rules have invalid .categories. value in .contest. section'),
+    ("""
 [contest]
 bands=1
 periods=1
 categories=0
 modes=1
 """ +
-    VALID_BAND1_SECTION +
-    VALID_PERIOD1_SECTION
+     VALID_BAND1_SECTION +
+     VALID_PERIOD1_SECTION,
+     ValueError,
+     'Rules have invalid .categories. value in .contest. section'),
+    ("""
+[contest]
+bands=1
+periods=1
+categories=1
+modes=1
+""" +
+     VALID_BAND1_SECTION +
+     VALID_PERIOD1_SECTION,
+     KeyError,
+     'Rules file has missing settings for categor'),
 ]
 
 VALID_MINIMAL_CONTEST_SECTION = """
@@ -403,10 +420,10 @@ class TestRules(TestCase):
     @mock.patch('os.path.isfile')
     def test_rules_category_syntax(self, mock_isfile):
         mock_isfile.return_value = True
-        for rule_period in INVALID_RULES_CATEGORIES_SYNTAX:
+        for rule_period, error_raise, error_msg in INVALID_RULES_CATEGORIES_SYNTAX:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, 'Rules have invalid .categories. value in .contest. section',
+                self.assertRaisesRegex(error_raise, error_msg,
                                        rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
