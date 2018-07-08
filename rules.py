@@ -136,7 +136,7 @@ class Rules(object):
                 _ = self.contest_band(band)['band']
                 _ = self.contest_band(band)['regexp']
         except KeyError as why:
-            raise ValueError('Rules file has invalid settings for band', band)
+            raise ValueError('Rules file has invalid settings for band {}'.format(band))
 
         # validate period number and fields
         if self.contest_periods_nr < 1:
@@ -150,7 +150,7 @@ class Rules(object):
                 _ = self.contest_period(period)['endhour']
                 _ = self.contest_period(period)['bands']
         except KeyError as why:
-            raise KeyError('Rules file has invalid settings for period', period)
+            raise KeyError('Rules file has invalid settings for period {}'.format(period))
 
         # validate category number and fields
         if self.contest_categories_nr < 1:
@@ -162,7 +162,7 @@ class Rules(object):
                 _ = self.contest_category(category)['regexp']
                 _ = self.contest_category(category)['bands']
         except KeyError as why:
-            raise KeyError('Rules file has missing settings for category', category)
+            raise KeyError('Rules file has missing settings for category {}'.format(category))
 
         # validate date and time in [periodX]. period date and time to be in [contest] date/time range
         try:
@@ -185,7 +185,7 @@ class Rules(object):
                 msg = 'period {} end hour'.format(period)
                 datetime.strptime(self.contest_period(period)['endhour'], '%H%M')
         except ValueError as why:
-            raise ValueError('Rules file has invalid', msg)
+            raise ValueError('Rules file has invalid {}'.format(msg))
 
         # validate band field in [periodX]
         for period in range(1, self.contest_periods_nr+1):
