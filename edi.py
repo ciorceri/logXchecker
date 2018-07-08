@@ -96,6 +96,7 @@ class Log(object):
 
     qsos_tuple = namedtuple('qso_tuple', ['linenr', 'qso', 'valid', 'errors']) # REMOVE
     qsos = list()   # list with LogQso instances
+    qsos_points = None
 
     def __init__(self, path, rules=None, checklog=False):
         self.path = path

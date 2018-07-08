@@ -234,6 +234,19 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
         print("DEBUG banda nr={} name={} regexp={}".format(band, rules.contest_band(band)['band'], rules.contest_band(band)['regexp']))
         crosscheck_logs(operator_instances, rules, band)
 
+    # calculate points in every logs
+    print("#### CALCULATE POINTS FOR EVERY LOGS")
+    for op,op_inst in operator_instances.items():
+        for log in op_inst.logs:
+            points = 0
+            for qso in log.qsos:
+                if qso.points and qso.points > 0:
+                    points += qso.points
+            log.qsos_points = points
+            # print every op points:
+            print('HAM: {}  LOG: {}  BAND: {}  POINTS: {}'.format(op, log.path, log.band, log.qsos_points))
+
+
 
 def crosscheck_logs(operator_instances, rules, band_nr):
     """
@@ -291,8 +304,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 if distance < 0:
                     continue
                 qso1.points = distance * 1  # TODO : remove hardcoded band multiplier
-
-    return None
+                qso1.confirmed = True
 
 
 def compare_qso(log1, qso1, log2, qso2):
