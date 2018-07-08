@@ -334,6 +334,8 @@ test_logQso_generic_qso_validator = [
 test_logQso_rules_based_qso_validator = [
     edi.Log.qsos_tuple(linenr=1, qso='130802;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
                        errors=[(1, 'QSO date is invalid: before contest starts (<130803)'), (1, 'QSO date/hour is invalid: not inside contest periods')]),
+    edi.Log.qsos_tuple(linenr=1, qso='130807;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
+                       errors=[(1, 'QSO date is invalid: after contest ends (>130806)'), (1, 'QSO date/hour is invalid: not inside contest periods')]),
     edi.Log.qsos_tuple(linenr=2, qso='130803;1159;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
                        errors=[(2, 'QSO hour is invalid: before contest start hour (<1200)'), (2, 'QSO date/hour is invalid: not inside contest periods')]),
     edi.Log.qsos_tuple(linenr=3, qso='130803;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
@@ -724,6 +726,7 @@ class TestEdiLog(TestCase):
     def test_get_qsos(self, mock_read_file_content):
         self.maxDiff = None
         mock_read_file_content.return_value = valid_edi_log.split('\n')
+        mock_read_file_content.return_value.append('[END; SomeToolSignature]')
         log = edi.Log('some_log_file.edi')
         self.assertEqual(len(test_logQso_qsos), len(log.qsos))
         for qso1, qso2 in zip(test_logQso_qsos, log.qsos):
@@ -761,7 +764,7 @@ class TestEdiLog(TestCase):
 
     def test_validate_address(self):
         positive_tests = ['Sesame Street', 'SesameStreet,13', 'SesameStreetNo.13']
-        negative_tests = [None, '', 'short', 'NewStr13']
+        negative_tests = [None, '', 'short', 'SesameStreet']
         for test in positive_tests:
             self.assertTrue(edi.Log.validate_address(test))
         for test in negative_tests:
@@ -816,6 +819,7 @@ class TestEdiLog(TestCase):
             self.assertTrue(edi.Log.rules_based_validate_band(test, _rules))
         for test in negative_tests:
             self.assertFalse(edi.Log.rules_based_validate_band(test, _rules))
+        self.assertRaisesRegex(ValueError, 'No contest rules provided !', edi.Log.rules_based_validate_band, positive_tests[0], None)
 
     def test_validate_section(self):
         positive_tests = ['so', 'sosb', 'somb', 'single', 'single op', 'single-op',
@@ -840,6 +844,7 @@ class TestEdiLog(TestCase):
             self.assertTrue(edi.Log.rules_based_validate_section(test, _rules))
         for test in negative_tests:
             self.assertFalse(edi.Log.rules_based_validate_section(test, _rules))
+        self.assertRaisesRegex(ValueError, 'No contest rules provided !', edi.Log.rules_based_validate_section, positive_tests[0], None)
 
 
 class TestEdiLogQso(TestCase):
