@@ -54,10 +54,12 @@ class Rules(object):
         [band1]
         band=144
         regexp=144|145|2m
+        multiplier=1
 
         [band2]
         band=432
         regexp=430|432|70cm
+        multiplier=2
 
         [period1]
         begindate=20160805
@@ -135,6 +137,7 @@ class Rules(object):
                 _ = self.contest_band(band)
                 _ = self.contest_band(band)['band']
                 _ = self.contest_band(band)['regexp']
+                _ = self.contest_band(band)['multiplier']
         except KeyError as why:
             raise ValueError('Rules file has invalid settings for band {}'.format(band))
 

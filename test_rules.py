@@ -40,11 +40,13 @@ VALID_BAND1_SECTION = r"""
 [band1]
 band=144
 regexp=144|145|2m
+multiplier=1
 """
 VALID_BAND2_SECTION = r"""
 [band2]
 band=432
 regexp=430|432|70cm
+multiplier=2
 """
 VALID_PERIOD1_SECTION = r"""
 [period1]

@@ -78,9 +78,11 @@ class Log(object):
         'qso': [ (line, 'error: message'), ...],
     }
     """
+    use_as_checklog = False
+    ignore_this_log = None
+
     path = None
     rules = None
-    use_as_checklog = False
     log_lines = None
     valid_header = None
     valid_qsos = None
@@ -102,6 +104,7 @@ class Log(object):
         self.path = path
         self.rules = rules
         self.use_as_checklog = checklog
+        self.ignore_this_log = False
         self.errors = {ERR_IO: [],
                        ERR_HEADER: [],
                        ERR_QSO: []}

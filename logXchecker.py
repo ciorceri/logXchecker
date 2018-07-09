@@ -131,11 +131,7 @@ def load_log_format_module(module_name):
     :param module_name: path to module who knows to parse & read a specified file format (edi, adif, cbr)
     :return:
     """
-    try:
-        module = importlib.import_module(module_name)
-    except ImportError as e:
-        print("ERROR:", e)
-        sys.exit(1)
+    module = importlib.import_module(module_name)
     return module
 
     # class Module(module):
@@ -201,6 +197,7 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
     operator_instances = {}
     for log in logs_instances:
         if not log.valid_header:
+            log.ignore_this_log = True
             ignored_logs.append(log)
             continue
         callsign = log.callsign.upper()
@@ -215,7 +212,8 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
             print('$$$ HAM {} WITH LOG {} AND BAND {}'.format(op.callsign, log.path, log.band))
 
     # TODO check for duplicate logs (on same band)
-    # find a way to select from dupplicate logs or just ignore them all
+    # select one log from duplicate logs
+    # set Log.ignore_this_log field to True for duplicate logs
 
     # TODO check if a ham has logs with different sections
     # but ignore
@@ -236,7 +234,7 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
 
     # calculate points in every logs
     print("#### CALCULATE POINTS FOR EVERY LOGS")
-    for op,op_inst in operator_instances.items():
+    for op, op_inst in operator_instances.items():
         for log in op_inst.logs:
             points = 0
             for qso in log.qsos:
@@ -264,6 +262,8 @@ def crosscheck_logs(operator_instances, rules, band_nr):
             continue
         log1 = _logs1[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
         if log1.use_as_checklog is True:
+            continue
+        if log1.ignore_this_log is True:
             continue
 
         for qso1 in log1.qsos:
@@ -300,7 +300,11 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 _callsign = qso2.qso_fields['call']
                 if callsign1 != _callsign:
                     continue
-                distance = compare_qso(log1, qso1, log2, qso2)
+                try:
+                    distance = compare_qso(log1, qso1, log2, qso2)
+                except ValueError as e:
+                    qso1.errors.append(e)
+
                 # print('      *** COMPARAM : {} vs {} SI {} cu {} = {}'.format(callsign1, callsign2, qso1.qso_line, qso2.qso_line, distance))
                 if distance < 0:
                     continue
@@ -325,35 +329,39 @@ def compare_qso(log1, qso1, log2, qso2):
     REGEX_HOUR = '(?P<hour>\d{2})(?P<minute>\d{2})'
 
     date_res1 = re.match(REGEX_DATE, qso1.qso_fields['date'])
+    if not date_res1:
+        raise ValueError('Date format is invalid : {}'.format(qso1.qso_fields['date']))
     hour_res1 = re.match(REGEX_HOUR, qso1.qso_fields['hour'])
-    if not date_res1 or not hour_res1:
-        return -1
+    if not hour_res1:
+        raise ValueError('Hour format is invalid : {}'.format(qso1.qso_fields['hour']))
     absolute_time1 = datetime(int(date_res1.group('year')), int(date_res1.group('month')), int(date_res1.group('day')),
                               int(hour_res1.group('hour')), int(hour_res1.group('minute')))
 
     date_res2 = re.match(REGEX_DATE, qso2.qso_fields['date'])
+    if not date_res2:
+        raise ValueError('Date format is invalid : {}'.format(qso2.qso_fields['date']))
     hour_res2 = re.match(REGEX_HOUR, qso2.qso_fields['hour'])
-    if not date_res2 or not hour_res2:
-        return -1
+    if not hour_res2:
+        raise ValueError('Hour format is invalid : {}'.format(qso2.qso_fields['hour']))
     absolute_time2 = datetime(int(date_res2.group('year')), int(date_res2.group('month')), int(date_res2.group('day')),
                               int(hour_res2.group('hour')), int(hour_res2.group('minute')))
 
     # check if time1 and time2 difference is less than 5 minutes
     if abs(absolute_time1 - absolute_time2) > timedelta(minutes=5):
-        return -1
+        raise ValueError('Different date/time between qso\'s')
 
     # compare rst
     if (qso1.qso_fields['rst_sent'] != qso2.qso_fields['rst_recv'] or \
         qso1.qso_fields['rst_recv'] != qso2.qso_fields['rst_sent']):
-        return -1
+        raise ValueError('Rst mismatch')
     if (qso1.qso_fields['nr_sent'] != qso2.qso_fields['nr_recv'] or \
         qso1.qso_fields['nr_recv'] != qso2.qso_fields['nr_sent']):
-        return -1
+        raise ValueError('Serial number mismatch')
 
     # compare qth
     if (log1.maidenhead_locator != qso2.qso_fields['wwl'] or \
         log2.maidenhead_locator != qso1.qso_fields['wwl']):
-        return -1
+        raise ValueError('Qth locator mismatch')
 
     # calculate & return distance
     return qth_distance(log1.maidenhead_locator, log2.maidenhead_locator)
