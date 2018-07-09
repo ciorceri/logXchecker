@@ -1,5 +1,5 @@
 """
-Copyright 2016-2017 Ciorceri Petru Sorin
+Copyright 2016-2018 Ciorceri Petru Sorin (yo5pjb)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ limitations under the License.
 
 from unittest import TestCase
 from unittest import mock
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 
 import rules
 
@@ -536,3 +536,31 @@ class TestRules(TestCase):
             with patch('builtins.open', mo, create=True):
                 self.assertRaisesRegex(ValueError, 'Rules file has invalid band settings .band2. for period 1',
                                        rules.Rules, 'some_rule_file.rules')
+
+    @mock.patch('os.path.isfile')
+    def test_contest_log_format(self, mock_isfile):
+        mock_isfile.return_value = True
+        mo = mock.mock_open(read_data=VALID_RULES)
+        with patch('builtins.open', mo, create=True):
+            _rules = rules.Rules('some_rule_file.rules')
+            self.assertEqual(_rules.contest_log_format, 'EDI')
+
+    @mock.patch('os.path.isfile')
+    def test_contest_extra_fields(self, mock_isfile):
+        mock_isfile.return_value = True
+        modif_rules = VALID_RULES
+
+        mo = mock.mock_open(read_data=modif_rules)
+        with patch('builtins.open', mo, create=True):
+            _rules = rules.Rules('some_rule_file.rules')
+            self.assertEqual(_rules.contest_extra_fields, ['name', 'email', 'address'])
+
+        # remove [extra] section from rules
+        extra_rules_list = VALID_EXTRA_FIELD.split()
+        for extra in extra_rules_list:
+            modif_rules = modif_rules.replace(extra, '')
+
+        mo = mock.mock_open(read_data=modif_rules)
+        with patch('builtins.open', mo, create=True):
+            _rules = rules.Rules('some_rule_file.rules')
+            self.assertEqual(_rules.contest_extra_fields, [])
