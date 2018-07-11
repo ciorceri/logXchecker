@@ -566,17 +566,17 @@ class LogQso(object):
                        'exchange received', 'wwl', 'points', 'new exchange', 'new wwl', 'new dxcc', 'duplicate_qso')
 
         if len(line) < qso_min_line_length:
-            return 'QSO line is too short'
+            return 'Qso line is too short'
         res = re.match(cls.REGEX_MINIMAL_QSO_CHECK, line)
         if not res:
-            return 'Incorrect QSO line format (incorrect number of fields).'
+            return 'Incorrect Qso line format (incorrect number of fields).'
         res = re.match(cls.REGEX_MEDIUM_QSO_CHECK, line)
         if not res:
             for (regex, field, name) in zip(cls.REGEX_MEDIUM_QSO_CHECK.split(';'),
                                             line.split(';'),
                                             field_names):
                 if not re.match('^'+regex+'$', field):
-                    return 'QSO field <{}> has an invalid value ({})'.format(name, field)
+                    return 'Qso field <{}> has an invalid value ({})'.format(name, field)
         return None
 
     def generic_qso_validator(self):
@@ -590,14 +590,14 @@ class LogQso(object):
             datetime.datetime.strptime(self.qso_fields['date'], '%y%m%d')
         except ValueError as why:
             self.valid = False
-            self.errors.append((self.line_nr, 'QSO date is invalid: {}'.format(str(why))))
+            self.errors.append((self.line_nr, 'Qso date is invalid: {}'.format(str(why))))
 
         # validate time format
         try:
             datetime.datetime.strptime(self.qso_fields['hour'], '%H%M')
         except ValueError as why:
             self.valid = False
-            self.errors.append((self.line_nr, 'QSO hour is invalid: {}'.format(str(why))))
+            self.errors.append((self.line_nr, 'Qso hour is invalid: {}'.format(str(why))))
 
         # validate callsign format
         re_call = r'^\w+/?\w+$'
@@ -611,29 +611,29 @@ class LogQso(object):
         result = re.match(re_mode, self.qso_fields['mode'])
         if not result:
             self.valid = False
-            self.errors.append((self.line_nr, 'QSO mode is invalid: {}'.format(self.qso_fields['mode'])))
+            self.errors.append((self.line_nr, 'Qso mode is invalid: {}'.format(self.qso_fields['mode'])))
 
         # validate RST (sent & recv) format
         re_rst = "^[1-5][1-9][1-9]?[aA]?$"
         result = re.match(re_rst, self.qso_fields['rst_sent'])
         if not result:
             self.valid = False
-            self.errors.append((self.line_nr, 'RST is invalid: {}'.format(self.qso_fields['rst_sent'])))
+            self.errors.append((self.line_nr, 'Rst is invalid: {}'.format(self.qso_fields['rst_sent'])))
         result = re.match(re_rst, self.qso_fields['rst_recv'])
         if not result:
             self.valid = False
-            self.errors.append((self.line_nr, 'RST is invalid: {}'.format(self.qso_fields['rst_recv'])))
+            self.errors.append((self.line_nr, 'Rst is invalid: {}'.format(self.qso_fields['rst_recv'])))
 
         # validate NR (sent & recv) format
         re_sent_recv_nr = r'^\d{1,4}$'
         result = re.match(re_sent_recv_nr, self.qso_fields['nr_sent'])
         if not result:
             self.valid = False
-            self.errors.append((self.line_nr, 'Sent QSO number is invalid: {}'.format(self.qso_fields['nr_sent'])))
+            self.errors.append((self.line_nr, 'Sent Qso number is invalid: {}'.format(self.qso_fields['nr_sent'])))
         result = re.match(re_sent_recv_nr, self.qso_fields['nr_recv'])
         if not result:
             self.valid = False
-            self.errors.append((self.line_nr, 'Received QSO number is invalid: {}'.format(self.qso_fields['nr_recv'])))
+            self.errors.append((self.line_nr, 'Received Qso number is invalid: {}'.format(self.qso_fields['nr_recv'])))
 
         # validate 'exchange_recv' format
         re_exchange = r'^\w{0,6}$'
@@ -645,7 +645,7 @@ class LogQso(object):
         # validate QTH locator format
         if not Log.validate_qth_locator(self.qso_fields['wwl']):
             self.valid = False
-            self.errors.append((self.line_nr, 'QSO WWL is invalid: {}'.format(self.qso_fields['wwl'])))
+            self.errors.append((self.line_nr, 'Qso WWL is invalid: {}'.format(self.qso_fields['wwl'])))
 
         # validate 'duplicate_qso' format
         # TODO
@@ -664,22 +664,22 @@ class LogQso(object):
         if self.qso_fields['date'] < self.rules.contest_begin_date[2:]:
             self.valid = False
             self.errors.append((self.line_nr,
-                                'QSO date is invalid: before contest starts (<{})'.format(self.rules.contest_begin_date[2:])))
+                                'Qso date is invalid: before contest starts (<{})'.format(self.rules.contest_begin_date[2:])))
         if self.qso_fields['date'] > self.rules.contest_end_date[2:]:
             self.valid = False
             self.errors.append((self.line_nr,
-                                'QSO date is invalid: after contest ends (>{})'.format(self.rules.contest_end_date[2:])))
+                                'Qso date is invalid: after contest ends (>{})'.format(self.rules.contest_end_date[2:])))
 
         # validate qso hour
         if self.qso_fields['date'] == self.rules.contest_begin_date[2:] and \
            self.qso_fields['hour'] < self.rules.contest_begin_hour:
             self.valid = False
             self.errors.append((self.line_nr,
-                                'QSO hour is invalid: before contest start hour (<{})'.format(self.rules.contest_begin_hour)))
+                                'Qso hour is invalid: before contest start hour (<{})'.format(self.rules.contest_begin_hour)))
         if self.qso_fields['date'] == self.rules.contest_end_date[2:] and self.qso_fields['hour'] > self.rules.contest_end_hour:
             self.valid = False
             self.errors.append((self.line_nr,
-                                'QSO hour is invalid: after contest end hour (>{})'.format(self.rules.contest_end_hour)))
+                                'Qso hour is invalid: after contest end hour (>{})'.format(self.rules.contest_end_hour)))
 
         # validate date & hour based on period
         inside_period = False
@@ -709,13 +709,13 @@ class LogQso(object):
         if not inside_period:
             self.valid = False
             self.errors.append((self.line_nr,
-                                'QSO date/hour is invalid: not inside contest periods'))
+                                'Qso date/hour is invalid: not inside contest periods'))
 
         # validate qso mode
         if int(self.qso_fields['mode']) not in self.rules.contest_qso_modes:
             self.valid = False
             self.errors.append((self.line_nr,
-                                'QSO mode is invalid: not in defined modes ({})'.format(self.rules.contest_qso_modes)))
+                                'Qso mode is invalid: not in defined modes ({})'.format(self.rules.contest_qso_modes)))
         return None
 
 

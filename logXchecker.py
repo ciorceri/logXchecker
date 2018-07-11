@@ -320,6 +320,10 @@ def compare_qso(log1, qso1, log2, qso2):
     :return: distance if QSO's are valid or -1/None
     """
 
+    if qso1.valid is False:
+        # TODO : think if I should pass only the 1st error or all errors to ValueError
+        raise ValueError(qso1.errors[0][1])
+
     # compare callsign
     if log1.callsign != qso2.qso_fields['call'] or log2.callsign != qso1.qso_fields['call']:
         return -1
@@ -350,6 +354,9 @@ def compare_qso(log1, qso1, log2, qso2):
     if abs(absolute_time1 - absolute_time2) > timedelta(minutes=5):
         raise ValueError('Different date/time between qso\'s')
 
+    # compare mode
+    if qso1.qso_fields['mode'] != qso2.qso_fields['mode']:
+        raise ValueError('Mode mismatch')
     # compare rst
     if (qso1.qso_fields['rst_sent'] != qso2.qso_fields['rst_recv'] or \
         qso1.qso_fields['rst_recv'] != qso2.qso_fields['rst_sent']):
