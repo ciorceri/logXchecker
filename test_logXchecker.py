@@ -90,32 +90,42 @@ class TestHelperMethods(unittest.TestCase):
         qso_list = [
             # base qso (0)
             edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
-            # qso's with date issues (1-6)
+            # qso's with wrong date (1-6)
             edi.LogQso('120803;1200;YO5AAA;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
             edi.LogQso('140803;1200;YO5AAA;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
             edi.LogQso('130703;1200;YO5AAA;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
             edi.LogQso('130903;1200;YO5AAA;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
             edi.LogQso('130802;1200;YO5AAA;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
             edi.LogQso('130804;1200;YO5AAA;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
-            # qso's with time issues (7-11)
+            # qso's with wrong time (7-11)
             edi.LogQso('130803;1159;YO5AAA;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
             edi.LogQso('130803;1150;YO5AAA;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
             edi.LogQso('130803;1205;YO5AAA;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
             edi.LogQso('130803;1206;YO5AAA;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
             edi.LogQso('130803;1210;YO5AAA;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
-            # qso's with callsign error (12-16)
+            # qso's with wrong callsign (12-16)
             edi.LogQso('130803;1200;YO5AAA/P;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
             edi.LogQso('130803;1200;YO5AAA-P;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
             edi.LogQso('130803;1200;YO5AAA/M;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
             edi.LogQso('130803;1200;YO5AAA-M;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
             edi.LogQso('130803;1200;YO5BBB;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
-            # qso's with mode issues (17-18)
+            # qso's with wrong mode (17-18)
             edi.LogQso('130803;1200;YO5AAA;1;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
             edi.LogQso('130803;1200;YO5AAA;4;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
-            # TODO
-            # qso's with RST issues
-            # qso's with QTH issues
-            # qso's with duplicate issues
+            # qso's with wrong rst & serial (19-22)
+            edi.LogQso('130803;1200;YO5AAA;6;58;001;59;001;;KN16AA;1;;;;', 1, _rules),
+            edi.LogQso('130803;1200;YO5AAA;6;59;002;59;001;;KN16AA;1;;;;', 1, _rules),
+            edi.LogQso('130803;1200;YO5AAA;6;59;001;58;001;;KN16AA;1;;;;', 1, _rules),
+            edi.LogQso('130803;1200;YO5AAA;6;59;001;59;002;;KN16AA;1;;;;', 1, _rules),
+            # qso with invalid rst & serial (23-26)
+            edi.LogQso('130803;1200;YO5AAA;6;00;001;59;001;;KN16AA;1;;;;', 1, _rules),
+            edi.LogQso('130803;1200;YO5AAA;6;59;001;00;001;;KN16AA;1;;;;', 1, _rules),
+            edi.LogQso('130803;1200;YO5AAA;6;59;00001;59;001;;KN16AA;1;;;;', 1, _rules),
+            edi.LogQso('130803;1200;YO5AAA;6;59;001;59;00001;;KN16AA;1;;;;', 1, _rules),
+            # qso with wrong qth (27)
+            edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16AB;1;;;;', 1, _rules),
+            # qso with invalid qth (28)
+            edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;ZZ16ZZ;1;;;;', 1, _rules),
         ]
 
         qso_test = (
@@ -163,10 +173,35 @@ class TestHelperMethods(unittest.TestCase):
             # reverse test of different modes
             (qso_list[17], qso_list[0], None, ValueError, 'Mode mismatch'),
             (qso_list[18], qso_list[0], None, ValueError, 'Qso mode is invalid: not in defined modes \(\[1, 2, 6\]\)'),
+            # test different rst & serial
+            (qso_list[0], qso_list[19], None, ValueError, 'Rst mismatch'),
+            (qso_list[0], qso_list[20], None, ValueError, 'Serial number mismatch'),
+            (qso_list[0], qso_list[21], None, ValueError, 'Rst mismatch'),
+            (qso_list[0], qso_list[22], None, ValueError, 'Serial number mismatch'),
+            # reverse test of differe rst & serial
+            (qso_list[19], qso_list[0], None, ValueError, 'Rst mismatch'),
+            (qso_list[20], qso_list[0], None, ValueError, 'Serial number mismatch'),
+            (qso_list[21], qso_list[0], None, ValueError, 'Rst mismatch'),
+            (qso_list[22], qso_list[0], None, ValueError, 'Serial number mismatch'),
+            # test invalid rst & serial
+            (qso_list[0], qso_list[23], None, ValueError, 'Rst mismatch'),
+            (qso_list[0], qso_list[24], None, ValueError, 'Rst mismatch'),
+            (qso_list[0], qso_list[25], -1, None, None),
+            (qso_list[0], qso_list[26], -1, None, None),
+            # reverse test of invalid rst & serial
+            (qso_list[23], qso_list[0], None, ValueError, 'Rst is invalid: 00'),
+            (qso_list[24], qso_list[0], None, ValueError, 'Rst is invalid: 00'),
+            (qso_list[25], qso_list[0], None, ValueError, 'Qso field <rst send nr> has an invalid value \(00001\)'),
+            (qso_list[26], qso_list[0], None, ValueError, 'Qso field <rst received nr> has an invalid value \(00001\)'),
+            # test different qth
+            (qso_list[0], qso_list[27], None, ValueError, 'Qth locator mismatch'),
+            (qso_list[27], qso_list[0], None, ValueError, 'Qth locator mismatch'),
+            # test invalid qth
+            (qso_list[0], qso_list[28], None, ValueError, 'Qth locator mismatch'),
+            (qso_list[28], qso_list[0], None, ValueError, 'Qso WWL is invalid: ZZ16ZZ'),
         )
 
         for q1, q2, r, ex, ex_msg in qso_test:
-            print('>>>>>', q1.qso_line, q2.qso_line)
             if r:
                 self.assertEqual(logXchecker.compare_qso(_log, q1, _log, q2), r)
             if ex:
