@@ -142,7 +142,7 @@ def load_log_format_module(module_name):
     #         pass
 
 
-def print_human_friendly(output):
+def print_human_friendly_output(output):
     """Will print a human-fiendly output for easy read"""
     # single log
     if output.get(edi.INFO_LOG, False):
@@ -244,6 +244,8 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
             # print every op points:
             print('HAM:{}  LOG:{}  CHECKLOG:{}  BAND:{}  POINTS:{}'.format(op, log.path, log.use_as_checklog, log.band, log.qsos_points))
 
+    return operator_instances
+
 
 def crosscheck_logs(operator_instances, rules, band_nr):
     """
@@ -308,7 +310,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 # print('      *** COMPARAM : {} vs {} SI {} cu {} = {}'.format(callsign1, callsign2, qso1.qso_line, qso2.qso_line, distance))
                 if distance < 0:
                     continue
-                qso1.points = distance * 1  # TODO : remove hardcoded band multiplier
+                qso1.points = distance * int(rules.contest_band(band_nr)['multiplier'])
                 qso1.confirmed = True
 
 
@@ -508,11 +510,15 @@ def main():
             output[edi.INFO_FOLDER_LOGS].extend(logs_output)
 
     if args.output.upper() == 'HUMAN-FRIENDLY':
-        print_human_friendly(output)
+        print_human_friendly_output(output)
     elif args.output.upper() == 'JSON':
         print(edi.dict_to_json(output))
     elif args.output.upper() == 'XML':
         print(edi.dict_to_xml(output))
+
+    # TODO : print_human_fiendly_results(li)
+    if li:
+        pass
 
 if __name__ == '__main__':
     main()
