@@ -298,14 +298,14 @@ class Log(object):
                 do_read_qso = False
                 continue
             if do_read_qso:
-                qso_lines.append((index, line.strip()))
+                qso_lines.append((index+1, line.strip()))
 
         # validate qso lines
         self.qsos = list()
         for qso in qso_lines:
             self.qsos.append(
                 # REMOVE self.qsos_tuple(linenr=qso[0], qso=qso[1], valid=False if message else True, error=message)
-                LogQso(qso[1], qso[0])  # LogQso(qso_line, qso_line_number_in_log)
+                LogQso(qso[1], qso[0], self.rules)  # LogQso(qso_line, qso_line_number_in_log)
             )
 
     @staticmethod

@@ -23,8 +23,8 @@ from test_rules import VALID_RULES
 import edi
 from edi import ERR_IO, ERR_HEADER, ERR_QSO
 
-valid_edi_log = """
-TName=Cupa Nasaud
+valid_edi_log = \
+"""TName=Cupa Nasaud
 TDate=20130803;20130806
 PCall=YO5PJB
 PWWLo=KN16SS
@@ -392,7 +392,7 @@ class TestEdiLog(TestCase):
             self.assertFalse(log.valid_header)
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(5, 'PCall field is present multiple times')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(4, 'PCall field is present multiple times')], ERR_QSO: []})
 
         # test with invalid PCall
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PCall=')]
@@ -437,7 +437,7 @@ class TestEdiLog(TestCase):
             self.assertFalse(log.valid_header)
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(6, 'PWWLo field is present multiple times')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(5, 'PWWLo field is present multiple times')], ERR_QSO: []})
 
         # test with missing PBand
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PBand=')]
@@ -468,7 +468,7 @@ class TestEdiLog(TestCase):
             self.assertFalse(log.valid_header)
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(11, 'PBand field is present multiple times')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(10, 'PBand field is present multiple times')], ERR_QSO: []})
 
         # test with missing PSect
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PSect=')]
@@ -499,7 +499,7 @@ class TestEdiLog(TestCase):
             self.assertFalse(log.valid_header)
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(10, 'PSect field is present multiple times')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(9, 'PSect field is present multiple times')], ERR_QSO: []})
 
         # test with missing TDate
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('TDate=')]
@@ -543,7 +543,7 @@ class TestEdiLog(TestCase):
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
-                                  ERR_HEADER: [(4, 'TDate field is present multiple times')],
+                                  ERR_HEADER: [(3, 'TDate field is present multiple times')],
                                   ERR_QSO: []})
 
         # test with valid header and invalid QSO
@@ -719,8 +719,8 @@ class TestEdiLog(TestCase):
     def test_get_field(self, mock_read_file_content):
         mock_read_file_content.return_value = valid_edi_log.split('\n')
         log = edi.Log('some_log_file.edi')
-        self.assertTupleEqual((['YO5PJB'], 4), log.get_field('PCall'))
-        self.assertTupleEqual((['YO5PJB'], 4), log.get_field('pcall'))
+        self.assertTupleEqual((['YO5PJB'], 3), log.get_field('PCall'))
+        self.assertTupleEqual((['YO5PJB'], 3), log.get_field('pcall'))
 
     @mock.patch.object(edi.Log, 'read_file_content')
     def test_get_qsos(self, mock_read_file_content):
