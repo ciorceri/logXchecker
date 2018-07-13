@@ -20,9 +20,13 @@ import json
 from dicttoxml import dicttoxml
 from validate_email import validate_email
 
-INFO_SINGLE_LOG = 'log'
-INFO_FOLDER = 'folder'
-INFO_MULTIPLE_LOGS = 'logs'
+INFO_SLC = 'single_log_path'
+INFO_MLC = 'multi_logs_folder'
+INFO_CC = 'cross_check_folder'
+INFO_LOG = 'log'
+INFO_BANDS = 'band'
+INFO_OPERATORS = 'operators'
+INFO_CALLSIGN = 'callsign'
 ERR_IO = 'io'
 ERR_HEADER = 'header'
 ERR_QSO = 'qso'

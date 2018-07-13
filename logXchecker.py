@@ -145,19 +145,28 @@ def load_log_format_module(module_name):
 def print_human_friendly_output(output):
     """Will print a human-fiendly output for easy read"""
     # single log
-    if output.get(edi.INFO_SINGLE_LOG, False):
+    if output.get(edi.INFO_SLC, False):
         print_log_human_friendly(output)
     # multi logs
-    if output.get(edi.INFO_FOLDER, False):
-        print('Checking logs from folder : {}'.format(output[edi.INFO_FOLDER]))
-        for log in output[edi.INFO_MULTIPLE_LOGS]:
+    if output.get(edi.INFO_MLC, False):
+        print('Checking logs from folder : {}'.format(output[edi.INFO_MLC]))
+        for log in output[edi.INFO_MLC]:
             print_log_human_friendly(log)
-            print('-------------')
+            print('--------')
+    # cross check
+    if output.get(edi.INFO_CC, False):
+        print('Cross check logs from folder : {}'.format(output[edi.INFO_CC]))
+        for _call, _values in output[edi.INFO_OPERATORS].items():
+            print('Callsign : {}'.format(_call))
+            for _band, _details in _values['band'].items():
+                print('   Band {} : valid={} , section={} , points={}'.format(_band, _details['valid'], _details['section'], _details['points']))
+            print('--------')
+
 
 
 def print_log_human_friendly(output):
     """Will print human fiendly info for a log"""
-    print('Checking log : {}'.format(output[edi.INFO_SINGLE_LOG]))
+    print('Checking log : {}'.format(output[edi.INFO_SLC]))
     if output[edi.ERR_IO]:
         print('Input/Output : {}'.format(output[edi.ERR_IO]))
         pass
@@ -205,12 +214,6 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
         if not operator_instances.get(callsign, None):
             operator_instances[callsign] = edi.Operator(callsign)
         operator_instances[callsign].add_log_instance(log)
-        print('### HAM {} WITH LOG {} AND BAND {}'.format(callsign, log.path, log.band))
-
-    # TODO only debug
-    for _not_used, op in operator_instances.items():
-        for log in op.logs:
-            print('$$$ HAM {} WITH LOG {} AND BAND {}'.format(op.callsign, log.path, log.band))
 
     # TODO check for duplicate logs (on same band)
     # select one log from duplicate logs
@@ -219,22 +222,10 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
     # TODO check if a ham has logs with different sections
     # but ignore
 
-    # DEBUG : print logs errors and ignored logs
-    for x in operator_instances:
-        print('OPERATOR:', x)
-        for y in operator_instances[x].logs:
-            print("-", y.band, y.errors)
-
-    for x in ignored_logs:
-        print('IGNORED: {} @ {} @ {} @ {}'.format(x.callsign, x.use_as_checklog, x.band, x.path))
-        print('- {}'.format(x.errors))
-
     for band in range(1, rules.contest_bands_nr+1):
-        print("DEBUG banda nr={} name={} regexp={}".format(band, rules.contest_band(band)['band'], rules.contest_band(band)['regexp']))
         crosscheck_logs(operator_instances, rules, band)
 
     # calculate points in every logs
-    print("#### CALCULATE POINTS FOR EVERY LOGS")
     for op, op_inst in operator_instances.items():
         for log in op_inst.logs:
             points = 0
@@ -242,8 +233,6 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
                 if qso.points and qso.points > 0:
                     points += qso.points
             log.qsos_points = points
-            # print every op points:
-            print('HAM:{}  LOG:{}  CHECKLOG:{}  BAND:{}  POINTS:{}'.format(op, log.path, log.use_as_checklog, log.band, log.qsos_points))
 
     return operator_instances
 
@@ -478,7 +467,7 @@ def main():
 
     # if 'validate one log'
     if args.singlelogcheck:
-        output[edi.INFO_SINGLE_LOG] = args.singlelogcheck
+        output[edi.INFO_SLC] = args.singlelogcheck
         if not os.path.isfile(args.singlelogcheck):
             print('Cannot open file : {}'.format(args.singlelogcheck))
             return 1
@@ -487,7 +476,7 @@ def main():
 
     # validate multiple logs
     elif args.multilogcheck:
-        output[edi.INFO_FOLDER] = args.multilogcheck
+        output[edi.INFO_MLC] = args.multilogcheck
         if not os.path.isdir(args.multilogcheck):
             print('Cannot open logs folder : {}'.format(args.multilogcheck))
             return 1
@@ -495,10 +484,10 @@ def main():
         for filename in os.listdir(args.multilogcheck):
             log_output = {}
             _log = log(os.path.join(args.multilogcheck, filename), rules=rules)
-            log_output[edi.INFO_SINGLE_LOG] = filename
+            log_output[edi.INFO_LOG] = filename
             log_output.update(_log.errors)
             logs_output.append(log_output)
-        output[edi.INFO_MULTIPLE_LOGS] = logs_output
+        output[edi.INFO_MLC] = logs_output
         # add also checklogs
         if args.checklogs:
             if os.path.isdir(args.checklogs):
@@ -506,14 +495,25 @@ def main():
                 for filename in os.listdir(args.checklogs):
                     log_output = {}
                     _log = log(os.path.join(args.checklogs, filename), rules=rules, checklog=True)
-                    log_output[edi.INFO_SINGLE_LOG] = filename
+                    log_output[edi.INFO_SLC] = filename
                     log_output.update(_log.errors)
                     logs_output.append(log_output)
-                output[edi.INFO_MULTIPLE_LOGS].extend(logs_output)
+                output[edi.INFO_MLC].extend(logs_output)
 
     elif args.crosscheck:
-        li = crosscheck_logs_filter(log, rules=rules, logs_folder=args.crosscheck, checklogs_folder=args.checklogs)
-        # TODO : print_human_fiendly_results(li)
+        output[edi.INFO_CC] = args.crosscheck
+        output[edi.INFO_OPERATORS] = {}
+        op_instance = crosscheck_logs_filter(log, rules=rules, logs_folder=args.crosscheck, checklogs_folder=args.checklogs)
+        for _call, _instance in op_instance.items():
+            op_output = {}
+            op_output[edi.INFO_BANDS] = {}
+            for _log in _instance.logs:
+                op_output[edi.INFO_BANDS][_log.band] = {
+                    'points': _log.qsos_points,
+                    'valid': _log.valid_header,
+                    'section': _log.section,
+                }
+            output[edi.INFO_OPERATORS][_call] = op_output
 
     if args.output.upper() == 'HUMAN-FRIENDLY':
         print_human_friendly_output(output)
