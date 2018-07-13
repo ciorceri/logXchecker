@@ -72,7 +72,7 @@ class Operator(object):
 class Log(object):
     """
     Keep a single EDI log information:
-    log path, log raw content, callsign, qth, band, section, qsos tuple (raw content)
+    log path, log raw content, callsign, qth, band, category(section), qsos tuple (raw content)
     and a list with LogQso() instances
 
     errors format :
@@ -94,7 +94,8 @@ class Log(object):
     callsign = None
     maidenhead_locator = None
     band = None
-    section = None
+    category = None  # section
+    category_raw = None
     date = None
     email = None
     address = None
@@ -178,18 +179,26 @@ class Log(object):
             self.band = _band[0]
 
         # get & validate PSect based on generic rules and by custom rules if provided (rules.contest_category['regexp']
-        _section, line_nr = self.get_field('PSect')
-        if not _section:
+        _category, line_nr = self.get_field('PSect')
+        if not _category:
             self.errors[ERR_HEADER].append((line_nr, 'PSect field is not present'))
-        elif len(_section) > 1:
+        elif len(_category) > 1:
             self.errors[ERR_HEADER].append((line_nr, 'PSect field is present multiple times'))
-        elif not self.rules and not self.validate_section(_section[0]):
-            self.errors[ERR_HEADER].append((line_nr, 'PSect field value is not valid ({})'.format(_section[0])))
-        elif self.rules and not self.rules_based_validate_section(_section[0], self.rules):
+        elif not self.rules and self.validate_category(_category[0]) == (False, None):
+            self.errors[ERR_HEADER].append((line_nr, 'PSect field value is not valid ({})'.format(_category[0])))
+        elif self.rules and self.rules_based_validate_category(_category[0], self.rules) == (False, None):
             self.errors[ERR_HEADER].append((line_nr, 'PSect field value has an invalid value ({}). '
-                                          'Not as defined in contest rules'.format(_section[0])))
+                                          'Not as defined in contest rules'.format(_category[0])))
         else:
-            self.section = _section[0]
+            self.category_raw = _category[0]
+            # normalize self.category_raw
+            if self.rules:
+                _res, _cat = self.rules_based_validate_category(self.category_raw, self.rules)
+                self.category = _cat
+            else:
+                _res, _cat = self.validate_category(self.category_raw)
+                self.category = _cat
+
 
         # get & validate TDate based on generic rules format and by custom rules if provided
         # (rules.contest_begin_date & rules.contest_end_date)
@@ -207,7 +216,7 @@ class Log(object):
             self.date = _date[0]
 
         # are all mandatory fields valid ?
-        if all((self.callsign, self.maidenhead_locator, self.band, self.section, self.date)):
+        if all((self.callsign, self.maidenhead_locator, self.band, self.category, self.date)):
             self.valid_header = True
 
         # validate email from [extra] @ rules
@@ -386,40 +395,45 @@ class Log(object):
         return is_valid
 
     @staticmethod
-    def validate_section(section_value):
+    def validate_category(category_value):
         """
         This will validate PSect based on generic rules
         """
-        is_valid = False
-        if not section_value:
-            return is_valid
+        if not category_value:
+            return False, None
 
-        regexpSectCheck = ['.*SOSB.*', '.*SOMB.*', '.*Single.*', '^SO$',
-                           '.*MOSB.*', '.*MOMB.*', '.*Multi.*', '^MO$',
-                           'check', 'checklog', 'check log']
-        for _regex in regexpSectCheck:
-            res = re.match(_regex, section_value, re.IGNORECASE)
-            if res:
-                is_valid = True
-        return is_valid
+        regexpCategories = {
+            'single': ['.*SOSB.*', '.*SOMB.*', '.*Single.*', '^SO$'],
+            'multi': ['.*MOSB.*', '.*MOMB.*', '.*Multi.*', '^MO$'],
+            'checklog': ['check', 'checklog', 'check log']
+        }
+        for _cat, _regex_list in regexpCategories.items():
+            for _regex in _regex_list:
+                res = re.match(_regex, category_value, re.IGNORECASE)
+                if res:
+                    return True, _cat
+        return False, None
 
     @staticmethod
-    def rules_based_validate_section(section_value, rules):
+    def rules_based_validate_category(category_value, rules):
         """
         This will validate PSect based on Rules class instance
         """
-        is_valid = False
-        if not section_value:
-            return is_valid
+        if not category_value:
+            return False, None
 
         if rules is None:
             raise ValueError('No contest rules provided !')
         for _nr in range(1, rules.contest_categories_nr+1):
             _regex = r'\s*(' + rules.contest_category(_nr)['regexp'] + r')\s*'
-            res = re.match(_regex, section_value, re.IGNORECASE)
+            res = re.match(_regex, category_value, re.IGNORECASE)
             if res:
-                is_valid = True
-        return is_valid
+                return True, rules.contest_category(_nr)['name']
+        return False, None
+
+    @staticmethod
+    def normalize_category(category_value, rules):
+        pass
 
     @staticmethod
     def validate_date(date_value):

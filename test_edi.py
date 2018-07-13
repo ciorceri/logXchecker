@@ -821,30 +821,36 @@ class TestEdiLog(TestCase):
             self.assertFalse(edi.Log.rules_based_validate_band(test, _rules))
         self.assertRaisesRegex(ValueError, 'No contest rules provided !', edi.Log.rules_based_validate_band, positive_tests[0], None)
 
-    def test_validate_section(self):
-        positive_tests = ['so', 'sosb', 'somb', 'single', 'single op', 'single-op',
-                          'mo', 'mosb', 'momb', 'multi', 'multi op', 'multi-op']
+    def test_validate_category(self):
+        positive_tests = {
+            'single': ['so', 'sosb', 'somb', 'single', 'single op', 'single-op'],
+            'multi': ['mo', 'mosb', 'momb', 'multi', 'multi op', 'multi-op'],
+            'checklog': ['check', 'check-log', 'checklog', 'CHECklog']
+        }
         negative_tests = [None, '', 'operator', 'band']
-        for test in positive_tests:
-            self.assertTrue(edi.Log.validate_section(test))
+        for _category, test_list in positive_tests.items():
+            for test in test_list:
+                self.assertTupleEqual(edi.Log.validate_category(test), (True, _category))
         for test in negative_tests:
-            self.assertFalse(edi.Log.validate_section(test))
+            self.assertTupleEqual(edi.Log.validate_category(test), (False, None))
 
     @mock.patch('os.path.isfile')
-    def test_rules_based_validate_section(self, mock_isfile):
+    def test_rules_based_validate_category(self, mock_isfile):
         mock_isfile.return_value = True
-        positive_tests = ['so', 'sosb', 'somb', 'single', 'mo', 'multi',
-                          'single-op', 'single-operator', 'single operator',
-                          'multi-op', 'multi-operator' 'multi operator']
+        positive_tests = {
+            'Single Operator 144': ['so', 'sosb', 'somb', 'single', 'single op', 'single-op', 'single-operator', 'single operator'],
+            'Multi Operator': ['mo', 'mosb', 'momb', 'multi', 'multi op', 'multi-op', 'multi-operator' 'multi operator'],
+        }
         negative_tests = [None, '', 'operator', 'band']
         mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
             _rules = rules.Rules('some_rule_file.rules')
-        for test in positive_tests:
-            self.assertTrue(edi.Log.rules_based_validate_section(test, _rules))
+        for _category, test_list in positive_tests.items():
+            for test in test_list:
+                self.assertTupleEqual(edi.Log.rules_based_validate_category(test, _rules), (True, _category))
         for test in negative_tests:
-            self.assertFalse(edi.Log.rules_based_validate_section(test, _rules))
-        self.assertRaisesRegex(ValueError, 'No contest rules provided !', edi.Log.rules_based_validate_section, positive_tests[0], None)
+            self.assertTupleEqual(edi.Log.rules_based_validate_category(test, _rules), (False, None))
+        self.assertRaisesRegex(ValueError, 'No contest rules provided !', edi.Log.rules_based_validate_category, 'none', None)
 
 
 class TestEdiLogQso(TestCase):

@@ -159,7 +159,7 @@ def print_human_friendly_output(output):
         for _call, _values in output[edi.INFO_OPERATORS].items():
             print('Callsign : {}'.format(_call))
             for _band, _details in _values['band'].items():
-                print('   Band {} : valid={} , section={} , points={}'.format(_band, _details['valid'], _details['section'], _details['points']))
+                print('   Band {} : valid={} , category={} , points={}'.format(_band, _details['valid'], _details['category'], _details['points']))
             print('--------')
 
 
@@ -219,7 +219,7 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
     # select one log from duplicate logs
     # set Log.ignore_this_log field to True for duplicate logs
 
-    # TODO check if a ham has logs with different sections
+    # TODO check if a ham has logs with different categories
     # but ignore
 
     for band in range(1, rules.contest_bands_nr+1):
@@ -511,7 +511,7 @@ def main():
                 op_output[edi.INFO_BANDS][_log.band] = {
                     'points': _log.qsos_points,
                     'valid': _log.valid_header,
-                    'section': _log.section,
+                    'category': _log.category,
                 }
             output[edi.INFO_OPERATORS][_call] = op_output
 
