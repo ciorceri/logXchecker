@@ -34,14 +34,6 @@ ERR_HEADER = 'header'
 ERR_QSO = 'qso'
 
 
-def dict_to_json(dictionary):
-    return json.dumps(dictionary)
-
-
-def dict_to_xml(dictionary):
-    return dicttoxml(dictionary)
-
-
 class Operator(object):
     """
     Keep operator callsign, info and logs path
@@ -829,7 +821,9 @@ def crosscheck_logs(operator_instances, rules, band_nr):
             if qso1.confirmed is True:
                 continue
 
-            # TODO : ignore duplicate qso
+            # TODO : ignore duplicate qso (with flag)
+            # TODO : check if this qso is present multiple times here in same period
+            # and in other ham log to avoid 'dupplicate hacks'
 
             # check if we have some logs from 2nd ham
             callsign2 = qso1.qso_fields['call']
@@ -995,3 +989,11 @@ def qth_distance(qth1, qth2):
     else:
         return int(round(arc*6373))
         #return arc*6373
+
+
+def dict_to_json(dictionary):
+    return json.dumps(dictionary)
+
+
+def dict_to_xml(dictionary):
+    return dicttoxml(dictionary)

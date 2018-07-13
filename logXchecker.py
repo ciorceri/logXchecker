@@ -70,60 +70,7 @@ class ArgumentParser(object):
         return self.parser.parse_args(args)
 
 
-class Contest(object):
-    """
-    This is the main contest class which will held an instance of 'Rules' class.
-    It will create a list of instances of 'Operator' class
-    and each 'Operator' instance will have a list of 'Log' class
-    and each 'Log' instance will keep a lot of instances of 'LogQso'
-    """
-
-
-# class Log(edi.Log):
-#     """
-#     This will keep a single log information (header + list of LogQso instances)
-#     """
-#     path = None
-#
-#     def __init__(self):
-#         pass
-#
-#     def validate_log_name(self):
-#         pass
-#
-#     def validate_log_content(self):
-#         pass
-#
-#     def get_summary(self):
-#         """
-#         Based on the output format (text, html...) this will output a summary of the log
-#         """
-#         pass
-#
-#
-# class LogQso(edi.LogQso):
-#     """
-#     This will keep a single QSO
-#     """
-#     qsoFields = {}
-#
-#     def __init__(self):
-#         pass
-#
-#     def qso_parser(self):
-#         """
-#         This should parse a qso based on log format
-#         """
-#         pass
-#
-#     def validate_qso(self):
-#         """
-#         This will validate a parsed qso based on generic rules (simple validation) or based on rules
-#         """
-#         pass
-
-
-# This function is not used at this moment since I have support only for 'edi format'
+# TODO : This function is not used at this moment since I have support only for 'edi format'
 def load_log_format_module(module_name):
     """
     :param module_name: path to module who knows to parse & read a specified file format (edi, adif, cbr)
@@ -239,6 +186,7 @@ def main():
                     logs_output.append(log_output)
                 output[edi.INFO_MLC].extend(logs_output)
 
+    # crosscheck logs
     elif args.crosscheck:
         output[edi.INFO_CC] = args.crosscheck
         output[edi.INFO_OPERATORS] = {}
