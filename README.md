@@ -26,19 +26,20 @@ beginhour=1200
 endhour=1200
 bands=2
 periods=2
-categories=3
+categories=4
+modes=1,2,6
 
 [log]
 format=edi
 
 [band1]
 band=144
-regexp=(144|145|2m)
+regexp=144|145|2m
 multiplier=1
 
 [band2]
 band=432
-regexp=(430|432|70cm)
+regexp=430|432|70cm
 multiplier=1
 
 [period1]
@@ -57,17 +58,22 @@ bands=band1,band2
 
 [category1]
 name=Single Operator 144
-regexp=(so|single)
+regexp=so|single
 bands=band1
 
 [category2]
 name=Single Operator 432
-regexp=(so|single)
+regexp=so|single
 bands=band2
 
 [category3]
 name=Multi Operator
-regexp=(mo|multi)
+regexp=mo|multi
+bands=band1,band2
+
+[category4]
+name=Checklog
+regexp=check|checklog
 bands=band1,band2
 
 [extra]
