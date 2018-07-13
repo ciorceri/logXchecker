@@ -660,7 +660,10 @@ class LogQso(object):
             self.errors.append((self.line_nr, 'Qso WWL is invalid: {}'.format(self.qso_fields['wwl'])))
 
         # validate 'duplicate_qso' format
-        # TODO
+        if self.qso_fields['duplicate_qso'].upper() == 'D':
+            self.valid = False
+            self.errors.append((self.line_nr, 'Qso marked as dupplicate'))
+
         return None
 
     def rules_based_qso_validator(self):
@@ -694,30 +697,8 @@ class LogQso(object):
                                 'Qso hour is invalid: after contest end hour (>{})'.format(self.rules.contest_end_hour)))
 
         # validate date & hour based on period
-        inside_period = False
-        for period in range(1, self.rules.contest_periods_nr + 1):
-            # if date is not in period, check next period
-            if not (self.rules.contest_period(period)['begindate'][2:] <= self.qso_fields['date'] <= self.rules.contest_period(period)['enddate'][2:]):
-                continue
-            _enddate = datetime.strptime(self.rules.contest_period(period)['enddate'], '%Y%m%d')
-            _begindate = datetime.strptime(self.rules.contest_period(period)['begindate'], '%Y%m%d')
-            delta_days = _enddate - _begindate
-            # if period is in same day
-            if delta_days == timedelta(0) and self.rules.contest_period(period)['beginhour'] <= self.qso_fields['hour'] <= self.rules.contest_period(period)['endhour']:
-                    inside_period = True
-                    break
-            # if period is in multiple days
-            elif delta_days > timedelta(0):
-                if self.rules.contest_period(period)['begindate'][2:] == self.qso_fields['date'] and self.rules.contest_period(period)['beginhour'] <= self.qso_fields['hour']:
-                    inside_period = True
-                    break
-                if self.qso_fields['date'] == self.rules.contest_period(period)['enddate'][2:] and self.qso_fields['hour'] <= self.rules.contest_period(period)['endhour']:
-                    inside_period = True
-                    break
-                # if begin_period < qso_date < end_period
-                if self.rules.contest_period(period)['begindate'][2:] < self.qso_fields['date'] < self.rules.contest_period(period)['enddate'][2:]:
-                    inside_period = True
-                    break
+        inside_period, _ = self.qso_inside_period()
+
         if not inside_period:
             self.valid = False
             self.errors.append((self.line_nr,
@@ -729,6 +710,46 @@ class LogQso(object):
             self.errors.append((self.line_nr,
                                 'Qso mode is invalid: not in defined modes ({})'.format(self.rules.contest_qso_modes)))
         return None
+
+    def qso_inside_period(self):
+        """
+        :return: True, period_number
+                 False, None
+        """
+        inside_period = False
+        inside_period_nr = None
+
+        if not self.rules or self.valid is False:
+            return inside_period, inside_period_nr
+
+        for period in range(1, self.rules.contest_periods_nr + 1):
+            # if date is not in period, check next period
+            if not (self.rules.contest_period(period)['begindate'][2:] <= self.qso_fields['date'] <= self.rules.contest_period(period)['enddate'][2:]):
+                continue
+            _enddate = datetime.strptime(self.rules.contest_period(period)['enddate'], '%Y%m%d')
+            _begindate = datetime.strptime(self.rules.contest_period(period)['begindate'], '%Y%m%d')
+            delta_days = _enddate - _begindate
+            # if period is in same day
+            if delta_days == timedelta(0) and self.rules.contest_period(period)['beginhour'] <= self.qso_fields['hour'] <= self.rules.contest_period(period)['endhour']:
+                    inside_period = True
+                    inside_period_nr = period
+                    break
+            # if period is in multiple days
+            elif delta_days > timedelta(0):
+                if self.rules.contest_period(period)['begindate'][2:] == self.qso_fields['date'] and self.rules.contest_period(period)['beginhour'] <= self.qso_fields['hour']:
+                    inside_period = True
+                    inside_period_nr = period
+                    break
+                if self.qso_fields['date'] == self.rules.contest_period(period)['enddate'][2:] and self.qso_fields['hour'] <= self.rules.contest_period(period)['endhour']:
+                    inside_period = True
+                    inside_period_nr = period
+                    break
+                # if begin_period < qso_date < end_period
+                if self.rules.contest_period(period)['begindate'][2:] < self.qso_fields['date'] < self.rules.contest_period(period)['enddate'][2:]:
+                    inside_period = True
+                    inside_period_nr = period
+                    break
+        return inside_period, inside_period_nr
 
 
 class LogException(Exception):
@@ -800,11 +821,10 @@ def crosscheck_logs(operator_instances, rules, band_nr):
     :return: TODO
     """
     for callsign1, ham1 in operator_instances.items():
-        # print('CHECK LOGS OF : ', callsign1, ham1.callsign)
-
+        # set a list for this ham with already made contacts
+        _had_qso_with = []
         # get logs for band
         _logs1 = ham1.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
-        # print('  LOG PATH : ', [x.path for x in _logs1])
 
         if not _logs1:
             continue
@@ -821,10 +841,6 @@ def crosscheck_logs(operator_instances, rules, band_nr):
             if qso1.confirmed is True:
                 continue
 
-            # TODO : ignore duplicate qso (with flag)
-            # TODO : check if this qso is present multiple times here in same period
-            # and in other ham log to avoid 'dupplicate hacks'
-
             # check if we have some logs from 2nd ham
             callsign2 = qso1.qso_fields['call']
             ham2 = operator_instances.get(callsign2, None)
@@ -832,9 +848,14 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 qso1.confirmed = False
                 continue
 
+            # validate that this qso wasn't already validated
+            _, inside_period_nr = qso1.qso_inside_period()
+            if '{}-period{}'.format(callsign2, inside_period_nr) in _had_qso_with:
+                qso1.confirmed = False
+                continue
+
             # check if we have proper band logs from 2nd ham
             _logs2 = ham2.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
-            # print('      HAM2 LOGS : ', [x.path for x in _logs2])
             if not _logs2:
                 qso1.confirmed = False
                 continue
@@ -845,8 +866,6 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 if qso2.valid is False:
                     continue
 
-                # TODO : ignore duplicate qso
-
                 _callsign = qso2.qso_fields['call']
                 if callsign1 != _callsign:
                     continue
@@ -855,9 +874,11 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 except ValueError as e:
                     qso1.errors.append(e)
 
-                # print('      *** COMPARAM : {} vs {} SI {} cu {} = {}'.format(callsign1, callsign2, qso1.qso_line, qso2.qso_line, distance))
                 if distance < 0:
                     continue
+                # add this qso in _had_qso_with list
+                _, inside_period_nr = qso2.qso_inside_period()
+                _had_qso_with.append('{}-period{}'.format(callsign2, inside_period_nr))
                 qso1.points = distance * int(rules.contest_band(band_nr)['multiplier'])
                 qso1.confirmed = True
 
