@@ -1,0 +1,48 @@
+[REG1TEST;1]
+TName=Cupa Napoca
+TDate=20160507;20160508
+PCall=YO5OUC
+PWWLo=KN16TS
+PExch=
+PAdr1=
+PAdr2=
+PSect=SOMB
+PBand=432 MHz
+PClub=Transilvania Connection
+RName=Nicolae Crisan
+RCall=
+Radr1=Fabricii nr. 5 Ap. 159
+Radr2=
+RPoCo=
+RCity=
+RCoun=Romania
+RPhon=
+RHBBS=yo5ouc@yahoo.com
+MOpe1=
+MOpe2=
+STXEq=FT 857D
+SPowe=20W
+SRXEq=
+SAnte=YAGI 6el
+SAntH=
+CQSOs=6,2
+CQSOP=672
+CWWLs=
+CWWLB=
+CExcs=
+CExcB=
+CDXCs=
+CDXCB=
+CToSc=672
+CODXC=YO6OBK;KN26TR;152
+[Remarks]
+
+
+
+[QSORecords;6]
+160508;0726 ;YO5CRI; ;59;001 ;59;007 ;;KN16TS ;2;;;;
+160508;0730 ;YO6OBK; ;59;002 ;59;008 ;;KN26TR ;304;;;;
+160508;0739 ;YO5KLD; ;59;003 ;59;019 ;;KN17UL ;158;;;;
+160508;0747 ;YO5KAS; ;59;004 ;59;012 ;;N16SQ ;22;;;;
+160508;0752 ;YO5PLP/P; ;59;005 ;59;006 ;;KN27FH ;174;;;;
+160508;0815 ;YO5TP; ;59;006 ;59;007 ;;KN16SS ;12;;;;

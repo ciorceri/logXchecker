@@ -1,0 +1,48 @@
+[REGITEST;1]
+TName=Concurs Cluj Napoca
+TDate=20160508;20160508
+PCall=YO5QBS/p
+PWWLo=kn17wp
+PExch=
+PAdr1=bogdan voda nr250
+PAdr2=
+PSect= single
+PBand=432
+PClub=
+RName=risco gheorghe
+RCall=YO5QBS
+RAdr1=bogdan voda nr 250 sighet
+RAdr2=
+RPoCo=
+RCity=sighetu marmatiei
+RCoun=romania
+RPhon=nr 250 sigheromaniaheorgsighetu marmatieiS
+RHBBS=
+MOpe1=
+MOpe2=
+STXEq=ft857
+SPowe=20w
+SRXEq=ft857
+SAnte=yagi
+SAntH=;nr 250 sighe6mmaniaheorgswanetu marmft857Sÿÿ
+CQSOs=6;1
+CQSOP=971
+CWWLs=;0;1
+CWWLB=0
+CExcs=0;0;1
+CExcB=0
+CDXCs=;0;1
+CDXCB=0
+CToSc=4956
+CODXC=YO6OBK;KN26TR;334
+[Remarks]
+
+
+
+[QSORecords;6]
+160508;0558;YO5KAS;1;59;001;59;003;;KN16SQ;220;;;;;
+160508;0602;YO5PVA;1;59;002;59;007;;KN27FH;116;;;;;
+160508;0736;YO5KLD;1;59;003;59;018;;KN17UL;46;;;;;
+160508;0739;YO6OBK;1;59;004;59;010;;KN26TR;334;;;;;
+160508;0753;YO5CRI;1;59;005;59;009;;KN16TS;198;;;;;
+160508;0756;YO5PLP/P;1;59;006;59;007;;KN27FH;57;;;;;

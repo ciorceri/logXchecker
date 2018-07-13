@@ -23,8 +23,8 @@ from test_rules import VALID_RULES
 import edi
 from edi import ERR_IO, ERR_HEADER, ERR_QSO
 
-valid_edi_log = """
-TName=Cupa Nasaud
+valid_edi_log = \
+"""TName=Cupa Nasaud
 TDate=20130803;20130806
 PCall=YO5PJB
 PWWLo=KN16SS
@@ -107,6 +107,16 @@ TDate=20130803;20130806
 RHBBS=invalid email address
 """
 
+invalid_edi_log_RHBBS_2 = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+RHBBS=mail1@mail.com
+RHBBS=mail2@mail.com
+"""
+
 invalid_edi_log_PAdr1 = """
 PCall=YO5PJB
 PWWLo=KN16SS
@@ -117,6 +127,18 @@ RHBBS=name@email.com
 PAdr1=None 
 """
 
+invalid_edi_log_PAdr1_2 = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+RHBBS=name@email.com
+PAdr1=Address1
+PAdr1=Address1 again
+"""
+
+
 invalid_edi_log_RName = """
 PCall=YO5PJB
 PWWLo=KN16SS
@@ -126,6 +148,29 @@ TDate=20130803;20130806
 RHBBS=name@email.com
 PAdr1=Sesame Street, 13
 RName=cucu
+"""
+
+invalid_edi_log_RName_2 = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+RHBBS=name@email.com
+PAdr1=Sesame Street, 13
+RName=John Doe
+RName=John Doe's brother
+"""
+
+valid_edi_log_header = """
+PCall=YO5PJB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+RHBBS=name@email.com
+PAdr1=Sesame Street, 13
+RName=John Doe
 """
 
 test_valid_qso_lines = [
@@ -189,15 +234,15 @@ test_valid_qso_fields = [
 ]
 
 test_invalid_qso_lines = [
-    ('123456789012345678', 'QSO line is too short'),
-    ('130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;', 'Incorrect QSO line format (incorrect number of fields).'),
-    ('30803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', 'QSO field <date> has an invalid value (30803)'),
-    ('130803;319;YO5BTZ;;59;001;59;001;;KN16SS;1;;;;', 'QSO field <hour> has an invalid value (319)'),
-    ('130803;1319;YO5BTZ;6;9;001;59;001;;KN16SS;1;;;;', 'QSO field <rst sent> has an invalid value (9)'),
-    ('130803;1319;YO5BTZ;6;59;1;59;001;;KN16SS;1;;;;', 'QSO field <rst send nr> has an invalid value (1)'),
-    ('130803;1319;YO5BTZ;6;59;00001;59;001;;KN16SS;1;;;;', 'QSO field <rst send nr> has an invalid value (00001)'),
-    ('130803;1319;YO5BTZ;6;59;001;9;001;;KN16SS;1;;;;', 'QSO field <rst received> has an invalid value (9)'),
-    ('130803;1319;YO5BTZ;6;59;001;59;00002;;KN16SS;1;;;;', 'QSO field <rst received nr> has an invalid value (00002)'),
+    ('123456789012345678', 'Qso line is too short'),
+    ('130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;', 'Incorrect Qso line format (incorrect number of fields).'),
+    ('30803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', 'Qso field <date> has an invalid value (30803)'),
+    ('130803;319;YO5BTZ;;59;001;59;001;;KN16SS;1;;;;', 'Qso field <hour> has an invalid value (319)'),
+    ('130803;1319;YO5BTZ;6;9;001;59;001;;KN16SS;1;;;;', 'Qso field <rst sent> has an invalid value (9)'),
+    ('130803;1319;YO5BTZ;6;59;1;59;001;;KN16SS;1;;;;', 'Qso field <rst send nr> has an invalid value (1)'),
+    ('130803;1319;YO5BTZ;6;59;00001;59;001;;KN16SS;1;;;;', 'Qso field <rst send nr> has an invalid value (00001)'),
+    ('130803;1319;YO5BTZ;6;59;001;9;001;;KN16SS;1;;;;', 'Qso field <rst received> has an invalid value (9)'),
+    ('130803;1319;YO5BTZ;6;59;001;59;00002;;KN16SS;1;;;;', 'Qso field <rst received nr> has an invalid value (00002)'),
 ]
 
 test_logQso_qsos = [
@@ -235,70 +280,72 @@ test_logQso_qsos = [
 
 test_logQso_regexp_qso_validator = [
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;0016SS;1;;;;', valid=False,
-                       errors=[(5, 'QSO field <wwl> has an invalid value (0016SS)')]),
+                       errors=[(5, 'Qso field <wwl> has an invalid value (0016SS)')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN1600;1;;;;', valid=False,
-                       errors=[(5, 'QSO field <wwl> has an invalid value (KN1600)')]),
+                       errors=[(5, 'Qso field <wwl> has an invalid value (KN1600)')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KNAASS;1;;;;', valid=False,
-                       errors=[(5, 'QSO field <wwl> has an invalid value (KNAASS)')]),
+                       errors=[(5, 'Qso field <wwl> has an invalid value (KNAASS)')]),
 ]
 
 test_logQso_generic_qso_validator = [
     edi.Log.qsos_tuple(linenr=1, qso='999999;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(1, 'QSO date is invalid: unconverted data remains: 99')]),
+                       errors=[(1, 'Qso date is invalid: unconverted data remains: 99')]),
     edi.Log.qsos_tuple(linenr=2, qso='130803;9999;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(2, 'QSO hour is invalid: unconverted data remains: 99')]),
+                       errors=[(2, 'Qso hour is invalid: unconverted data remains: 99')]),
     edi.Log.qsos_tuple(linenr=3, qso='130803;1319;YO5BTZ/P/P;6;59;001;59;001;;KN16SS;1;;;;;', valid=False,
                        errors=[(3, 'Callsign is invalid: YO5BTZ/P/P')]),
     edi.Log.qsos_tuple(linenr=4, qso='130803;1319;YO5BTZ;A;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(4, 'QSO mode is invalid: A')]),
+                       errors=[(4, 'Qso mode is invalid: A')]),
 
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;09;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(5, 'RST is invalid: 09')]),
+                       errors=[(5, 'Rst is invalid: 09')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59A;001;59;001;;KN16SS;1;;;;', valid=True,
                        errors=[]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59A;001;;KN16SS;1;;;;', valid=True,
                        errors=[]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;69;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(5, 'RST is invalid: 69')]),
+                       errors=[(5, 'Rst is invalid: 69')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;50;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(5, 'RST is invalid: 50')]),
+                       errors=[(5, 'Rst is invalid: 50')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59Z;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(5, 'RST is invalid: 59Z')]),
+                       errors=[(5, 'Rst is invalid: 59Z')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;69A;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(5, 'RST is invalid: 69A')]),
+                       errors=[(5, 'Rst is invalid: 69A')]),
 
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;09;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(5, 'RST is invalid: 09')]),
+                       errors=[(5, 'Rst is invalid: 09')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;69;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(5, 'RST is invalid: 69')]),
+                       errors=[(5, 'Rst is invalid: 69')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;50;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(5, 'RST is invalid: 50')]),
+                       errors=[(5, 'Rst is invalid: 50')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59Z;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(5, 'RST is invalid: 59Z')]),
+                       errors=[(5, 'Rst is invalid: 59Z')]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;69A;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(5, 'RST is invalid: 69A')]),
+                       errors=[(5, 'Rst is invalid: 69A')]),
 
     edi.Log.qsos_tuple(linenr=6, qso='130803;1319;YO5BTZ;6;59;001;59;001;1234567;KN16SS;1;;;;', valid=False,
                        errors=[(6, 'Received exchange is invalid: 1234567')]),
     edi.Log.qsos_tuple(linenr=7, qso='130803;1319;YO5BTZ;6;59;001;59;001;;ZZ27HM;1;;;;', valid=False,
-                       errors=[(7, 'QSO WWL is invalid: ZZ27HM')]),
+                       errors=[(7, 'Qso WWL is invalid: ZZ27HM')]),
     edi.Log.qsos_tuple(linenr=7, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN27ZZ;1;;;;', valid=False,
-                       errors=[(7, 'QSO WWL is invalid: KN27ZZ')]),
+                       errors=[(7, 'Qso WWL is invalid: KN27ZZ')]),
 ]
 
 test_logQso_rules_based_qso_validator = [
     edi.Log.qsos_tuple(linenr=1, qso='130802;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(1, 'QSO date is invalid: before contest starts (<130803)'), (1, 'QSO date/hour is invalid: not inside contest periods')]),
+                       errors=[(1, 'Qso date is invalid: before contest starts (<130803)'), (1, 'Qso date/hour is invalid: not inside contest periods')]),
+    edi.Log.qsos_tuple(linenr=1, qso='130807;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
+                       errors=[(1, 'Qso date is invalid: after contest ends (>130806)'), (1, 'Qso date/hour is invalid: not inside contest periods')]),
     edi.Log.qsos_tuple(linenr=2, qso='130803;1159;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(2, 'QSO hour is invalid: before contest start hour (<1200)'), (2, 'QSO date/hour is invalid: not inside contest periods')]),
+                       errors=[(2, 'Qso hour is invalid: before contest start hour (<1200)'), (2, 'Qso date/hour is invalid: not inside contest periods')]),
     edi.Log.qsos_tuple(linenr=3, qso='130803;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
                        errors=[]),
     edi.Log.qsos_tuple(linenr=4, qso='130803;1759;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
                        errors=[]),
     edi.Log.qsos_tuple(linenr=5, qso='130803;1800;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(5, 'QSO date/hour is invalid: not inside contest periods')]),
+                       errors=[(5, 'Qso date/hour is invalid: not inside contest periods')]),
     edi.Log.qsos_tuple(linenr=6, qso='130804;0559;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(6, 'QSO date/hour is invalid: not inside contest periods')]),
+                       errors=[(6, 'Qso date/hour is invalid: not inside contest periods')]),
     edi.Log.qsos_tuple(linenr=7, qso='130804;0600;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
                        errors=[]),
     edi.Log.qsos_tuple(linenr=8, qso='130805;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
@@ -306,15 +353,25 @@ test_logQso_rules_based_qso_validator = [
     edi.Log.qsos_tuple(linenr=9, qso='130806;1159;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
                        errors=[]),
     edi.Log.qsos_tuple(linenr=10, qso='130806;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(10, 'QSO hour is invalid: after contest end hour (>1159)'), (10, 'QSO date/hour is invalid: not inside contest periods')]),
+                       errors=[(10, 'Qso hour is invalid: after contest end hour (>1159)'), (10, 'Qso date/hour is invalid: not inside contest periods')]),
 
     edi.Log.qsos_tuple(linenr=11, qso='130803;1200;YO5BTZ;7;59;001;59;001;;KN16SS;1;;;;', valid=False,
-                       errors=[(11, 'QSO mode is invalid: not in defined modes ([1, 2, 6])')]),
+                       errors=[(11, 'Qso mode is invalid: not in defined modes ([1, 2, 6])')]),
 ]
 
 
 class TestEdiLog(TestCase):
     def test_init(self):
+
+        # test with a log with no-lines
+        invalid_edi_log = ''
+        mo = mock.mock_open(read_data=invalid_edi_log)
+        with patch('builtins.open', mo, create=True):
+            log = edi.Log('some_log_file.edi')
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {ERR_IO: [(None, 'Log is empty')], ERR_HEADER: [], ERR_QSO: []})
 
         # test with missing PCall
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PCall=')]
@@ -335,7 +392,7 @@ class TestEdiLog(TestCase):
             self.assertFalse(log.valid_header)
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(5, 'PCall field is present multiple times')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(4, 'PCall field is present multiple times')], ERR_QSO: []})
 
         # test with invalid PCall
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PCall=')]
@@ -380,7 +437,7 @@ class TestEdiLog(TestCase):
             self.assertFalse(log.valid_header)
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(6, 'PWWLo field is present multiple times')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(5, 'PWWLo field is present multiple times')], ERR_QSO: []})
 
         # test with missing PBand
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PBand=')]
@@ -411,7 +468,7 @@ class TestEdiLog(TestCase):
             self.assertFalse(log.valid_header)
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(11, 'PBand field is present multiple times')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(10, 'PBand field is present multiple times')], ERR_QSO: []})
 
         # test with missing PSect
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PSect=')]
@@ -442,7 +499,7 @@ class TestEdiLog(TestCase):
             self.assertFalse(log.valid_header)
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(10, 'PSect field is present multiple times')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(9, 'PSect field is present multiple times')], ERR_QSO: []})
 
         # test with missing TDate
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('TDate=')]
@@ -486,7 +543,7 @@ class TestEdiLog(TestCase):
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
-                                  ERR_HEADER: [(4, 'TDate field is present multiple times')],
+                                  ERR_HEADER: [(3, 'TDate field is present multiple times')],
                                   ERR_QSO: []})
 
         # test with valid header and invalid QSO
@@ -499,7 +556,7 @@ class TestEdiLog(TestCase):
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [],
-                                  ERR_QSO: [(55, 'QSO date is invalid: unconverted data remains: 99')]})
+                                  ERR_QSO: [(55, 'Qso date is invalid: unconverted data remains: 99')]})
 
     @mock.patch('os.path.isfile')
     def test_init_with_rules(self, mock_isfile):
@@ -574,6 +631,19 @@ class TestEdiLog(TestCase):
                                   'io': [],
                                   'qso': []})
 
+        # test with valid rules and with duplicate RHBBS
+        mo_log = mock.mock_open(read_data=invalid_edi_log_RHBBS_2)
+        with patch('builtins.open', mo_log, create=True):
+            log = edi.Log('some_log_file.edi', rules=_rules)
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {'header': [(8, 'RHBBS is present multiple times'),
+                                             (None, 'PAdr1 field is not present'),
+                                             (None, 'RName field is not present')],
+                                  'io': [],
+                                  'qso': []})
+
         # test with valid rules and with invalid edi log (invalid PAdr1)
         mo_log = mock.mock_open(read_data=invalid_edi_log_PAdr1)
         with patch('builtins.open', mo_log, create=True):
@@ -582,6 +652,18 @@ class TestEdiLog(TestCase):
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {'header': [(8, 'PAdr1 field is too short (None)'),
+                                             (None, 'RName field is not present')],
+                                  'io': [],
+                                  'qso': []})
+
+        # test with valid rules and with duplicate address
+        mo_log = mock.mock_open(read_data=invalid_edi_log_PAdr1_2)
+        with patch('builtins.open', mo_log, create=True):
+            log = edi.Log('some_log_file.edi', rules=_rules)
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {'header': [(9, 'PAdr1 is present multiple times'),
                                              (None, 'RName field is not present')],
                                   'io': [],
                                   'qso': []})
@@ -597,6 +679,28 @@ class TestEdiLog(TestCase):
                                   'io': [],
                                   'qso': []})
 
+        # test with valid rules and with duplicate name
+        mo_log = mock.mock_open(read_data=invalid_edi_log_RName_2)
+        with patch('builtins.open', mo_log, create=True):
+            log = edi.Log('some_log_file.edi', rules=_rules)
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {'header': [(10, 'RName is present multiple times')],
+                                  'io': [],
+                                  'qso': []})
+
+        # test with valid rules and valid header
+        mo_log = mock.mock_open(read_data=valid_edi_log_header)
+        with patch('builtins.open', mo_log, create=True):
+            log = edi.Log('some_log_file.edi', rules=_rules)
+            self.assertTrue(log.valid_header)
+            self.assertTrue(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {'header': [],
+                                  'io': [],
+                                  'qso': []})
+
     def test_read_file_content(self):
         # test 'read_file_content', the buildins.open is mocked
         mo = mock_open(read_data=valid_edi_log)
@@ -608,19 +712,21 @@ class TestEdiLog(TestCase):
         log = edi.Log('non-existing-log-file.edi')
         self.assertFalse(log.valid_header)
         self.assertDictEqual(log.errors,
-                             {ERR_IO: [(None, 'Cannot read edi log')], ERR_HEADER: [], ERR_QSO: []})
+                             {ERR_IO: [(None, 'Cannot read edi log. Error: [Errno 2] No such file or directory: '
+                                              "'non-existing-log-file.edi'")], ERR_HEADER: [], ERR_QSO: []})
 
     @mock.patch.object(edi.Log, 'read_file_content')
     def test_get_field(self, mock_read_file_content):
         mock_read_file_content.return_value = valid_edi_log.split('\n')
         log = edi.Log('some_log_file.edi')
-        self.assertTupleEqual((['YO5PJB'], 4), log.get_field('PCall'))
-        self.assertTupleEqual((['YO5PJB'], 4), log.get_field('pcall'))
+        self.assertTupleEqual((['YO5PJB'], 3), log.get_field('PCall'))
+        self.assertTupleEqual((['YO5PJB'], 3), log.get_field('pcall'))
 
     @mock.patch.object(edi.Log, 'read_file_content')
     def test_get_qsos(self, mock_read_file_content):
         self.maxDiff = None
         mock_read_file_content.return_value = valid_edi_log.split('\n')
+        mock_read_file_content.return_value.append('[END; SomeToolSignature]')
         log = edi.Log('some_log_file.edi')
         self.assertEqual(len(test_logQso_qsos), len(log.qsos))
         for qso1, qso2 in zip(test_logQso_qsos, log.qsos):
@@ -658,7 +764,7 @@ class TestEdiLog(TestCase):
 
     def test_validate_address(self):
         positive_tests = ['Sesame Street', 'SesameStreet,13', 'SesameStreetNo.13']
-        negative_tests = [None, '', 'short', 'NewStr13']
+        negative_tests = [None, '', 'short', 'SesameStreet']
         for test in positive_tests:
             self.assertTrue(edi.Log.validate_address(test))
         for test in negative_tests:
@@ -680,13 +786,13 @@ class TestEdiLog(TestCase):
         negative_tests_432 = [None, '', '431', '433', '434']
 
         for test in positive_tests_144:
-            self.assertEqual(144, edi.Log.get_band(test))
+            self.assertEqual('144', edi.Log.get_band(test))
 
         for test in negative_tests_144:
             self.assertIsNone(edi.Log.get_band(test))
 
         for test in positive_tests_432:
-            self.assertEqual(432, edi.Log.get_band(test))
+            self.assertEqual('432', edi.Log.get_band(test))
 
         for test in negative_tests_432:
             self.assertIsNone(edi.Log.get_band(test))
@@ -713,30 +819,38 @@ class TestEdiLog(TestCase):
             self.assertTrue(edi.Log.rules_based_validate_band(test, _rules))
         for test in negative_tests:
             self.assertFalse(edi.Log.rules_based_validate_band(test, _rules))
+        self.assertRaisesRegex(ValueError, 'No contest rules provided !', edi.Log.rules_based_validate_band, positive_tests[0], None)
 
-    def test_validate_section(self):
-        positive_tests = ['so', 'sosb', 'somb', 'single', 'single op', 'single-op',
-                          'mo', 'mosb', 'momb', 'multi', 'multi op', 'multi-op']
+    def test_validate_category(self):
+        positive_tests = {
+            'single': ['so', 'sosb', 'somb', 'single', 'single op', 'single-op'],
+            'multi': ['mo', 'mosb', 'momb', 'multi', 'multi op', 'multi-op'],
+            'checklog': ['check', 'check-log', 'checklog', 'CHECklog']
+        }
         negative_tests = [None, '', 'operator', 'band']
-        for test in positive_tests:
-            self.assertTrue(edi.Log.validate_section(test))
+        for _category, test_list in positive_tests.items():
+            for test in test_list:
+                self.assertTupleEqual(edi.Log.validate_category(test), (True, _category))
         for test in negative_tests:
-            self.assertFalse(edi.Log.validate_section(test))
+            self.assertTupleEqual(edi.Log.validate_category(test), (False, None))
 
     @mock.patch('os.path.isfile')
-    def test_rules_based_validate_section(self, mock_isfile):
+    def test_rules_based_validate_category(self, mock_isfile):
         mock_isfile.return_value = True
-        positive_tests = ['so', 'sosb', 'somb', 'single', 'mo', 'multi',
-                          'single-op', 'single-operator', 'single operator',
-                          'multi-op', 'multi-operator' 'multi operator']
+        positive_tests = {
+            'Single Operator 144': ['so', 'sosb', 'somb', 'single', 'single op', 'single-op', 'single-operator', 'single operator'],
+            'Multi Operator': ['mo', 'mosb', 'momb', 'multi', 'multi op', 'multi-op', 'multi-operator' 'multi operator'],
+        }
         negative_tests = [None, '', 'operator', 'band']
         mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
             _rules = rules.Rules('some_rule_file.rules')
-        for test in positive_tests:
-            self.assertTrue(edi.Log.rules_based_validate_section(test, _rules))
+        for _category, test_list in positive_tests.items():
+            for test in test_list:
+                self.assertTupleEqual(edi.Log.rules_based_validate_category(test, _rules), (True, _category))
         for test in negative_tests:
-            self.assertFalse(edi.Log.rules_based_validate_section(test, _rules))
+            self.assertTupleEqual(edi.Log.rules_based_validate_category(test, _rules), (False, None))
+        self.assertRaisesRegex(ValueError, 'No contest rules provided !', edi.Log.rules_based_validate_category, 'none', None)
 
 
 class TestEdiLogQso(TestCase):
@@ -801,7 +915,7 @@ class TestEdiOperator(TestCase):
         self.assertEqual(op.callsign, 'yo5pjb')
         self.assertEqual(op.logs, [])
 
-    def test_all_log(self):
+    def test_add_log(self):
         op = edi.Operator('yo5pjb')
         mo = mock.mock_open(read_data=valid_edi_log)
         with patch('builtins.open', mo, create=True):
@@ -811,6 +925,35 @@ class TestEdiOperator(TestCase):
             self.assertEqual(len(op.logs), 2)
             self.assertIsInstance(op.logs[0], edi.Log)
             self.assertIsInstance(op.logs[1], edi.Log)
+
+    def test_add_log_instance(self):
+        op = edi.Operator('yo5pjb')
+        log = edi.Log('some_log_file.edi')
+
+        self.assertEqual(op.logs, [])
+        op.add_log_instance(log)
+        self.assertEqual(op.logs, [log])
+
+    def test_logs_by_band_regexp(self):
+        op = edi.Operator('yo5pjb')
+        log1 = edi.Log('log1.edi')
+        log1.band = '144 Mhz'
+        log1.valid_header = True
+        log2 = edi.Log('log2.edi')
+        log2.band = '432 MHz'
+        log2.valid_header = True
+        log3 = edi.Log('log3.edi')
+        log3.band = '2m'
+        log3.valid_header = True
+        log4 = edi.Log('log4_invalid.edi')
+        log4.band = '2m'
+
+        op.add_log_instance(log1)
+        op.add_log_instance(log2)
+        op.add_log_instance(log3)
+        op.add_log_instance(log4)
+
+        self.assertListEqual(op.logs_by_band_regexp('144|145|2m'), [log1, log3])
 
 
 class TestEdiHelperFunctions(TestCase):

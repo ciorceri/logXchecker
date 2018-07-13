@@ -1,5 +1,5 @@
 """
-Copyright 2016-2017 Ciorceri Petru Sorin
+Copyright 2016-2018 Ciorceri Petru Sorin (yo5pjb)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -54,10 +54,12 @@ class Rules(object):
         [band1]
         band=144
         regexp=144|145|2m
+        multiplier=1
 
         [band2]
         band=432
         regexp=430|432|70cm
+        multiplier=2
 
         [period1]
         begindate=20160805
@@ -125,26 +127,23 @@ class Rules(object):
             _ = self.contest_categories_nr
             _ = self.contest_qso_modes
         except KeyError as why:
-            print('ERROR: Rules has missing fields from [contest] section')
-            sys.exit(10)
+            raise KeyError("ERROR: Rules has missing fields from [contest] section")
 
         # validate bands number and fields
         if self.contest_bands_nr < 1:
-            print('ERROR: Rules file has invalid \'bands\' field setting in [contest] section')
-            sys.exit(10)
+            raise ValueError('Rules have invalid \'bands\' value in [contest] section')
         try:
             for band in range(1, self.contest_bands_nr+1):
                 _ = self.contest_band(band)
                 _ = self.contest_band(band)['band']
                 _ = self.contest_band(band)['regexp']
+                _ = self.contest_band(band)['multiplier']
         except KeyError as why:
-            print('ERROR: Rules file has invalid settings for band', band)
-            sys.exit(11)
+            raise ValueError('Rules file has invalid settings for band {}'.format(band))
 
         # validate period number and fields
         if self.contest_periods_nr < 1:
-            print('ERROR: Rules file has invalid \'periods\' field setting in [contest] section')
-            sys.exit(10)
+            raise ValueError('Rules file has invalid \'periods\' field setting in [contest] section')
         try:
             for period in range(1, self.contest_periods_nr+1):
                 _ = self.contest_period(period)
@@ -154,13 +153,11 @@ class Rules(object):
                 _ = self.contest_period(period)['endhour']
                 _ = self.contest_period(period)['bands']
         except KeyError as why:
-            print('ERROR: Rules file has invalid settings for period', period)
-            sys.exit(12)
+            raise KeyError('Rules file has invalid settings for period {}'.format(period))
 
         # validate category number and fields
         if self.contest_categories_nr < 1:
-            print('ERROR: Rules file has invalid \'categories\' field setting in [contest] section')
-            sys.exit(10)
+            raise ValueError('Rules have invalid \'categories\' value in [contest] section')
         try:
             for category in range(1, self.contest_categories_nr+1):
                 _ = self.contest_category(category)
@@ -168,8 +165,7 @@ class Rules(object):
                 _ = self.contest_category(category)['regexp']
                 _ = self.contest_category(category)['bands']
         except KeyError as why:
-            print('ERROR: Rules file has invalid settings for category', category)
-            sys.exit(13)
+            raise KeyError('Rules file has missing settings for category {}'.format(category))
 
         # validate date and time in [periodX]. period date and time to be in [contest] date/time range
         try:
@@ -192,24 +188,21 @@ class Rules(object):
                 msg = 'period {} end hour'.format(period)
                 datetime.strptime(self.contest_period(period)['endhour'], '%H%M')
         except ValueError as why:
-            print('ERROR: Rules file has invalid', msg)
-            sys.exit(12)
+            raise ValueError('Rules file has invalid {}'.format(msg))
 
         # validate band field in [periodX]
         for period in range(1, self.contest_periods_nr+1):
             period_bands = self.contest_period_bands(period)
             for period_band in period_bands:
                 if period_band not in self.config.sections():
-                    print('ERROR: Rules file has invalid band settings ({}) for period {}'.format(period_band, period))
-                    sys.exit(12)
+                    raise ValueError('Rules file has invalid band settings ({}) for period {}'.format(period_band, period))
 
         # validate band field in [categoryX]
         for category in range(1, self.contest_categories_nr+1):
             category_bands = self.contest_category_bands(category)
             for category_band in category_bands:
                 if category_band not in self.config.sections():
-                    print('ERROR: Rules file has invalid band settings ({}) for category {}'.format(category_band, period))
-                    sys.exit(13)
+                    raise ValueError('Rules file has invalid band settings ({}) for category {}'.format(category_band, period))
 
     @property
     def contest_begin_date(self):
@@ -233,9 +226,9 @@ class Rules(object):
             modes = [int(mode) for mode in self.config['contest']['modes'].split(',')]
             return modes
         except KeyError:
-            raise KeyError("Rules are missing field 'modes' in [contest] section")
+            raise KeyError('Rules are missing field \'modes\' in [contest] section')
         except ValueError:
-            raise ValueError("The rules have invalid 'modes' value in [contest] section")
+            raise ValueError('The rules have invalid \'modes\' value in [contest] section')
 
     @property
     def contest_bands_nr(self):
@@ -247,9 +240,9 @@ class Rules(object):
             _nr = int(self.config['contest']['bands'])
             return _nr
         except KeyError:
-            raise KeyError("Rules has missing field 'bands' in [contest] section")
+            raise KeyError('Rules has missing field \'bands\' in [contest] section')
         except ValueError:
-            raise ValueError("The rules have invalid 'bands' value in [contest] section")
+            raise ValueError('The rules have invalid \'bands\' value in [contest] section')
 
     def contest_band(self, number):
         """
@@ -268,9 +261,9 @@ class Rules(object):
             _nr = int(self.config['contest']['periods'])
             return _nr
         except KeyError:
-            raise KeyError("Rules has missing field 'periods' in [contest] section")
+            raise KeyError('Rules has missing field \'periods\' in [contest] section')
         except ValueError:
-            raise ValueError("The rules have invalid 'periods' value in [contest] section")
+            raise ValueError('The rules have invalid \'periods\' value in [contest] section')
 
     def contest_period(self, number):
         """
@@ -294,9 +287,9 @@ class Rules(object):
             _nr = int(self.config['contest']['categories'])
             return _nr
         except KeyError:
-            raise KeyError("Rules has missing field 'categories' in [contest] section")
+            raise KeyError('Rules has missing field \'categories\' in [contest] section')
         except ValueError:
-            raise ValueError("The rules have invalid 'categories' value in [contest] section")
+            raise ValueError('Rules have invalid \'categories\' value in [contest] section')
 
     def contest_category(self, number):
         """
@@ -318,4 +311,8 @@ class Rules(object):
 
     @property
     def contest_extra_fields(self):
+        try:
+            assert self.config['extra']
+        except KeyError:
+            return []
         return [x for x in self.config['extra'] if self.config['extra'][x].upper() == 'YES']
