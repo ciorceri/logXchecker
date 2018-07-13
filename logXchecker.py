@@ -171,6 +171,7 @@ def print_log_human_friendly(output):
             print('Line {} : {}'.format(err[0], err[1]))
 
 
+# TODO : move this to edi.log
 def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_folder=None):
 
     ignored_logs = []
@@ -247,6 +248,7 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
     return operator_instances
 
 
+# TODO : move this to edi.log
 def crosscheck_logs(operator_instances, rules, band_nr):
     """
     :param operator_instances: dictionary {key=callsign, value=edi.Operator(callsign)}
@@ -314,6 +316,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 qso1.confirmed = True
 
 
+# TODO : move this to edi.log
 def compare_qso(log1, qso1, log2, qso2):
     """
     Generic comparision of 2 QSO's
@@ -376,6 +379,7 @@ def compare_qso(log1, qso1, log2, qso2):
     return qth_distance(log1.maidenhead_locator, log2.maidenhead_locator)
 
 
+# TODO : move this to edi.log
 def delta_ord(letter):
     """
     This will return an character number in alphabet and same for numbers.
@@ -390,6 +394,7 @@ def delta_ord(letter):
     return -1
 
 
+# TODO : move this to edi.log
 def conv_maidenhead_to_latlong(maiden):
     """
     Will convert he Maidenhead location to Latitude/Longitude location
@@ -399,6 +404,7 @@ def conv_maidenhead_to_latlong(maiden):
     return long, lat
 
 
+# TODO : move this to edi.log
 def qth_distance(qth1, qth2):
     """
     Math to calculate the distance (in kilometers) between 2 Maindehead locators
