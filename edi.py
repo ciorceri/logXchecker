@@ -20,9 +20,9 @@ import json
 from dicttoxml import dicttoxml
 from validate_email import validate_email
 
-INFO_LOG = 'log'
+INFO_SINGLE_LOG = 'log'
 INFO_FOLDER = 'folder'
-INFO_FOLDER_LOGS = 'logs'
+INFO_MULTIPLE_LOGS = 'logs'
 ERR_IO = 'io'
 ERR_HEADER = 'header'
 ERR_QSO = 'qso'

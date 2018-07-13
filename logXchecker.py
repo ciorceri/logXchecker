@@ -145,19 +145,19 @@ def load_log_format_module(module_name):
 def print_human_friendly_output(output):
     """Will print a human-fiendly output for easy read"""
     # single log
-    if output.get(edi.INFO_LOG, False):
+    if output.get(edi.INFO_SINGLE_LOG, False):
         print_log_human_friendly(output)
     # multi logs
     if output.get(edi.INFO_FOLDER, False):
         print('Checking logs from folder : {}'.format(output[edi.INFO_FOLDER]))
-        for log in output[edi.INFO_FOLDER_LOGS]:
+        for log in output[edi.INFO_MULTIPLE_LOGS]:
             print_log_human_friendly(log)
             print('-------------')
 
 
 def print_log_human_friendly(output):
     """Will print human fiendly info for a log"""
-    print('Checking log : {}'.format(output[edi.INFO_LOG]))
+    print('Checking log : {}'.format(output[edi.INFO_SINGLE_LOG]))
     if output[edi.ERR_IO]:
         print('Input/Output : {}'.format(output[edi.ERR_IO]))
         pass
@@ -468,18 +468,17 @@ def main():
     log = lfmodule.Log
     logQso = lfmodule.LogQso
 
-    # TODO : move upper 3 lines here based on log type
-    # TODO : and use the proper log type checks
-
     output = {}
+
     # if 'validate one log'
     if args.singlelogcheck:
-        output[edi.INFO_LOG] = args.singlelogcheck
+        output[edi.INFO_SINGLE_LOG] = args.singlelogcheck
         if not os.path.isfile(args.singlelogcheck):
             print('Cannot open file : {}'.format(args.singlelogcheck))
             return 1
         _log = log(args.singlelogcheck, rules=rules)
         output.update(_log.errors)
+
     # validate multiple logs
     elif args.multilogcheck:
         output[edi.INFO_FOLDER] = args.multilogcheck
@@ -490,24 +489,25 @@ def main():
         for filename in os.listdir(args.multilogcheck):
             log_output = {}
             _log = log(os.path.join(args.multilogcheck, filename), rules=rules)
-            log_output[edi.INFO_LOG] = filename
+            log_output[edi.INFO_SINGLE_LOG] = filename
             log_output.update(_log.errors)
             logs_output.append(log_output)
-        output[edi.INFO_FOLDER_LOGS] = logs_output
+        output[edi.INFO_MULTIPLE_LOGS] = logs_output
+        # add also checklogs
+        if args.checklogs:
+            if os.path.isdir(args.checklogs):
+                logs_output = []
+                for filename in os.listdir(args.checklogs):
+                    log_output = {}
+                    _log = log(os.path.join(args.checklogs, filename), rules=rules, checklog=True)
+                    log_output[edi.INFO_SINGLE_LOG] = filename
+                    log_output.update(_log.errors)
+                    logs_output.append(log_output)
+                output[edi.INFO_MULTIPLE_LOGS].extend(logs_output)
+
     elif args.crosscheck:
         li = crosscheck_logs_filter(log, rules=rules, logs_folder=args.crosscheck, checklogs_folder=args.checklogs)
-
-    # add also checklogs
-    if args.multilogcheck and args.checklogs:
-        if os.path.isdir(args.checklogs):
-            logs_output = []
-            for filename in os.listdir(args.checklogs):
-                log_output = {}
-                _log=log(os.path.join(args.checklogs, filename), rules=rules, checklog=True)
-                log_output[edi.INFO_LOG] = filename
-                log_output.update(_log.errors)
-                logs_output.append(log_output)
-            output[edi.INFO_FOLDER_LOGS].extend(logs_output)
+        # TODO : print_human_fiendly_results(li)
 
     if args.output.upper() == 'HUMAN-FRIENDLY':
         print_human_friendly_output(output)
@@ -515,10 +515,6 @@ def main():
         print(edi.dict_to_json(output))
     elif args.output.upper() == 'XML':
         print(edi.dict_to_xml(output))
-
-    # TODO : print_human_fiendly_results(li)
-    if li:
-        pass
 
 if __name__ == '__main__':
     main()

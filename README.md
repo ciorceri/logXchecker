@@ -34,10 +34,12 @@ format=edi
 [band1]
 band=144
 regexp=(144|145|2m)
+multiplier=1
 
 [band2]
 band=432
 regexp=(430|432|70cm)
+multiplier=1
 
 [period1]
 begindate=20160805
@@ -101,10 +103,7 @@ The following errors can be displayed if validation fails:
     - Line 3 : TDate field value is not valid (201605070;20160508)
 
 If a rules file was provided the following errors can be displayed if validation fails:
-    - Rules validation errors:
-      - ...
-    - Log file validation errors:
-      - ...
+    TO ADD
 
 Notes:
 
