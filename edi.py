@@ -13,10 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import math
+import os
 import re
 import datetime
 from collections import namedtuple
 import json
+from datetime import datetime, timedelta
+
 from dicttoxml import dicttoxml
 from validate_email import validate_email
 
@@ -445,7 +449,7 @@ class Log(object):
         is_valid = True
         for _date in dates:
             try:
-                datetime.datetime.strptime(_date, '%Y%m%d')
+                datetime.strptime(_date, '%Y%m%d')
             except ValueError:
                 is_valid = False
                 break
@@ -603,14 +607,14 @@ class LogQso(object):
 
         # validate date format
         try:
-            datetime.datetime.strptime(self.qso_fields['date'], '%y%m%d')
+            datetime.strptime(self.qso_fields['date'], '%y%m%d')
         except ValueError as why:
             self.valid = False
             self.errors.append((self.line_nr, 'Qso date is invalid: {}'.format(str(why))))
 
         # validate time format
         try:
-            datetime.datetime.strptime(self.qso_fields['hour'], '%H%M')
+            datetime.strptime(self.qso_fields['hour'], '%H%M')
         except ValueError as why:
             self.valid = False
             self.errors.append((self.line_nr, 'Qso hour is invalid: {}'.format(str(why))))
@@ -703,15 +707,15 @@ class LogQso(object):
             # if date is not in period, check next period
             if not (self.rules.contest_period(period)['begindate'][2:] <= self.qso_fields['date'] <= self.rules.contest_period(period)['enddate'][2:]):
                 continue
-            _enddate = datetime.datetime.strptime(self.rules.contest_period(period)['enddate'], '%Y%m%d')
-            _begindate = datetime.datetime.strptime(self.rules.contest_period(period)['begindate'], '%Y%m%d')
+            _enddate = datetime.strptime(self.rules.contest_period(period)['enddate'], '%Y%m%d')
+            _begindate = datetime.strptime(self.rules.contest_period(period)['begindate'], '%Y%m%d')
             delta_days = _enddate - _begindate
             # if period is in same day
-            if delta_days == datetime.timedelta(0) and self.rules.contest_period(period)['beginhour'] <= self.qso_fields['hour'] <= self.rules.contest_period(period)['endhour']:
+            if delta_days == timedelta(0) and self.rules.contest_period(period)['beginhour'] <= self.qso_fields['hour'] <= self.rules.contest_period(period)['endhour']:
                     inside_period = True
                     break
             # if period is in multiple days
-            elif delta_days > datetime.timedelta(0):
+            elif delta_days > timedelta(0):
                 if self.rules.contest_period(period)['begindate'][2:] == self.qso_fields['date'] and self.rules.contest_period(period)['beginhour'] <= self.qso_fields['hour']:
                     inside_period = True
                     break
@@ -739,3 +743,255 @@ class LogException(Exception):
     def __init__(self, message, line):
         self.message = message
         self.line = line
+
+
+def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_folder=None):
+
+    ignored_logs = []
+
+    # create instances for all logs
+    logs_instances = []
+    if not logs_folder:
+        print('Logs folder was not provided')
+        return 1
+    if logs_folder and not os.path.isdir(logs_folder):
+        print('Cannot open logs folder : {}'.format(logs_folder))
+        return 1
+    for filename in os.listdir(logs_folder):
+        logs_instances.append(log_class(os.path.join(logs_folder, filename), rules=rules))
+
+    if checklogs_folder:
+        if os.path.isdir(checklogs_folder):
+            for filename in os.listdir(checklogs_folder):
+                logs_instances.append(log_class(os.path.join(checklogs_folder, filename), rules=rules, checklog=True))
+        else:
+            print('Cannot open checklogs folder : {}'.format(checklogs_folder))
+
+    # create instances for all hams and add logs with valid header
+    operator_instances = {}
+    for log in logs_instances:
+        if not log.valid_header:
+            log.ignore_this_log = True
+            ignored_logs.append(log)
+            continue
+        callsign = log.callsign.upper()
+        if not operator_instances.get(callsign, None):
+            operator_instances[callsign] = Operator(callsign)
+        operator_instances[callsign].add_log_instance(log)
+
+    # TODO check for duplicate logs (on same band)
+    # select one log from duplicate logs
+    # set Log.ignore_this_log field to True for duplicate logs
+
+    # TODO check if a ham has logs with different categories
+    # but ignore
+
+    for band in range(1, rules.contest_bands_nr+1):
+        crosscheck_logs(operator_instances, rules, band)
+
+    # calculate points in every logs
+    for op, op_inst in operator_instances.items():
+        for log in op_inst.logs:
+            points = 0
+            for qso in log.qsos:
+                if qso.points and qso.points > 0:
+                    points += qso.points
+            log.qsos_points = points
+
+    return operator_instances
+
+
+def crosscheck_logs(operator_instances, rules, band_nr):
+    """
+    :param operator_instances: dictionary {key=callsign, value=Operator(callsign)}
+    :param band_nr: number of contest band
+    :return: TODO
+    """
+    for callsign1, ham1 in operator_instances.items():
+        # print('CHECK LOGS OF : ', callsign1, ham1.callsign)
+
+        # get logs for band
+        _logs1 = ham1.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
+        # print('  LOG PATH : ', [x.path for x in _logs1])
+
+        if not _logs1:
+            continue
+        log1 = _logs1[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
+        if log1.use_as_checklog is True:
+            continue
+        if log1.ignore_this_log is True:
+            continue
+
+        for qso1 in log1.qsos:
+            # print('    LOG QSO : ', qso1.qso_line, qso1.qso_fields['call'])
+            if qso1.valid is False:
+                continue
+            if qso1.confirmed is True:
+                continue
+
+            # TODO : ignore duplicate qso
+
+            # check if we have some logs from 2nd ham
+            callsign2 = qso1.qso_fields['call']
+            ham2 = operator_instances.get(callsign2, None)
+            if not ham2:
+                qso1.confirmed = False
+                continue
+
+            # check if we have proper band logs from 2nd ham
+            _logs2 = ham2.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
+            # print('      HAM2 LOGS : ', [x.path for x in _logs2])
+            if not _logs2:
+                qso1.confirmed = False
+                continue
+            log2 = _logs2[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
+
+            # get 2nd ham qsos and compare them with 1st ham qso
+            for qso2 in log2.qsos:
+                if qso2.valid is False:
+                    continue
+
+                # TODO : ignore duplicate qso
+
+                _callsign = qso2.qso_fields['call']
+                if callsign1 != _callsign:
+                    continue
+                try:
+                    distance = compare_qso(log1, qso1, log2, qso2)
+                except ValueError as e:
+                    qso1.errors.append(e)
+
+                # print('      *** COMPARAM : {} vs {} SI {} cu {} = {}'.format(callsign1, callsign2, qso1.qso_line, qso2.qso_line, distance))
+                if distance < 0:
+                    continue
+                qso1.points = distance * int(rules.contest_band(band_nr)['multiplier'])
+                qso1.confirmed = True
+
+
+def compare_qso(log1, qso1, log2, qso2):
+    """
+    Generic comparision of 2 QSO's
+    :param qso1:
+    :param qso2:
+    :return: distance if QSO's are valid or -1/None
+    """
+
+    if qso1.valid is False:
+        # TODO : think if I should pass only the 1st error or all errors to ValueError
+        raise ValueError(qso1.errors[0][1])
+
+    # compare callsign
+    if log1.callsign != qso2.qso_fields['call'] or log2.callsign != qso1.qso_fields['call']:
+        return -1
+
+    # calculate absolute date+time
+    REGEX_DATE = '(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})'
+    REGEX_HOUR = '(?P<hour>\d{2})(?P<minute>\d{2})'
+
+    date_res1 = re.match(REGEX_DATE, qso1.qso_fields['date'])
+    if not date_res1:
+        raise ValueError('Date format is invalid : {}'.format(qso1.qso_fields['date']))
+    hour_res1 = re.match(REGEX_HOUR, qso1.qso_fields['hour'])
+    if not hour_res1:
+        raise ValueError('Hour format is invalid : {}'.format(qso1.qso_fields['hour']))
+    absolute_time1 = datetime(int(date_res1.group('year')), int(date_res1.group('month')), int(date_res1.group('day')),
+                              int(hour_res1.group('hour')), int(hour_res1.group('minute')))
+
+    date_res2 = re.match(REGEX_DATE, qso2.qso_fields['date'])
+    if not date_res2:
+        raise ValueError('Date format is invalid : {}'.format(qso2.qso_fields['date']))
+    hour_res2 = re.match(REGEX_HOUR, qso2.qso_fields['hour'])
+    if not hour_res2:
+        raise ValueError('Hour format is invalid : {}'.format(qso2.qso_fields['hour']))
+    absolute_time2 = datetime(int(date_res2.group('year')), int(date_res2.group('month')), int(date_res2.group('day')),
+                              int(hour_res2.group('hour')), int(hour_res2.group('minute')))
+
+    # check if time1 and time2 difference is less than 5 minutes
+    if abs(absolute_time1 - absolute_time2) > timedelta(minutes=5):
+        raise ValueError('Different date/time between qso\'s')
+
+    # compare mode
+    if qso1.qso_fields['mode'] != qso2.qso_fields['mode']:
+        raise ValueError('Mode mismatch')
+    # compare rst
+    if (qso1.qso_fields['rst_sent'] != qso2.qso_fields['rst_recv'] or \
+        qso1.qso_fields['rst_recv'] != qso2.qso_fields['rst_sent']):
+        raise ValueError('Rst mismatch')
+    if (qso1.qso_fields['nr_sent'] != qso2.qso_fields['nr_recv'] or \
+        qso1.qso_fields['nr_recv'] != qso2.qso_fields['nr_sent']):
+        raise ValueError('Serial number mismatch')
+
+    # compare qth
+    if (log1.maidenhead_locator != qso2.qso_fields['wwl'] or \
+        log2.maidenhead_locator != qso1.qso_fields['wwl']):
+        raise ValueError('Qth locator mismatch')
+
+    # calculate & return distance
+    return qth_distance(log1.maidenhead_locator, log2.maidenhead_locator)
+
+
+def delta_ord(letter):
+    """
+    This will return an character number in alphabet and same for numbers.
+    The order number starts from 0.
+    Ex: for input '5' will return '5'-'0' = 5
+        for input 'C' will return 'C'-'A' = 3
+    """
+    if (letter>='0') & (letter<='9'):
+        return ord(letter)-ord('0')
+    if (letter>='A') & (letter<='Z'):
+        return ord(letter)-ord('A')
+    return -1
+
+
+def conv_maidenhead_to_latlong(maiden):
+    """
+    Will convert he Maidenhead location to Latitude/Longitude location
+    """
+    long = -180.0 + 20 * delta_ord(maiden[0]) + 2.0 * delta_ord(maiden[2]) + 5.0 * delta_ord(maiden[4]) / 60.0
+    lat = -90.0 + 10 * delta_ord(maiden[1]) + 1.0 * delta_ord(maiden[3]) + 2.5 * delta_ord(maiden[5]) / 60.0
+    return long, lat
+
+
+def qth_distance(qth1, qth2):
+    """
+    Math to calculate the distance (in kilometers) between 2 Maindehead locators
+    see : https://en.wikipedia.org/wiki/Maidenhead_Locator_System
+    """
+    if qth1 == qth2:
+        return 1
+
+    # Convert Maidenhead to latitude and longitude
+    long1, lat1 = conv_maidenhead_to_latlong(qth1)
+    long2, lat2 = conv_maidenhead_to_latlong(qth2)
+
+    # Convert latitude and longitude to
+    # spherical coordinates in radians.
+    degrees_to_radians = math.pi/180.0
+
+    # phi = 90 - latitude
+    phi1 = (90.0 - lat1)*degrees_to_radians
+    phi2 = (90.0 - lat2)*degrees_to_radians
+
+    # theta = longitude
+    theta1 = long1*degrees_to_radians
+    theta2 = long2*degrees_to_radians
+
+    # Compute spherical distance from spherical coordinates.
+
+    # For two locations in spherical coordinates
+    # (1, theta, phi) and (1, theta, phi)
+    # cosine( arc length ) =
+    #    sin phi sin phi' cos(theta-theta') + cos phi cos phi'
+    # distance = rho * arc length
+
+    cos = (math.sin(phi1)*math.sin(phi2)*math.cos(theta1 - theta2) + math.cos(phi1)*math.cos(phi2))
+    arc = math.acos( cos )
+
+    # Remember to multiply arc by the radius of the earth
+    # in your favorite set of units to get length.
+    if 0.0 == round(arc*6373):
+        return 1
+    else:
+        return int(round(arc*6373))
+        #return arc*6373

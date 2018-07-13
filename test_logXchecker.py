@@ -72,7 +72,7 @@ class TestHelperMethods(unittest.TestCase):
                     ('KN16SS', 'KN16SQ', 9),
                     ('KN16SS', 'KN17SS', 111)]
         for qth1, qth2, km in distance:
-            self.assertEqual(logXchecker.qth_distance(qth1, qth2), km)
+            self.assertEqual(edi.qth_distance(qth1, qth2), km)
 
     @patch('os.path.isfile')
     def test_compare_qso(self, mock_isfile):
@@ -203,7 +203,7 @@ class TestHelperMethods(unittest.TestCase):
 
         for q1, q2, r, ex, ex_msg in qso_test:
             if r:
-                self.assertEqual(logXchecker.compare_qso(_log, q1, _log, q2), r)
+                self.assertEqual(edi.compare_qso(_log, q1, _log, q2), r)
             if ex:
-                self.assertRaisesRegex(ex, ex_msg, logXchecker.compare_qso, _log, q1, _log, q2)
+                self.assertRaisesRegex(ex, ex_msg, edi.compare_qso, _log, q1, _log, q2)
 
