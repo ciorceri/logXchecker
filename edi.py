@@ -818,7 +818,6 @@ def crosscheck_logs(operator_instances, rules, band_nr):
     """
     :param operator_instances: dictionary {key=callsign, value=Operator(callsign)}
     :param band_nr: number of contest band
-    :return: TODO
     """
     for callsign1, ham1 in operator_instances.items():
         # set a list for this ham with already made contacts
