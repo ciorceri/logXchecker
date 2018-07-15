@@ -1033,12 +1033,12 @@ class TestEdiHelperFunctions(TestCase):
 
         qso_test = (
             # test different date
-            (qso_list[0], qso_list[1], None, ValueError, 'Different date/time between qso\'s'),
-            (qso_list[0], qso_list[2], None, ValueError, 'Different date/time between qso\'s'),
-            (qso_list[0], qso_list[3], None, ValueError, 'Different date/time between qso\'s'),
-            (qso_list[0], qso_list[4], None, ValueError, 'Different date/time between qso\'s'),
-            (qso_list[0], qso_list[5], None, ValueError, 'Different date/time between qso\'s'),
-            (qso_list[0], qso_list[6], None, ValueError, 'Different date/time between qso\'s'),
+            (qso_list[0], qso_list[1], None, ValueError, 'Other ham qso is invalid'),
+            (qso_list[0], qso_list[2], None, ValueError, 'Other ham qso is invalid'),
+            (qso_list[0], qso_list[3], None, ValueError, 'Other ham qso is invalid'),
+            (qso_list[0], qso_list[4], None, ValueError, 'Other ham qso is invalid'),
+            (qso_list[0], qso_list[5], None, ValueError, 'Other ham qso is invalid'),
+            (qso_list[0], qso_list[6], None, ValueError, 'Other ham qso is invalid'),
             # reverse test of different date
             (qso_list[1], qso_list[0], None, ValueError, 'Qso date is invalid: before contest starts \(<130803\)'),
             (qso_list[2], qso_list[0], None, ValueError, 'Qso date is invalid: after contest ends \(>130806\)'),
@@ -1047,8 +1047,8 @@ class TestEdiHelperFunctions(TestCase):
             (qso_list[5], qso_list[0], None, ValueError, 'Qso date is invalid: before contest starts \(<130803\)'),
             (qso_list[6], qso_list[0], None, ValueError, 'Qso date/hour is invalid: not inside contest periods'),
             # test different time
-            (qso_list[0], qso_list[7], 1, None, None),
-            (qso_list[0], qso_list[8], None, ValueError, 'Different date/time between qso\'s'),
+            (qso_list[0], qso_list[7], None, ValueError, 'Other ham qso is invalid'),
+            (qso_list[0], qso_list[8], None, ValueError, 'Other ham qso is invalid'),
             (qso_list[0], qso_list[9], 1, None, None),
             (qso_list[0], qso_list[10], None, ValueError, 'Different date/time between qso\'s'),
             (qso_list[0], qso_list[11], None, ValueError, 'Different date/time between qso\'s'),
@@ -1059,20 +1059,20 @@ class TestEdiHelperFunctions(TestCase):
             (qso_list[10], qso_list[0], None, ValueError, 'Different date/time between qso\'s'),
             (qso_list[11], qso_list[0], None, ValueError, 'Different date/time between qso\'s'),
             # test different callsign
-            (qso_list[0], qso_list[12], -1, None, None),
-            (qso_list[0], qso_list[13], None, None, None),
-            (qso_list[0], qso_list[14], -1, None, None),
-            (qso_list[0], qso_list[15], -1, None, None),
-            (qso_list[0], qso_list[16], -1, None, None),
+            (qso_list[0], qso_list[12], None, ValueError, 'Callsign mismatch'),
+            (qso_list[0], qso_list[13], None, ValueError, 'Other ham qso is invalid'),
+            (qso_list[0], qso_list[14], None, ValueError, 'Callsign mismatch'),
+            (qso_list[0], qso_list[15], None, ValueError, 'Other ham qso is invalid'),
+            (qso_list[0], qso_list[16], None, ValueError, 'Callsign mismatch'),
             # reverse test of different callsign
-            (qso_list[12], qso_list[0], -1, None, None),
+            (qso_list[12], qso_list[0], None, ValueError, 'Callsign mismatch'),
             (qso_list[13], qso_list[0], None, ValueError, 'Callsign is invalid: YO5AAA-P'),
-            (qso_list[14], qso_list[0], -1, None, None),
+            (qso_list[14], qso_list[0], None, ValueError, 'Callsign mismatch'),
             (qso_list[15], qso_list[0], None, ValueError, 'Callsign is invalid: YO5AAA-M'),
-            (qso_list[16], qso_list[0], -1, None, None),
+            (qso_list[16], qso_list[0], None, ValueError, 'Callsign mismatch'),
             # test different modes
             (qso_list[0], qso_list[17], None, ValueError, 'Mode mismatch'),
-            (qso_list[0], qso_list[18], None, ValueError, 'Mode mismatch'),
+            (qso_list[0], qso_list[18], None, ValueError, 'Other ham qso is invalid'),
             # reverse test of different modes
             (qso_list[17], qso_list[0], None, ValueError, 'Mode mismatch'),
             (qso_list[18], qso_list[0], None, ValueError, 'Qso mode is invalid: not in defined modes \(\[1, 2, 6\]\)'),
@@ -1087,10 +1087,10 @@ class TestEdiHelperFunctions(TestCase):
             (qso_list[21], qso_list[0], None, ValueError, 'Rst mismatch'),
             (qso_list[22], qso_list[0], None, ValueError, 'Serial number mismatch'),
             # test invalid rst & serial
-            (qso_list[0], qso_list[23], None, ValueError, 'Rst mismatch'),
-            (qso_list[0], qso_list[24], None, ValueError, 'Rst mismatch'),
-            (qso_list[0], qso_list[25], -1, None, None),
-            (qso_list[0], qso_list[26], -1, None, None),
+            (qso_list[0], qso_list[23], None, ValueError, 'Other ham qso is invalid'),
+            (qso_list[0], qso_list[24], None, ValueError, 'Other ham qso is invalid'),
+            (qso_list[0], qso_list[25], None, ValueError, 'Other ham qso is invalid'),
+            (qso_list[0], qso_list[26], None, ValueError, 'Other ham qso is invalid'),
             # reverse test of invalid rst & serial
             (qso_list[23], qso_list[0], None, ValueError, 'Rst is invalid: 00'),
             (qso_list[24], qso_list[0], None, ValueError, 'Rst is invalid: 00'),
@@ -1100,13 +1100,11 @@ class TestEdiHelperFunctions(TestCase):
             (qso_list[0], qso_list[27], None, ValueError, 'Qth locator mismatch'),
             (qso_list[27], qso_list[0], None, ValueError, 'Qth locator mismatch'),
             # test invalid qth
-            (qso_list[0], qso_list[28], None, ValueError, 'Qth locator mismatch'),
+            (qso_list[0], qso_list[28], None, ValueError, 'Other ham qso is invalid'),
             (qso_list[28], qso_list[0], None, ValueError, 'Qso WWL is invalid: ZZ16ZZ'),
         )
 
         for q1, q2, r, ex, ex_msg in qso_test:
-            print("DEBUG : ", q1.qso_line, q2.qso_line)
-            print(q1.valid, q1.errors)
             if r:
                 self.assertEqual(edi.compare_qso(_log, q1, _log, q2), r)
             if ex:

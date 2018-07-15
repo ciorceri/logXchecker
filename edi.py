@@ -505,8 +505,9 @@ class LogQso(object):
     valid = None
     errors = []
 
-    confirmed = None  # possible values: True, False or some error message
-    points = None     # if qso is confirmed we store here the calculated points (multiplier included)
+    cc_confirmed = None  # possible values: True, False or some error message
+    cc_errors = []  # here we store errors from cross-check
+    points = None  # if qso is confirmed we store here the calculated points (multiplier included)
 
     qso_fields = {}
 
@@ -835,29 +836,33 @@ def crosscheck_logs(operator_instances, rules, band_nr):
             continue
 
         for qso1 in log1.qsos:
-            # print('    LOG QSO : ', qso1.qso_line, qso1.qso_fields['call'])
             if qso1.valid is False:
+                qso1.cc_confirmed = False
+                qso1.cc_errors.append('Qso is not valid')
                 continue
-            if qso1.confirmed is True:
+            if qso1.cc_confirmed is True:
                 continue
 
             # check if we have some logs from 2nd ham
             callsign2 = qso1.qso_fields['call']
             ham2 = operator_instances.get(callsign2, None)
             if not ham2:
-                qso1.confirmed = False
+                qso1.cc_confirmed = False
+                qso1.cc_errors.append('No log from {}'.format(callsign2))
                 continue
 
             # validate that this qso wasn't already validated
             _, inside_period_nr = qso1.qso_inside_period()
             if '{}-period{}'.format(callsign2, inside_period_nr) in _had_qso_with:
-                qso1.confirmed = False
+                qso1.cc_confirmed = False
+                qso1.cc_errors.append('Qso already confirmed')
                 continue
 
             # check if we have proper band logs from 2nd ham
             _logs2 = ham2.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
             if not _logs2:
-                qso1.confirmed = False
+                qso1.cc_confirmed = False
+                qso1.cc_errors.append('No log from {}'.format(callsign2))
                 continue
             log2 = _logs2[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
 
@@ -869,13 +874,15 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 _callsign = qso2.qso_fields['call']
                 if callsign1 != _callsign:
                     continue
+                distance = None
                 try:
                     distance = compare_qso(log1, qso1, log2, qso2)
                 except ValueError as e:
-                    qso1.errors.append(e)
+                    qso1.cc_errors.append(e)
 
-                if distance < 0:
+                if distance is None:
                     continue
+
                 # add this qso in _had_qso_with list
                 _, inside_period_nr = qso2.qso_inside_period()
                 _had_qso_with.append('{}-period{}'.format(callsign2, inside_period_nr))
@@ -895,9 +902,12 @@ def compare_qso(log1, qso1, log2, qso2):
         # TODO : think if I should pass only the 1st error or all errors to ValueError
         raise ValueError(qso1.errors[0][1])
 
+    if qso2.valid is False:
+        raise(ValueError('Other ham qso is invalid'))
+
     # compare callsign
     if log1.callsign != qso2.qso_fields['call'] or log2.callsign != qso1.qso_fields['call']:
-        return -1
+        raise ValueError('Callsign mismatch')  # this is never raised
 
     # calculate absolute date+time
     REGEX_DATE = '(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})'

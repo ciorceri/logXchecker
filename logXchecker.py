@@ -65,6 +65,7 @@ class ArgumentParser(object):
         self.parser.add_argument('-cl', '--checklogs', type=str, default=None, metavar='path_to_folder', help='Checklogs used for cross-check')
         self.parser.add_argument('-o', '--output', type=self.check_output_value, required=False, default='human-friendly',
                                  help='Output format: human-friendly, json, xml (default: human-friendly)')
+        self.parser.add_argument('-v', '--verbose', action='store_true', help='More details for cross-check')
 
     def parse(self, args):
         return self.parser.parse_args(args)
