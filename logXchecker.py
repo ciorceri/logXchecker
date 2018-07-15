@@ -95,12 +95,15 @@ def print_human_friendly_output(output):
     # multi logs
     if output.get(edi.INFO_MLC, False):
         print('Checking logs from folder : {}'.format(output[edi.INFO_MLC]))
-        for log in output[edi.INFO_MLC]:
+        print('#########################')
+        # print('Checking logs from folder : {}'.format(output[edi.INFO_MLC]))
+        for log in output[edi.INFO_LOGS]:
             print_log_human_friendly(log)
             print('--------')
     # cross check
     if output.get(edi.INFO_CC, False):
         print('Cross check logs from folder : {}'.format(output[edi.INFO_CC]))
+        print('#########################')
         for _call, _values in output[edi.INFO_OPERATORS].items():
             print('Callsign : {}'.format(_call))
             for _band, _details in _values['band'].items():
@@ -173,7 +176,7 @@ def main():
             log_output[edi.INFO_LOG] = filename
             log_output.update(_log.errors)
             logs_output.append(log_output)
-        output[edi.INFO_MLC] = logs_output
+        output[edi.INFO_LOGS] = logs_output
         # add also checklogs
         if args.checklogs:
             if os.path.isdir(args.checklogs):
@@ -184,7 +187,7 @@ def main():
                     log_output[edi.INFO_LOG] = filename
                     log_output.update(_log.errors)
                     logs_output.append(log_output)
-                output[edi.INFO_MLC].extend(logs_output)
+                output[edi.INFO_LOGS].extend(logs_output)
 
     # crosscheck logs
     elif args.crosscheck:

@@ -27,6 +27,7 @@ from validate_email import validate_email
 INFO_MLC = 'multi_logs_folder'
 INFO_CC = 'cross_check_folder'
 INFO_LOG = 'log'
+INFO_LOGS = 'logs'
 INFO_BANDS = 'band'
 INFO_OPERATORS = 'operators'
 ERR_IO = 'io'
