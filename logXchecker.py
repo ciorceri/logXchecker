@@ -88,7 +88,7 @@ def load_log_format_module(module_name):
     #         pass
 
 
-def print_human_friendly_output(output):
+def print_human_friendly_output(output, verbose=False):
     """Will print a human-fiendly output for easy read"""
     # single log
     if output.get(edi.INFO_LOG, False):
@@ -109,6 +109,10 @@ def print_human_friendly_output(output):
             print('Callsign : {}'.format(_call))
             for _band, _details in _values['band'].items():
                 print('   Band {} : valid={} , category={} , points={}'.format(_band, _details['valid'], _details['category'], _details['points']))
+                if not verbose:
+                    continue
+                for err in _details['qso_errors']:
+                    print('   - {}'.format(err))
             print('--------')
 
 
@@ -200,14 +204,22 @@ def main():
             op_output[edi.INFO_BANDS] = {}
             for _log in _instance.logs:
                 op_output[edi.INFO_BANDS][_log.band] = {
+                    'path': _log.path,
                     'points': _log.qsos_points,
                     'valid': _log.valid_header,
                     'category': _log.category,
                 }
+                if args.verbose is True:
+                    _cc_errors = []
+                    for qso in _log.qsos:
+                        if qso.cc_confirmed is False:
+                            _cc_errors.append('{} : {}'.format(qso.qso_line, qso.cc_error))
+                    op_output[edi.INFO_BANDS][_log.band]['qso_errors'] = _cc_errors
+
             output[edi.INFO_OPERATORS][_call] = op_output
 
     if args.output.upper() == 'HUMAN-FRIENDLY':
-        print_human_friendly_output(output)
+        print_human_friendly_output(output, verbose=args.verbose)
     elif args.output.upper() == 'JSON':
         print(edi.dict_to_json(output))
     elif args.output.upper() == 'XML':

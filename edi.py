@@ -499,18 +499,6 @@ class LogQso(object):
                              '[a-zA-Z]{2}\d{2}[a-zA-Z]{2};.*?;.*?;.*?;.*?;.*?'
     #                          date  time   id  m    rst       nr      rst       nr    .  qth  km  .   .   .   .
 
-    qso_line = None
-    line_nr = None
-    rules = None
-    valid = None
-    errors = []
-
-    cc_confirmed = None  # possible values: True, False or some error message
-    cc_errors = []  # here we store errors from cross-check
-    points = None  # if qso is confirmed we store here the calculated points (multiplier included)
-
-    qso_fields = {}
-
     def __init__(self, qso_line=None, qso_line_number=None, rules=None):
         self.qso_line = qso_line
         self.line_nr = qso_line_number
@@ -518,6 +506,9 @@ class LogQso(object):
         self.valid = True
 
         self.errors = []
+        self.cc_confirmed = None  # possible values: True, False
+        self.cc_error = []  # here we store errors from cross-check
+        self.points = None  # if qso is confirmed we store here the calculated points (multiplier included)
 
         self.qso_fields = {'date': None,
                            'hour': None,
@@ -838,7 +829,10 @@ def crosscheck_logs(operator_instances, rules, band_nr):
         for qso1 in log1.qsos:
             if qso1.valid is False:
                 qso1.cc_confirmed = False
-                qso1.cc_errors.append('Qso is not valid')
+                if len(qso1.errors) >= 1:
+                    qso1.cc_error = qso1.errors[0][1]
+                else:
+                    qso1.cc_error = 'Qso is not valid'
                 continue
             if qso1.cc_confirmed is True:
                 continue
@@ -848,21 +842,21 @@ def crosscheck_logs(operator_instances, rules, band_nr):
             ham2 = operator_instances.get(callsign2, None)
             if not ham2:
                 qso1.cc_confirmed = False
-                qso1.cc_errors.append('No log from {}'.format(callsign2))
+                qso1.cc_error = 'No log from {}'.format(callsign2)
                 continue
 
             # validate that this qso wasn't already validated
             _, inside_period_nr = qso1.qso_inside_period()
             if '{}-period{}'.format(callsign2, inside_period_nr) in _had_qso_with:
                 qso1.cc_confirmed = False
-                qso1.cc_errors.append('Qso already confirmed')
+                qso1.cc_error = 'Qso already confirmed'
                 continue
 
             # check if we have proper band logs from 2nd ham
             _logs2 = ham2.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
             if not _logs2:
                 qso1.cc_confirmed = False
-                qso1.cc_errors.append('No log from {}'.format(callsign2))
+                qso1.cc_error = 'No log from {}'.format(callsign2)
                 continue
             log2 = _logs2[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
 
@@ -878,7 +872,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 try:
                     distance = compare_qso(log1, qso1, log2, qso2)
                 except ValueError as e:
-                    qso1.cc_errors.append(e)
+                    qso1.cc_error = e
 
                 if distance is None:
                     continue
@@ -887,7 +881,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 _, inside_period_nr = qso2.qso_inside_period()
                 _had_qso_with.append('{}-period{}'.format(callsign2, inside_period_nr))
                 qso1.points = distance * int(rules.contest_band(band_nr)['multiplier'])
-                qso1.confirmed = True
+                qso1.cc_confirmed = True
 
 
 def compare_qso(log1, qso1, log2, qso2):
