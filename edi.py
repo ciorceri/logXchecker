@@ -846,8 +846,8 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 continue
 
             # validate that this qso wasn't already validated
-            _, inside_period_nr = qso1.qso_inside_period()
-            if '{}-period{}'.format(callsign2, inside_period_nr) in _had_qso_with:
+            _, inside_period_nr1 = qso1.qso_inside_period()
+            if '{}-period{}'.format(callsign2, inside_period_nr1) in _had_qso_with:
                 qso1.cc_confirmed = False
                 qso1.cc_error = 'Qso already confirmed'
                 continue
@@ -868,20 +868,27 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 _callsign = qso2.qso_fields['call']
                 if callsign1 != _callsign:
                     continue
+
+                _, inside_period_nr2 = qso2.qso_inside_period()
+                if inside_period_nr1 != inside_period_nr2:
+                    continue
+
                 distance = None
                 try:
                     distance = compare_qso(log1, qso1, log2, qso2)
                 except ValueError as e:
+                    qso1.cc_confirmed = False
                     qso1.cc_error = e
+                    continue
 
                 if distance is None:
                     continue
 
                 # add this qso in _had_qso_with list
-                _, inside_period_nr = qso2.qso_inside_period()
-                _had_qso_with.append('{}-period{}'.format(callsign2, inside_period_nr))
+                _had_qso_with.append('{}-period{}'.format(callsign2, inside_period_nr2))
                 qso1.points = distance * int(rules.contest_band(band_nr)['multiplier'])
                 qso1.cc_confirmed = True
+                break
 
 
 def compare_qso(log1, qso1, log2, qso2):
@@ -941,8 +948,8 @@ def compare_qso(log1, qso1, log2, qso2):
         raise ValueError('Serial number mismatch')
 
     # compare qth
-    if (log1.maidenhead_locator != qso2.qso_fields['wwl'] or \
-        log2.maidenhead_locator != qso1.qso_fields['wwl']):
+    if log1.maidenhead_locator != qso2.qso_fields['wwl'] or \
+       log2.maidenhead_locator != qso1.qso_fields['wwl']:
         raise ValueError('Qth locator mismatch')
 
     # calculate & return distance
