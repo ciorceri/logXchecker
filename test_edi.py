@@ -401,8 +401,6 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            print(">>>>>>>>>", log.callsign)
-
             self.assertFalse(log.valid_header)
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
@@ -1110,3 +1108,123 @@ class TestEdiHelperFunctions(TestCase):
             if ex:
                 self.assertRaisesRegex(ex, ex_msg, edi.compare_qso, _log, q1, _log, q2)
 
+    @mock.patch('os.path.isfile')
+    def test_crosscheck_logs(self, mck_isfile):
+        """
+        A test with hardcoded logs.
+        It's hard to follow and understand this test and
+        I assume that I've covered most of the important cases from 'crosscheck_logs'
+        and in case something is changing this test should catch it
+        """
+        mck_isfile.return_value = True
+        expected_result = ['True-[]-1',
+                           'True-Mode mismatch-1',
+                           'True-[]-1',
+                           'True-[]-1',
+                           'False-Qso field <date> has an invalid value (1308)-None',
+                           'False-No log from YO5EEE-None',
+                           'False-No log from YO5FFF-None',
+                           'False-Mode mismatch-None',
+                           'True-[]-1',
+                           'True-[]-1',
+                           'False-Qso already confirmed-None',
+                           'False-Qso already confirmed-None',
+                           'False-Qso already confirmed-None',
+                           'None-[]-None']
+
+        log1_content = \
+"""TName=Cupa Nasaud
+TDate=20130803;20130806
+PCall=YO5AAA
+PWWLo=KN16SS
+PSect=SOSB
+PBand=144 MHz
+[QSORecords;1]
+130803;1200;YO5BBB;6;59;001;59;001;;KN16SS;1;;;;
+130803;1201;YO5CCC;6;59;002;59;001;;KN16SS;1;;;;
+"""
+        op1 = edi.Operator('YO5AAA')  # fair player
+        mo = mock.mock_open(read_data=log1_content)
+        with patch('builtins.open', mo, create=True):
+            op1.add_log_by_path('some_log_file.edi')
+            self.assertEqual(len(op1.logs), 1)
+
+        log2_content = \
+"""TName=Cupa Nasaud
+TDate=20130803;20130806
+PCall=YO5BBB
+PWWLo=KN16SS
+PSect=SOSB
+PBand=144 MHz
+[QSORecords;1]
+130803;1200;YO5AAA;6;59;001;59;001;;KN16SS;1;;;;
+130803;1201;YO5CCC;6;59;002;59;002;;KN16SS;1;;;;
+1308;1202;YO5DDD;6;59;003;59;001;;KN16SS;1;;;;
+130803;1203;YO5EEE;6;59;004;59;001;;KN16SS;1;;;;
+130803;1204;YO5FFF;6;59;005;59;001;;KN16SS;1;;;;
+"""
+        op2 = edi.Operator('YO5BBB')  # fair player with mistakes
+        mo = mock.mock_open(read_data=log2_content)
+        with patch('builtins.open', mo, create=True):
+            op2.add_log_by_path('some_log_file.edi')
+            self.assertEqual(len(op2.logs), 1)
+
+        log3_content = \
+"""TName=Cupa Nasaud
+TDate=20130803;20130806
+PCall=YO5CCC
+PWWLo=KN16SS
+PSect=SOSB
+PBand=144 MHz
+[QSORecords;1]
+130803;1200;YO5AAA;2;59;001;59;002;;KN16SS;2;;;;
+130803;1200;YO5AAA;6;59;001;59;002;;KN16SS;2;;;;
+130803;1201;YO5BBB;6;59;002;59;002;;KN16SS;5;;;;
+130803;1200;YO5AAA;6;59;003;59;002;;KN16SS;3;;;;
+130803;1200;YO5AAA;6;59;003;59;001;;KN16SS;4;;;;
+130803;1200;YO5AAA;6;59;002;59;002;;KN16SS;4;;;;
+"""
+        op3 = edi.Operator('YO5CCC')  # unfair player
+        mo = mock.mock_open(read_data=log3_content)
+        with patch('builtins.open', mo, create=True):
+            op3.add_log_by_path('some_log_file.edi')
+            self.assertEqual(len(op3.logs), 1)
+
+        op4 = edi.Operator('YO5DDD')  # op without logs
+
+        log5_content = \
+"""TName=Cupa Nasaud
+TDate=20130803;20130806
+PCall=YO5FFF
+PWWLo=KN16SS
+PSect=SOSB
+PBand=432 MHz
+[QSORecords;1]
+130803;1200;YO5ZZZ;6;59;001;59;001;;KN16SS;1;;;;
+"""
+        op5 = edi.Operator('YO5FFF')  # op with log on another band
+        mo = mock.mock_open(read_data=log5_content)
+        with patch('builtins.open', mo, create=True):
+            op5.add_log_by_path('some_log_file.edi')
+            self.assertEqual(len(op5.logs), 1)
+
+        op_inst = {
+            'YO5AAA': op1,
+            'YO5BBB': op2,
+            'YO5CCC': op3,
+            'YO5DDD': op4,
+            'YO5FFF': op5,
+        }
+        mo_rules = mock.mock_open(read_data=VALID_RULES)
+        with patch('builtins.open', mo_rules, create=True):
+            _rules = rules.Rules('some_rule_file.rules')
+
+        edi.crosscheck_logs(op_inst, _rules, 1)
+
+        result = []
+        for op, op_inst in op_inst.items():
+            for log in op_inst.logs:
+                for qso in log.qsos:
+                    result.append("{}-{}-{}".format(qso.cc_confirmed, qso.cc_error, qso.points))
+
+        self.assertListEqual(result, expected_result)
