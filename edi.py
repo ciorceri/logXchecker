@@ -78,7 +78,7 @@ class Log(object):
     }
     """
     use_as_checklog = False
-    ignore_this_log = None
+    ignore_this_log = None  # if flag is set this log will not be used in cross-check
 
     path = None
     rules = None
@@ -772,6 +772,7 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
                 logs_instances.append(log_class(os.path.join(checklogs_folder, filename), rules=rules, checklog=True))
         else:
             print('Cannot open checklogs folder : {}'.format(checklogs_folder))
+            return 1
 
     # create instances for all hams and add logs with valid header
     operator_instances = {}
@@ -785,13 +786,14 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
             operator_instances[callsign] = Operator(callsign)
         operator_instances[callsign].add_log_instance(log)
 
-    # TODO check for duplicate logs (on same band)
-    # select one log from duplicate logs
-    # set Log.ignore_this_log field to True for duplicate logs
+    # if we find multiple logs for a ham on a band
+    # we set Log.ignore_this_log for older files
+    for band in range(1, rules.contest_bands_nr+1):
+        for _, _ham in operator_instances.items():
+            _logs = _ham.logs_by_band_regexp(rules.contest_band(band)['regexp'])
+            mark_older_logs(_logs)
 
-    # TODO check if a ham has logs with different categories
-    # but ignore
-
+    # do the corss-check over filtered logs
     for band in range(1, rules.contest_bands_nr+1):
         crosscheck_logs(operator_instances, rules, band)
 
@@ -817,13 +819,16 @@ def crosscheck_logs(operator_instances, rules, band_nr):
         _had_qso_with = []
         # get logs for band
         _logs1 = ham1.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
-
         if not _logs1:
             continue
-        log1 = _logs1[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
-        if log1.use_as_checklog is True:
-            continue
-        if log1.ignore_this_log is True:
+
+        # use 1st log that : is not checklog , is not to ignore & has valid header
+        for log1 in _logs1:
+            if all((log1.use_as_checklog is False,
+                    log1.ignore_this_log is False,
+                    log1.valid_header is True)):
+                break
+        else:
             continue
 
         for qso1 in log1.qsos:
@@ -834,31 +839,43 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 else:
                     qso1.cc_error = 'Qso is not valid'
                 continue
+
             if qso1.cc_confirmed is True:
+                # code should never reach here
                 continue
 
-            # check if we have some logs from 2nd ham
             callsign2 = qso1.qso_fields['call']
-            ham2 = operator_instances.get(callsign2, None)
-            if not ham2:
-                qso1.cc_confirmed = False
-                qso1.cc_error = 'No log from {}'.format(callsign2)
-                continue
 
-            # validate that this qso wasn't already validated
+            # validate that this qso isn't an duplicate for current period
             _, inside_period_nr1 = qso1.qso_inside_period()
             if '{}-period{}'.format(callsign2, inside_period_nr1) in _had_qso_with:
                 qso1.cc_confirmed = False
                 qso1.cc_error = 'Qso already confirmed'
                 continue
 
+            # check if we have some logs from 2nd ham
+            ham2 = operator_instances.get(callsign2, None)
+            if not ham2:
+                qso1.cc_confirmed = False
+                qso1.cc_error = 'No log from {}'.format(callsign2)
+                continue
+
             # check if we have proper band logs from 2nd ham
             _logs2 = ham2.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
             if not _logs2:
                 qso1.cc_confirmed = False
-                qso1.cc_error = 'No log from {}'.format(callsign2)
+                qso1.cc_error = 'No log for this band from {}'.format(callsign2)
                 continue
-            log2 = _logs2[0]  # use 1st log # TODO : for multi-period contests I have to use all logs !
+
+            # use 1st log that : is not to ignore & has valid header
+            for log2 in _logs2:
+                if all((log2.ignore_this_log is False,
+                        log2.valid_header is True)):
+                    break
+            else:
+                qso1.cc_confirmed = False
+                qso1.cc_error = 'No valid log from {}'.format(callsign2)
+                continue
 
             # get 2nd ham qsos and compare them with 1st ham qso
             for qso2 in log2.qsos:
@@ -954,6 +971,23 @@ def compare_qso(log1, qso1, log2, qso2):
 
     # calculate & return distance
     return qth_distance(log1.maidenhead_locator, log2.maidenhead_locator)
+
+
+def mark_older_logs(log_list):
+    """
+    Will iterate the log list and based on log file timestamp will mark older ones
+    by setting the .ignore_this_log flag.
+    """
+    maxDate = 0
+    maxDateLogId = None
+    for log in log_list:
+        date = os.path.getmtime(log.path)
+        if date > maxDate:
+            maxDate = date
+            maxDateLogId = id(log)
+    for log in log_list:
+        if maxDateLogId != id(log):
+            log.ignore_this_log = True
 
 
 def delta_ord(letter):

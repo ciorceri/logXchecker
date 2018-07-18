@@ -108,7 +108,10 @@ def print_human_friendly_output(output, verbose=False):
         for _call, _values in output[edi.INFO_OPERATORS].items():
             print('Callsign : {}'.format(_call))
             for _band, _details in _values['band'].items():
-                print('   Band {} : valid={} , category={} , points={}'.format(_band, _details['valid'], _details['category'], _details['points']))
+                if _details.get('checklog', False) is True:
+                    print('   [checklog] band={} , valid={}'.format(_band, _details['valid']))
+                else:
+                    print('   band={} , valid={} , category={} , points={}'.format(_band, _details['valid'], _details['category'], _details['points']))
                 if not verbose:
                     continue
                 for err in _details['qso_errors']:
@@ -208,6 +211,7 @@ def main():
                     'points': _log.qsos_points,
                     'valid': _log.valid_header,
                     'category': _log.category,
+                    'checklog': _log.use_as_checklog,
                 }
                 if args.verbose is True:
                     _cc_errors = []

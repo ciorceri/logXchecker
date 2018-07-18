@@ -3,7 +3,7 @@ base = 'Console'
 executables = [Executable("logXchecker.py", base=base)]
 setup(
     name = "logXchecker",
-    version = "June 2017",
-    description = 'logXchecker log cross checker',
+    version = "1.0",
+    description = 'ham radio log cross checker',
     executables = executables
 )
