@@ -121,19 +121,25 @@ def print_human_friendly_output(output, verbose=False):
 
 def print_log_human_friendly(output):
     """Will print human fiendly info for a log"""
+    has_errors = False
     print('Checking log : {}'.format(output[edi.INFO_LOG]))
     if output[edi.ERR_IO]:
         print('Input/Output : {}'.format(output[edi.ERR_IO]))
+        has_errors = True
         pass
     if output[edi.ERR_HEADER]:
         print('Header errors :')
         for err in output[edi.ERR_HEADER]:
             print('Line {} : {}'.format(err[0], err[1]))
+        has_errors = True
     if output[edi.ERR_QSO]:
         print('QSO errors :')
         for err in output[edi.ERR_QSO]:
-            print('Line {} : {}'.format(err[0], err[1]))
+            print('Line {} : {} <- {}'.format(err[0], err[1], err[2]))
+        has_errors = True
 
+    if has_errors is False:
+        print('No error found')
 
 def main():
     print('{} - v{}'.format(version.__project__,  version.__version__))
