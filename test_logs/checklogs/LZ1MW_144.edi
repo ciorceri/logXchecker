@@ -1,0 +1,64 @@
+[REG1TEST;1]
+TName=Radio Day
+TDate=20160507;20160508
+PCall=LZ1MW
+PWWLo=KN12PQ
+PExch=
+PAdr1=
+PAdr2=
+PSect=SINGLE
+PBand=144 MHz
+PClub=
+RName=Milorad Vasilev
+RCall=LZ1MW
+RAdr1=
+RAdr2=
+RPoCo=
+RCity=SOFIA
+RCoun=BULGARIA
+RPhon=
+RHBBS=
+MOpe1=
+MOpe2=
+STXEq=Yaesu FT-8800, Yaesu FT-450D, Diamond X200, Windom, 5W
+SPowe=
+SRXEq=
+SAnte=
+SAntH=
+CQSOs=5;1
+CQSOP=19
+CWWLs=1;0;1
+CWWLB=
+CExcs=;;;
+CExcB=
+CDXCs=
+CDXCB=
+CToSc=19
+CODXC=LZ1DKL;KN12QQ;7
+[Remarks]
+nalTName=1;1;1
+nalPClubname=
+nalPreg=
+nalPregk=
+nalKateg=3
+nalOpName1=!;;
+nalOpCall1=LZ1MW
+nalOpYear1=  .  .
+nalOpRazr1=0
+nalOpTrnr1=
+nalOpAdr11=
+nalOpAdr21=
+nalOpPoCo1=
+nalOpCity1=
+nalOpCoun1=
+nalOpPhon1=
+nalOpHBBS1=
+nalSkmp=
+nalSdop=''
+[All records are on 144 MHz, except second QSO with LZ5ZX - 50 MHz]
+[QSORecords;5]
+160507;1815;LZ5ZX;6;59;001;59;001;;KN12PP;5;;N;;
+160507;1827;LZ5ON;6;59;002;59;003;;KN12PQ;1;;;;
+160507;1857;LZ1VAE;6;59;004;59;003;;KN12PQ;1;;;;
+160507;1900;LZ1DKL;6;59;005;59;002;;KN12QQ;7;;;;
+[END;PaperQSO version 0.0.9.803]

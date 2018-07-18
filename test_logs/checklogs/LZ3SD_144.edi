@@ -1,0 +1,41 @@
+[REG1TEST;1]
+TName=General VHF logging
+TDate=20160507;20160508
+PCall=LZ3SD
+PWWLo=KN22JD
+PExch=001
+PAdr1=N.Gogol 27
+PAdr2=
+PSect=CHECK
+PBand=144 MHz
+PClub=Thracian Rose Club
+RName=Spas  Delchev
+RCall=LZ3SD
+RAdr1=N.Gogol 27
+RAdr2=
+RPoCo=4000
+RCity=Plovdiv
+RCoun=BULGARIA
+RPhon=
+RHBBS=
+MOpe1=
+MOpe2=
+STXEq=TS 480 SAT
+SPowe=100
+SRXEq=TS 480 SAT
+SAnte=Dipol
+SAntH=;
+CQSOs=1;1
+CQSOP=2
+CWWLs=1;0;1
+CWWLB=0
+CExcs=0;0;1
+CExcB=0
+CDXCs=1;0;1
+CDXCB=0
+CToSc=2
+CODXC=LZ1ETE;KN22JD;2
+[Remarks]
+
+[QSORecords;1]
+160507;1600;LZ1ETE;1;59;001;59;000;;KN22JD;2;;;;

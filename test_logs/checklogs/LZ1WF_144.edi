@@ -1,0 +1,42 @@
+[REG1TEST;1]
+TName=Day of radio
+TDate=20160507;20160508
+PCall=LZ1WF
+PWWLo=KN22HI
+PExch=
+PAdr1=Nedelevo
+PAdr2=
+PSect=SINGLE
+PBand=144 MHz
+PClub=
+RName=Vasil Filchev
+RCall=
+RAdr1=
+RAdr2=
+RPoCo=
+RCity=
+RCoun=Bulgaria
+RPhon=
+RHBBS=
+MOpe1=
+MOpe2=
+STXEq=1
+SPowe=1
+SRXEq=1
+SAnte=1
+SAntH=1;1
+CQSOs=2;1
+CQSOP=149
+CWWLs=0;0;1
+CWWLB=0
+CsExcs=0;0;1
+CExcB=0
+CDXCs=0;0;1
+CDXCB=0
+CToSc=149
+CODXC=LZ1VQ;KN21QT;87
+[Remarks]
+Online EDI Generator ver 0.3, http://ok2kjt.net/edi
+[QSORecords;2]
+160508;0651;LZ1VQ;2;599;001;599;015;;KN21QT;87;;;;
+160508;0721;LZ1GJ;2;599;002;599;020;;KN22IB;34;;;;

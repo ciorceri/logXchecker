@@ -1,0 +1,42 @@
+﻿[REG1TEST;1]
+TName=2. ДЕН НА РАДИОТО 2016
+TDate=20160507;20160508
+PCall=LZ2GG
+PWWLo=KN33WN
+PExch=
+PAdr1=ДОБРИЧ
+PAdr2=
+PSect=SINGLE
+PBand=1.3 GHz
+PClub=
+RName=ГЕОРГИ ГЕОРГИЕВ
+RCall=LZ2GG
+RAdr1=жк.ДРУЖБА 62 Б 12
+RAdr2=
+RPoCo=
+RCity=ДОБРИЧ
+RCoun=BULGARIA
+RPhon=
+RHBBS=lz2gg@mail.bg
+MOpe1=
+MOpe2=
+STXEq=FT290R+TRANSVERTER
+SPowe=15
+SRXEq=FT290R+TRANSVERTER
+SAnte=DL6WU-26 EL
+SAntH=16;230
+CQSOs=2;1
+CQSOP=86
+CWWLs=0;0;1
+CWWLB=0
+CsExcs=0;0;1
+CExcB=0
+CDXCs=0;0;1
+CDXCB=0
+CToSc=86
+CODXC=LZ2QA;KN43EK;43
+[Remarks]
+Online EDI Generator ver 0.3, http://ok2kjt.net/edi
+[QSORecords;2]
+160508;0426;LZ2QA;1;59;001;59;003;;KN43EK;43;;;;
+160508;0526;LZ2SK;1;59;002;59;004;;KN43EK;43;;;;

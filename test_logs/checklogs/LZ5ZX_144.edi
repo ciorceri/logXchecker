@@ -1,0 +1,64 @@
+[REG1TEST;1]
+TName=Radio Day
+TDate=20160507;20160508
+PCall=LZ5ZX
+PWWLo=KN12PP
+PExch=
+PAdr1=15 Goliam Bratan Str.
+PAdr2=
+PSect=SINGLE
+PBand=145 MHz
+PClub=
+RName=
+RCall=LZ5ZX
+RAdr1=15 Goliam Bratan Str.
+RAdr2=
+RPoCo=1618
+RCity=SOFIA
+RCoun=BULGARIA
+RPhon=
+RHBBS=lz5zx@yahoo.com
+MOpe1=
+MOpe2=
+STXEq=Diamond X700H
+SPowe=
+SRXEq=
+SAnte=
+SAntH=
+CQSOs=4;1
+CQSOP=24
+CWWLs=1;0;1
+CWWLB=
+CExcs=;;;
+CExcB=
+CDXCs=
+CDXCB=
+CToSc=24
+CODXC=LZ1DKL;KN12QQ;9
+[Remarks]
+nalTName=1;1;1
+nalPClubname=
+nalPreg=
+nalPregk=
+nalKateg=3
+nalOpName1=!;;
+nalOpCall1=LZ5ZX
+nalOpYear1=  .  .
+nalOpRazr1=0
+nalOpTrnr1=
+nalOpAdr11=
+nalOpAdr21=
+nalOpPoCo1=
+nalOpCity1=
+nalOpCoun1=
+nalOpPhon1=
+nalOpHBBS1=
+nalSkmp=
+nalSdop=''
+[All records are on 144 MHz, except second QSO with LZ1MW - 50 MHz]
+[QSORecords;4]
+160507;1815;LZ1MW;6;59;001;59;001;;KN12PQ;5;;N;;
+160507;1821;LZ1VAE;6;59;002;59;001;;KN12PQ;5;;;;
+160507;1847;LZ1MW;6;59;003;59;003;;KN12PQ;5;;;;D
+160507;1857;LZ1DKL;6;59;004;59;001;;KN12QQ;9;;;;
+[END;PaperQSO version 0.0.9.803]

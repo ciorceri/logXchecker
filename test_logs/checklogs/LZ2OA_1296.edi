@@ -1,0 +1,42 @@
+[REG1TEST;1]
+TName=LZ DX VHF/UHF CONTEST 
+TDate=20160507;20160508
+PCall=LZ2OA
+PWWLo=KN33VK
+PExch=
+PAdr1=s.Stojer
+PAdr2=
+PSect=SINGLE
+PBand=1.3 GHz
+PClub=
+RName=Petko Hristov Shopov
+RCall=LZ2OA
+RAdr1=Al.Konstantinov 2 vh.B ap.17
+RAdr2=
+RPoCo=9300
+RCity=Dobrich
+RCoun=Bulgaria
+RPhon=
+RHBBS=klas2000eood@abv.bg
+MOpe1=
+MOpe2=
+STXEq=IC910
+SPowe=10
+SRXEq=IC910
+SAnte=27el.
+SAntH=15;330
+CQSOs=2;1
+CQSOP=96
+CWWLs=0;0;1
+CWWLB=0
+CsExcs=0;0;1
+CExcB=0
+CDXCs=0;0;1
+CDXCB=0
+CToSc=96
+CODXC=LZ2SK;KN43EK;48
+[Remarks]
+Online EDI Generator ver 0.3, http://ok2kjt.net/edi
+[QSORecords;2]
+160508;0355;LZ2SK;1;59;001;59;003;;KN43EK;48;;;;
+160508;0356;LZ2QA;1;59;002;59;002;;KN43EK;48;;;;

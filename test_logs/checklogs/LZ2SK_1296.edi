@@ -1,0 +1,44 @@
+[REG1TEST;1]
+TName=2. subregionalni zavod 2016
+TDate=20160507;20160508
+PCall=LZ2SK
+PWWLo=KN43EK
+PExch=
+PAdr1=„. ¿¬¿–Õ¿
+PAdr2=
+PSect=SINGLE
+PBand=1.3 GHz
+PClub=
+RName=—“ŒﬂÕ »¬¿ÕŒ¬
+RCall=LZ2SK
+RAdr1=ÛÎ.ƒ.—“Œ… Œ¬ 8
+RAdr2=
+RPoCo=
+RCity=„. ¿¬¿–Õ¿
+RCoun=BULGARIA
+RPhon=
+RHBBS=LZ2SK@ABV.BG
+MOpe1=
+MOpe2=
+STXEq=FT-290R+TRX
+SPowe=20
+SRXEq=FT-290R+TRX
+SAnte=37 EL. YAGI DL6WU
+SAntH=20;130                                                                                                                                                                                                                                                                                                                                                                   
+CQSOs=4;1
+CQSOP=204
+CWWLs=0;0;1
+CWWLB=0
+CsExcs=0;0;1
+CExcB=0
+CDXCs=0;0;1
+CDXCB=0
+CToSc=204
+CODXC=LZ3BD/2;KN34PB;112
+[Remarks]
+Online EDI Generator ver 0.3, http://ok2kjt.net/edi
+[QSORecords;4]
+160507;1547;LZ2QA;1;59;001;59;001;;KN43EK;1;;;;
+160508;0304;LZ3BD/2;1;59;002;59;001;;KN34PB;112;;;;
+160508;0356;LZ2OA;1;59;003;59;001;;KN33VK;48;;;;
+160508;0526;LZ2GG;1;59;004;59;002;;KN33WN;43;;;;

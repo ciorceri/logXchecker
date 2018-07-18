@@ -1,0 +1,43 @@
+[REG1TEST;1]
+TName=2. subregionalni zavod 2016
+TDate=20160507;20160508
+PCall=LZ5HP
+PWWLo=KN12QQ
+PExch=
+PAdr1=Sofia
+PAdr2=
+PSect=SINGLE
+PBand=1.3 GHz
+PClub=
+RName=Hristiyan
+RCall=LZ5HP
+RAdr1=
+RAdr2=
+RPoCo=
+RCity=Sofia
+RCoun=Bulgaria
+RPhon=
+RHBBS=LZ5HP@dir.bg
+MOpe1=
+MOpe2=
+STXEq=FT-817+transverter
+SPowe=2
+SRXEq=FT-817+transverter
+SAnte=4 el. Patch
+SAntH=25;550
+CQSOs=3;1
+CQSOP=264
+CWWLs=0;0;1
+CWWLB=0
+CsExcs=0;0;1
+CExcB=0
+CDXCs=0;0;1
+CDXCB=0
+CToSc=264
+CODXC=LZ1GJ;KN22IB;130
+[Remarks]
+Online EDI Generator ver 0.3, http://ok2kjt.net/edi
+[QSORecords;3]
+160507;1631;LZ1ZB;1;59;001;59;002;;KN12QO;10;;;;
+160508;0830;LZ7J;1;59;002;59;002;;KN22HB;124;;;;
+160508;0840;LZ1GJ;1;59;003;59;002;;KN22IB;130;;;;
