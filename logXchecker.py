@@ -159,7 +159,7 @@ def main():
     if log_format == 'EDI':
         lfmodule = edi
     else:
-        print('Unsupported log type selected : {}'.format(log_format))
+        print('Selected log type is unsupported : {}'.format(log_format))
         return 1
 
     operator = lfmodule.Operator
