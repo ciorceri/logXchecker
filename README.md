@@ -12,11 +12,11 @@
         - Validate logs based on predefined rules
     - Output can have following formats: human-friendly, json, xml
     - Cross checker to generate a VHF contest results
-#####Future features:
-
+    
+#### Future features:
     - Support for ADIF & Cabrillo logs with generic and rules based validator
     
-#####Current VHF rules format (this format may be subject to change):
+#### Current VHF rules format (this format may be subject to change):
 ```
 [contest]
 name=Contest name
@@ -76,7 +76,8 @@ email=yes
 address=no
 name=yes
 ```
-#####The rules format is based on [INI file format](http://en.wikipedia.org/wiki/INI_file) and there are the following sections:
+
+#### The rules format is based on [INI file format](http://en.wikipedia.org/wiki/INI_file) and there are the following sections:
 
     [contest]
         contains generic details about contest:
@@ -107,8 +108,7 @@ name=yes
     [extra]
         rules presence and validation of other header fields from log (email, address, name)
 
-#####Run examples using the provided 'test_logs' folder:
-
+#### Run examples using the provided 'test_logs' folder:
 * Single log validation (generic, no rules) and human friendly output
 ```
 $ python3 ./logXchecker.py -slc ./test_logs/logs/yo2lza_20160514_091251.edi -f edi
@@ -158,7 +158,7 @@ $ python3 ./logXchecker.py -cc ./test_logs/logs -cl ./test_logs/checklogs/ -r ./
 ...
 ```
 
-#####Example of possible errors at log header validation:
+#### Example of possible errors at log header validation:
 ```
 Line None : PCall field is not present
 Line None : PWWLo field is not present
@@ -170,21 +170,20 @@ Line 4 : PCall field content is not valid
 Line 5 : PWWLo field value is not valid
 ```
 
-#####Example of possible errors at log header validation when rules are provided:
+#### Example of possible errors at log header validation when rules are provided:
 ```
 Line 3 : TDate field value has an invalid value (20160507;20160508). Not as defined in contest rule
 Line 9 : PSect field value has an invalid value (SINGLE). Not as defined in contest rules
 ```
 
-#####Example of Qso errors:
+#### Example of Qso errors:
 ```
 160507;1450;LZ7J;1;59;006;59;019;;KN22HB;362;;N;; : No log from LZ7J
 160507;1529;LZ2SQ;1;59;008;59;020 KN33GY;;;234;;N;; : Qso field <rst received nr> has an invalid value (020 KN33GY)
 160507;1549;LZ2JA;1;59;010;59;009;;KN22UA;357;;;; : Qth locator mismatch
 ```
    
-#####Notes:
-
+#### Notes:
     - Suggestions are appreciated.
     - Only Python 3.6+ will be supported.
     - I will provide MacOS and Windows builds to make Python install optional. 
