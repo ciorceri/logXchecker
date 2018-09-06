@@ -705,9 +705,10 @@ class LogQso(object):
         # validate qso mode
         if int(self.qso_fields['mode']) not in self.rules.contest_qso_modes:
             self.valid = False
+            modes_str = ','.join(map(str, self.rules.contest_qso_modes))
             self.errors.append((self.line_nr,
                                 self.qso_line,
-                                'Qso mode is invalid: not in defined modes ({})'.format(self.rules.contest_qso_modes)))
+                                'Qso mode is invalid: not in defined modes ({})'.format(modes_str)))
         return None
 
     def qso_inside_period(self):

@@ -24,6 +24,8 @@ import rules as _rules
 import version
 from edi import crosscheck_logs_filter
 
+# SORT_OUTPUT = False  # TODO : sort the results output
+
 
 class ArgumentParser(object):
     """

@@ -380,7 +380,7 @@ test_logQso_rules_based_qso_validator = [
 
     edi.Log.qsos_tuple(linenr=11, qso='130803;1200;YO5BTZ;7;59;001;59;001;;KN16SS;1;;;;', valid=False,
                        errors=[(11, '130803;1200;YO5BTZ;7;59;001;59;001;;KN16SS;1;;;;',
-                                'Qso mode is invalid: not in defined modes ([1, 2, 6])')]),
+                                'Qso mode is invalid: not in defined modes (1,2,6)')]),
 ]
 
 
@@ -1098,7 +1098,7 @@ class TestEdiHelperFunctions(TestCase):
             (qso_list[0], qso_list[18], None, ValueError, 'Other ham qso is invalid'),
             # reverse test of different modes
             (qso_list[17], qso_list[0], None, ValueError, 'Mode mismatch'),
-            (qso_list[18], qso_list[0], None, ValueError, 'Qso mode is invalid: not in defined modes \(\[1, 2, 6\]\)'),
+            (qso_list[18], qso_list[0], None, ValueError, 'Qso mode is invalid: not in defined modes \(1,2,6\)'),
             # test different rst & serial
             (qso_list[0], qso_list[19], None, ValueError, 'Rst mismatch'),
             (qso_list[0], qso_list[20], None, ValueError, 'Serial number mismatch'),
