@@ -1054,6 +1054,8 @@ class TestEdiHelperFunctions(TestCase):
             edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;ZZ16ZZ;1;;;;', 1, _rules),
             # qso with long serial (29)
             edi.LogQso('130803;1200;YO5AAA;6;59;0001;59;001;;KN16AA;1;;;;', 1, _rules),
+            # qso with lowercase qthlocator (30)
+            edi.LogQso('130803;1200;YO5AAA;6;59;0001;59;001;;KN16aa;1;;;;', 1, _rules),
         ]
 
         qso_test = (
@@ -1130,6 +1132,9 @@ class TestEdiHelperFunctions(TestCase):
             # valid test with long serial
             (qso_list[0], qso_list[29], 1, None, None),
             (qso_list[29], qso_list[0], 1, None, None),
+            # valid test with lowercase qthlocator
+            (qso_list[0], qso_list[30], 1, None, None),
+            (qso_list[30], qso_list[0], 1, None, None),
 
         )
 
