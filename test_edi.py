@@ -1104,10 +1104,10 @@ class TestEdiHelperFunctions(TestCase):
             # test different rst & serial
             (qso_list[0], qso_list[19], None, ValueError, 'Rst mismatch'),
             (qso_list[0], qso_list[20], None, ValueError, 'Serial number mismatch'),
-            (qso_list[0], qso_list[21], None, ValueError, 'Rst mismatch'),
+            (qso_list[0], qso_list[21], None, ValueError, 'Rst mismatch \(other ham\)'),
             (qso_list[0], qso_list[22], None, ValueError, 'Serial number mismatch \(other ham\)'),
             # reverse test of differe rst & serial
-            (qso_list[19], qso_list[0], None, ValueError, 'Rst mismatch'),
+            (qso_list[19], qso_list[0], None, ValueError, 'Rst mismatch \(other ham\)'),
             (qso_list[20], qso_list[0], None, ValueError, 'Serial number mismatch \(other ham\)'),
             (qso_list[21], qso_list[0], None, ValueError, 'Rst mismatch'),
             (qso_list[22], qso_list[0], None, ValueError, 'Serial number mismatch'),

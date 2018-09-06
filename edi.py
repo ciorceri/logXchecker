@@ -964,8 +964,9 @@ def compare_qso(log1, qso1, log2, qso2):
     if qso1.qso_fields['mode'] != qso2.qso_fields['mode']:
         raise ValueError('Mode mismatch')
     # compare rst
-    if (qso1.qso_fields['rst_sent'] != qso2.qso_fields['rst_recv'] or \
-        qso1.qso_fields['rst_recv'] != qso2.qso_fields['rst_sent']):
+    if qso1.qso_fields['rst_sent'] != qso2.qso_fields['rst_recv']:
+        raise ValueError('Rst mismatch (other ham)')
+    if qso1.qso_fields['rst_recv'] != qso2.qso_fields['rst_sent']:
         raise ValueError('Rst mismatch')
 
     # compare serial number
