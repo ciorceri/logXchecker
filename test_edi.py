@@ -1122,7 +1122,7 @@ class TestEdiHelperFunctions(TestCase):
             (qso_list[25], qso_list[0], None, ValueError, 'Qso field <rst send nr> has an invalid value \(00001\)'),
             (qso_list[26], qso_list[0], None, ValueError, 'Qso field <rst received nr> has an invalid value \(00001\)'),
             # test different qth
-            (qso_list[0], qso_list[27], None, ValueError, 'Qth locator mismatch'),
+            (qso_list[0], qso_list[27], None, ValueError, 'Qth locator mismatch \(other ham\)'),
             (qso_list[27], qso_list[0], None, ValueError, 'Qth locator mismatch'),
             # test invalid qth
             (qso_list[0], qso_list[28], None, ValueError, 'Other ham qso is invalid'),

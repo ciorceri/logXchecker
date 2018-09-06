@@ -976,8 +976,9 @@ def compare_qso(log1, qso1, log2, qso2):
         raise ValueError('Serial number mismatch')
 
     # compare qth
-    if log1.maidenhead_locator != qso2.qso_fields['wwl'] or \
-       log2.maidenhead_locator != qso1.qso_fields['wwl']:
+    if log1.maidenhead_locator != qso2.qso_fields['wwl']:
+        raise ValueError('Qth locator mismatch (other ham)')
+    if log2.maidenhead_locator != qso1.qso_fields['wwl']:
         raise ValueError('Qth locator mismatch')
 
     # calculate & return distance
