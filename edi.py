@@ -967,8 +967,11 @@ def compare_qso(log1, qso1, log2, qso2):
     if (qso1.qso_fields['rst_sent'] != qso2.qso_fields['rst_recv'] or \
         qso1.qso_fields['rst_recv'] != qso2.qso_fields['rst_sent']):
         raise ValueError('Rst mismatch')
-    if (qso1.qso_fields['nr_sent'] != qso2.qso_fields['nr_recv'] or \
-        qso1.qso_fields['nr_recv'] != qso2.qso_fields['nr_sent']):
+
+    # compare serial number
+    if int(qso1.qso_fields['nr_sent']) != int(qso2.qso_fields['nr_recv']):
+        raise ValueError('Serial number mismatch (other ham)')
+    if int(qso1.qso_fields['nr_recv']) != int(qso2.qso_fields['nr_sent']):
         raise ValueError('Serial number mismatch')
 
     # compare qth

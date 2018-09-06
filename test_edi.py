@@ -1052,6 +1052,8 @@ class TestEdiHelperFunctions(TestCase):
             edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16AB;1;;;;', 1, _rules),
             # qso with invalid qth (28)
             edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;ZZ16ZZ;1;;;;', 1, _rules),
+            # qso with long serial (29)
+            edi.LogQso('130803;1200;YO5AAA;6;59;0001;59;001;;KN16AA;1;;;;', 1, _rules),
         ]
 
         qso_test = (
@@ -1103,10 +1105,10 @@ class TestEdiHelperFunctions(TestCase):
             (qso_list[0], qso_list[19], None, ValueError, 'Rst mismatch'),
             (qso_list[0], qso_list[20], None, ValueError, 'Serial number mismatch'),
             (qso_list[0], qso_list[21], None, ValueError, 'Rst mismatch'),
-            (qso_list[0], qso_list[22], None, ValueError, 'Serial number mismatch'),
+            (qso_list[0], qso_list[22], None, ValueError, 'Serial number mismatch \(other ham\)'),
             # reverse test of differe rst & serial
             (qso_list[19], qso_list[0], None, ValueError, 'Rst mismatch'),
-            (qso_list[20], qso_list[0], None, ValueError, 'Serial number mismatch'),
+            (qso_list[20], qso_list[0], None, ValueError, 'Serial number mismatch \(other ham\)'),
             (qso_list[21], qso_list[0], None, ValueError, 'Rst mismatch'),
             (qso_list[22], qso_list[0], None, ValueError, 'Serial number mismatch'),
             # test invalid rst & serial
@@ -1125,13 +1127,17 @@ class TestEdiHelperFunctions(TestCase):
             # test invalid qth
             (qso_list[0], qso_list[28], None, ValueError, 'Other ham qso is invalid'),
             (qso_list[28], qso_list[0], None, ValueError, 'Qso WWL is invalid: ZZ16ZZ'),
+            # valid test with long serial
+            (qso_list[0], qso_list[29], 1, None, None),
+            (qso_list[29], qso_list[0], 1, None, None),
+
         )
 
-        for q1, q2, r, ex, ex_msg in qso_test:
-            if r:
-                self.assertEqual(edi.compare_qso(_log, q1, _log, q2), r)
+        for q1, q2, distance, ex, ex_msg in qso_test:
+            if distance:
+                self.assertEqual(edi.compare_qso(_log, q1, _log, q2), distance)
             if ex:
-                self.assertRaisesRegex(ex, ex_msg, edi.compare_qso, _log, q1, _log, q2)
+                self.assertRaisesRegex(ex, '^'+ex_msg+'$', edi.compare_qso, _log, q1, _log, q2)
 
     @mock.patch('os.path.isfile')
     def test_crosscheck_logs(self, mck_isfile):
