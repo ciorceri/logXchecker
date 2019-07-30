@@ -240,7 +240,7 @@ test_invalid_qso_lines = [
     ('30803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', 'Qso field <date> has an invalid value (30803)'),
     ('130803;319;YO5BTZ;;59;001;59;001;;KN16SS;1;;;;', 'Qso field <hour> has an invalid value (319)'),
     ('130803;1319;YO5BTZ;6;9;001;59;001;;KN16SS;1;;;;', 'Qso field <rst sent> has an invalid value (9)'),
-    ('130803;1319;YO5BTZ;6;59;1;59;001;;KN16SS;1;;;;', 'Qso field <rst send nr> has an invalid value (1)'),
+    #('130803;1319;YO5BTZ;6;59;1;59;001;;KN16SS;1;;;;', 'Qso field <rst send nr> has an invalid value (1)'), # accept 1 digit rst
     ('130803;1319;YO5BTZ;6;59;00001;59;001;;KN16SS;1;;;;', 'Qso field <rst send nr> has an invalid value (00001)'),
     ('130803;1319;YO5BTZ;6;59;001;9;001;;KN16SS;1;;;;', 'Qso field <rst received> has an invalid value (9)'),
     ('130803;1319;YO5BTZ;6;59;001;59;00002;;KN16SS;1;;;;', 'Qso field <rst received nr> has an invalid value (00002)'),
