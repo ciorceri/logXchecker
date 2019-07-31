@@ -113,7 +113,7 @@ def print_human_friendly_output(output, verbose=False):
                 if _details.get('checklog', False) is True:
                     print('   [checklog] band={} , valid={}'.format(_band, _details['valid']))
                 else:
-                    print('   band={} , valid={} , category={} , points={}'.format(_band, _details['valid'], _details['category'], _details['points']))
+                    print('   band={} , valid={} , category={} , points={} , qsos_confirmed={}'.format(_band, _details['valid'], _details['category'], _details['points'], _details['qsos_confirmed']))
                 if not verbose:
                     continue
                 for err in _details['qso_errors']:
@@ -217,6 +217,7 @@ def main():
                 op_output[edi.INFO_BANDS][_log.band] = {
                     'path': _log.path,
                     'points': _log.qsos_points,
+                    'qsos_confirmed': _log.qsos_confirmed,
                     'valid': _log.valid_header,
                     'category': _log.category,
                     'checklog': _log.use_as_checklog,

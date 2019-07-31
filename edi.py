@@ -99,6 +99,7 @@ class Log(object):
     qsos_tuple = namedtuple('qso_tuple', ['linenr', 'qso', 'valid', 'errors']) # REMOVE
     qsos = list()   # list with LogQso instances
     qsos_points = None
+    qsos_confirmed = None
 
     def __init__(self, path, rules=None, checklog=False):
         self.path = path
@@ -808,10 +809,13 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
     for op, op_inst in operator_instances.items():
         for log in op_inst.logs:
             points = 0
+            confirmed = 0
             for qso in log.qsos:
                 if qso.points and qso.points > 0:
                     points += qso.points
+                    confirmed += 1
             log.qsos_points = points
+            log.qsos_confirmed = confirmed
 
     return operator_instances
 
