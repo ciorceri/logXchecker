@@ -45,11 +45,11 @@ class ArgumentParser(object):
 
     def check_output_value(self, arg):
         """
-        :param arg: specifies the output format (json, xml)
+        :param arg: specifies the output format (json, xml, csv)
         :return: arg
         :raise: ArgumentTypeError
         """
-        valid_output = ('HUMAN-FRIENDLY', 'JSON', 'XML')
+        valid_output = ('HUMAN-FRIENDLY', 'JSON', 'XML', 'CSV')
         if arg.upper() in valid_output:
             return arg
         raise argparse.ArgumentTypeError('Output "{}" is an invalid value. Use: {}'.format(arg, ','.join(valid_output)))
@@ -66,7 +66,7 @@ class ArgumentParser(object):
         group2.add_argument('-cc', '--crosscheck', type=str, default=False, metavar='path_to_folder', help='Cross-check multiple logs')
         self.parser.add_argument('-cl', '--checklogs', type=str, default=None, metavar='path_to_folder', help='Checklogs used for cross-check')
         self.parser.add_argument('-o', '--output', type=self.check_output_value, required=False, default='human-friendly',
-                                 help='Output format: human-friendly, json, xml (default: human-friendly)')
+                                 help='Output format: human-friendly, json, xml, csv (default: human-friendly)')
         self.parser.add_argument('-v', '--verbose', action='store_true', help='More details for cross-check')
 
     def parse(self, args):
@@ -143,9 +143,27 @@ def print_log_human_friendly(output):
     if has_errors is False:
         print('No error found')
 
+
+def print_csv_output(output):
+    # single log
+    if output.get(edi.INFO_LOG, False):
+        print('NOT IMPLEMENTED')
+    # multi logs
+    if output.get(edi.INFO_MLC, False):
+        print('NOT IMPLEMENTED')
+    # cross check
+    elif output.get(edi.INFO_CC, False):
+        print('Callsign, ValidLog, Band, Category, ConfirmedQso, Points')
+        for _call, _values in output[edi.INFO_OPERATORS].items():
+            for _band, _details in _values['band'].items():
+                if not _details.get('checklog', False) is True:
+                    print('{}, {}, {}, {}, {}, {}'.format(_call, _details['valid'], _band, _details['category'], _details['qsos_confirmed'], _details['points']))
+
+
 def main():
-    print('{} - v{}'.format(version.__project__,  version.__version__))
     args = ArgumentParser().parse(sys.argv[1:])
+    if args.output.upper() == 'HUMAN-FRIENDLY':
+        print('{} - v{}'.format(version.__project__,  version.__version__))
 
     operator = None
     log = None
@@ -237,6 +255,8 @@ def main():
         print(edi.dict_to_json(output))
     elif args.output.upper() == 'XML':
         print(edi.dict_to_xml(output))
+    elif args.output.upper() == 'CSV':
+        print_csv_output(output)
 
 if __name__ == '__main__':
     main()
