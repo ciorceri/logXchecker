@@ -140,12 +140,18 @@ class Log(object):
 
         # get & validate callsign
         _callsign, line_nr = self.get_field('PCall')
+        call_regexp = None
+        if self.rules and self.rules.contest_extra_field_value('callregexp'):
+            call_regexp = '^\s*' + self.rules.contest_extra_field_value('callregexp')
+
         if not _callsign:
             self.errors[ERR_HEADER].append((line_nr, 'PCall field is not present'))
         elif len(_callsign) > 1:
             self.errors[ERR_HEADER].append((line_nr, 'PCall field is present multiple times'))
         elif not self.validate_callsign(_callsign[0]):
             self.errors[ERR_HEADER].append((line_nr, 'PCall field content is not valid'))
+        elif call_regexp and not re.match(call_regexp, _callsign[0], re.IGNORECASE):
+            self.errors[ERR_HEADER].append((line_nr, 'PCall field content doesn\'t match \'callregexp\' value from rules'))
         else:
             self.callsign = _callsign[0]
 
@@ -668,6 +674,16 @@ class LogQso(object):
         """
         if self.rules is None:
             return
+
+        # if field 'callregexp' from rules file is present will filter the accepted callsigns in the contest
+        # this is usefull for national contests
+        if self.rules.contest_extra_field_value('callregexp'):
+            call_regexp = '^\s*' + self.rules.contest_extra_field_value('callregexp')
+            if not re.match(call_regexp, self.qso_fields['call'], re.IGNORECASE):
+                self.valid = False
+                self.errors.append((self.line_nr,
+                                    self.qso_line,
+                                    'Qso callsign is not accepted based on \'callregexp\' from rules files'))
 
         # validate qso date
         if self.qso_fields['date'] < self.rules.contest_begin_date[2:]:

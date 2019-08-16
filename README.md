@@ -75,12 +75,13 @@ bands=band1,band2
 email=yes
 address=no
 name=yes
+callregexp=.*
 ```
 
 #### The rules format is based on [INI file format](http://en.wikipedia.org/wiki/INI_file) and there are the following sections:
 
     [contest]
-        contains generic details about contest:
+        Contains generic details about contest:
             - name
             - contest date : begindate, enddate
             - contest hours : beginhour, endhour
@@ -89,24 +90,37 @@ name=yes
             - categories : number of categories (sosb, momb, checklog, ...)
             - modes : list with valid contest modes (1=ssb, 2=cw, 6=fm)
     [log]
-        specifies the log format (only edi is supported at this moment)
+        Specifies the log format (only edi is supported at this moment)
     [band1], [band2], ... [bandN]
-        rules about contest bands (frequency)
+        Rules about contest bands (frequency)
             - band : band name to be used in report
             - regexp : customisable regular expresion field to detect band in logs 
             - multiplier : the points multiplier for this band (use 1 as default value)
     [period1], [period2], ... [periodN]
-        rules about contest periods
+        Rules about contest periods
             - period date : begindate, enddate
             - period hours : beginhour, endhour
             - bands : list with contest bands that will be used in that period
     [category1], [category2], ... [categoryN]
-        rules about contest categories (single/multi operator[s], category bands)
+        Rules about contest categories (single/multi operator[s], category bands)
             - name : category name to be used in report
             - regexp : customisable regular experesion field to detect ham category in logs
             - bands : list with allowed bands by that category (usually all bands)
     [extra]
-        rules presence and validation of other header fields from log (email, address, name)
+        Rules for presence and validation of other header fields from log (email, address, name)
+            Those fields can be required by contest managers who want to contact later the contest participants.
+            Fields possible values : YES, any other value, not present
+            - field 'email'
+              If value is YES an email address is mandatory in log header
+            - field 'address'
+              If value is YES a contact address is mandatory in log header
+            - field 'name'
+              If value is YES an name is mandatory in log header
+        Following setting can be used in national contests where we want to filter the callsigns
+            - field 'callregexp' , possible values : not present, valid regular expresion
+              If is present it must be a valid regular expression. Based on that regexp all callsigns and qso's will be filtered and crosscheck will be done only for allowed callsigns.
+              Example : for 'YO national contest' this field value will have the value:
+                callregexp=yo|yp|yq|yr
 
 #### Run examples using the provided 'test_logs' folder:
 * Single log validation (generic, no rules) and human friendly output

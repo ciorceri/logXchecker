@@ -94,6 +94,7 @@ class Rules(object):
         name=yes
         email=yes
         address=no
+        callregexp=yo|yp|yq|yr
 
         # And then we have some details about mixing categories & bands. This will need some thinking
     """
@@ -311,8 +312,26 @@ class Rules(object):
 
     @property
     def contest_extra_fields(self):
+        extra_fields_to_check = ['callregexp']
+        extra_list = []
         try:
             assert self.config['extra']
         except KeyError:
             return []
-        return [x for x in self.config['extra'] if self.config['extra'][x].upper() == 'YES']
+
+        # Add fields from 'extra_fields_to_check' if they are present
+        for field in extra_fields_to_check:
+            try:
+                assert self.config['extra'][field]
+                extra_list.append(field)
+            except KeyError:
+                pass
+        # Add fields that have value set to 'YES'
+        extra_list.extend([x for x in self.config['extra'] if self.config['extra'][x].upper() == 'YES'])
+
+        return extra_list
+
+    def contest_extra_field_value(self, field):
+        if field in self.contest_extra_fields:
+            return self.config['extra'][field]
+        return None

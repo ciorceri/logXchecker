@@ -93,6 +93,7 @@ VALID_EXTRA_FIELD = """
 name=yes
 email=yes
 address=yes
+callregexp=yo|yp|yq|yr
 """
 
 VALID_RULES = VALID_CONTEST_SECTION + \
@@ -437,7 +438,7 @@ class TestRules(TestCase):
         self.assertEqual(_rules.contest_category(4)['name'], 'Multi Operator')
         self.assertEqual(_rules.contest_category(4)['regexp'], 'mo|multi')
         self.assertEqual(_rules.contest_category(4)['bands'], 'band1,band2')
-        self.assertEqual(_rules.contest_extra_fields, ['name', 'email', 'address'])
+        self.assertEqual(_rules.contest_extra_fields, ['callregexp', 'name', 'email', 'address'])
 
     def test_init_fail(self):
         # test 'file not found'
@@ -555,7 +556,7 @@ class TestRules(TestCase):
         mo = mock.mock_open(read_data=modif_rules)
         with patch('builtins.open', mo, create=True):
             _rules = rules.Rules('some_rule_file.rules')
-            self.assertEqual(_rules.contest_extra_fields, ['name', 'email', 'address'])
+            self.assertEqual(_rules.contest_extra_fields, ['callregexp', 'name', 'email', 'address'])
 
         # remove [extra] section from rules
         extra_rules_list = VALID_EXTRA_FIELD.split()
