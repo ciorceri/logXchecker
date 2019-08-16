@@ -80,6 +80,17 @@ CODXC=YO8SSB;KN27OD;133
 130804;0642;YO6POK;6;59;014;59;030;;KN27JG;109;;;;
 130804;0657;YO8SSB;2;599;015;599;035;;KN27OD;133;;;;"""
 
+invalid_edi_log_PCall = """
+PCall=LZ1NY
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+RHBBS=name@email.com
+PAdr1=Sesame Street, 13
+RName=John Doe
+"""
+
 invalid_edi_log_PBand = """
 PCall=YO5PJB
 PWWLo=KN16SS
@@ -385,6 +396,11 @@ test_logQso_rules_based_qso_validator = [
     edi.Log.qsos_tuple(linenr=11, qso='130803;1200;YO5BTZ;7;59;001;59;001;;KN16SS;1;;;;', valid=False,
                        errors=[(11, '130803;1200;YO5BTZ;7;59;001;59;001;;KN16SS;1;;;;',
                                 'Qso mode is invalid: not in defined modes (1,2,6)')]),
+
+    edi.Log.qsos_tuple(linenr=12, qso='130803;1200;LZ1NY;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
+                       errors=[(12,
+                                '130803;1200;LZ1NY;6;59;001;59;001;;KN16SS;1;;;;',
+                                'Qso callsign is not accepted based on \'callregexp\' from rules files')]),
 ]
 
 
@@ -432,7 +448,6 @@ class TestEdiLog(TestCase):
             self.assertIsNone(log.valid_qsos)
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(1, 'PCall field content is not valid')], ERR_QSO: []})
-
 
         # test with missing PWWLo
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PWWLo=')]
@@ -597,6 +612,15 @@ class TestEdiLog(TestCase):
         mo_log = mock.mock_open(read_data=valid_edi_log)
         with patch('builtins.open', mo_log, create=True):
             edi.Log('some_log_file.edi', rules=_rules)
+
+        # test with valid rules and with invalid edi log (not accepted PCall by 'callregexp')
+        mo_log = mock.mock_open(read_data=invalid_edi_log_PCall)
+        with patch('builtins.open', mo_log, create=True):
+            log = edi.Log('some_log_file.edi', rules=_rules)
+            self.assertFalse(log.valid_header)
+            self.assertIsNone(log.valid_qsos)
+            self.assertDictEqual(log.errors,
+                                 {ERR_IO: [], ERR_HEADER: [(2, "PCall field content doesn't match 'callregexp' value from rules")], ERR_QSO: []})
 
         # test with valid rules and with invalid edi log (invalid PBand)
         mo_log = mock.mock_open(read_data=invalid_edi_log_PBand)

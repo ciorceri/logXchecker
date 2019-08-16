@@ -142,7 +142,7 @@ class Log(object):
         _callsign, line_nr = self.get_field('PCall')
         call_regexp = None
         if self.rules and self.rules.contest_extra_field_value('callregexp'):
-            call_regexp = '^\s*' + self.rules.contest_extra_field_value('callregexp')
+            call_regexp = '^\s*(' + self.rules.contest_extra_field_value('callregexp') + ').*'
 
         if not _callsign:
             self.errors[ERR_HEADER].append((line_nr, 'PCall field is not present'))
@@ -675,7 +675,7 @@ class LogQso(object):
         if self.rules is None:
             return
 
-        # if field 'callregexp' from rules file is present will filter the accepted callsigns in the contest
+        # if field 'callregexp' from rules file is present, will filter the accepted callsigns in the contest
         # this is usefull for national contests
         if self.rules.contest_extra_field_value('callregexp'):
             call_regexp = '^\s*' + self.rules.contest_extra_field_value('callregexp')
@@ -736,8 +736,8 @@ class LogQso(object):
         inside_period = False
         inside_period_nr = None
 
-        if not self.rules or self.valid is False:
-            return inside_period, inside_period_nr
+        if not self.rules:
+            return True, None
 
         for period in range(1, self.rules.contest_periods_nr + 1):
             # if date is not in period, check next period
