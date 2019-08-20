@@ -153,7 +153,7 @@ class Log(object):
         elif call_regexp and not re.match(call_regexp, _callsign[0], re.IGNORECASE):
             self.errors[ERR_HEADER].append((line_nr, 'PCall field content doesn\'t match \'callregexp\' value from rules'))
         else:
-            self.callsign = _callsign[0]
+            self.callsign = _callsign[0].upper()
 
         # get & validate maidenhead locator
         _qthlocator, line_nr = self.get_field('PWWLo')
@@ -164,7 +164,7 @@ class Log(object):
         elif not self.validate_qth_locator(_qthlocator[0]):
             self.errors[ERR_HEADER].append((line_nr, 'PWWLo field value is not valid'))
         else:
-            self.maidenhead_locator = _qthlocator[0]
+            self.maidenhead_locator = _qthlocator[0].upper()
 
         # get & validate band based on generic rules and by custom rules if provided (rules.contest_band['regexp'])
         _band, line_nr = self.get_field('PBand')
@@ -313,7 +313,7 @@ class Log(object):
                 do_read_qso = False
                 continue
             if do_read_qso:
-                qso_lines.append((index+1, line.strip()))
+                qso_lines.append((index+1, line.strip().upper()))
 
         # validate qso lines
         self.qsos = list()

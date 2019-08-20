@@ -1197,8 +1197,8 @@ class TestEdiHelperFunctions(TestCase):
         log1_content = \
 """TName=Cupa Nasaud
 TDate=20130803;20130806
-PCall=YO5AAA
-PWWLo=KN16SS
+PCall=YO5aaa
+PWWLo=KN16ss
 PSect=SOSB
 PBand=144 MHz
 [QSORecords;1]
@@ -1215,15 +1215,15 @@ PBand=144 MHz
 """TName=Cupa Nasaud
 TDate=20130803;20130806
 PCall=YO5BBB
-PWWLo=KN16SS
+PWWLo=kn16ss
 PSect=SOSB
 PBand=144 MHz
 [QSORecords;1]
-130803;1200;YO5AAA;6;59;001;59;001;;KN16SS;1;;;;
-130803;1201;YO5CCC;6;59;002;59;002;;KN16SS;1;;;;
+130803;1200;YO5AAA;6;59;001;59;001;;kn16ss;1;;;;
+130803;1201;YO5ccc;6;59;002;59;002;;KN16SS;1;;;;
 1308;1202;YO5DDD;6;59;003;59;001;;KN16SS;1;;;;
-130803;1203;YO5EEE;6;59;004;59;001;;KN16SS;1;;;;
-130803;1204;YO5FFF;6;59;005;59;001;;KN16SS;1;;;;
+130803;1203;yo5eee;6;59;004;59;001;;KN16SS;1;;;;
+130803;1204;YO5FFF;6;59;005;59;001;;kn16ss;1;;;;
 """
         op2 = edi.Operator('YO5BBB')  # fair player with mistakes
         mo = mock.mock_open(read_data=log2_content)
@@ -1234,7 +1234,7 @@ PBand=144 MHz
         log3_content = \
 """TName=Cupa Nasaud
 TDate=20130803;20130806
-PCall=YO5CCC
+PCall=yo5ccc
 PWWLo=KN16SS
 PSect=SOSB
 PBand=144 MHz
@@ -1260,7 +1260,7 @@ PWWLo=KN16SS
 PSect=SOSB
 PBand=432 MHz
 [QSORecords;1]
-130803;1200;YO5ZZZ;6;59;001;59;001;;KN16SS;1;;;;
+130803;1200;yo5zzz;6;59;001;59;001;;KN16SS;1;;;;
 """
         op5 = edi.Operator('YO5FFF')  # op with log on another band
         mo = mock.mock_open(read_data=log5_content)
