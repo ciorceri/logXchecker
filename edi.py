@@ -779,14 +779,17 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
 
     ignored_logs = []
 
+    if not rules:
+        print('No rules were provided')
+        return {}
     # create instances for all logs
     logs_instances = []
     if not logs_folder:
         print('Logs folder was not provided')
-        return 1
+        return {}
     if logs_folder and not os.path.isdir(logs_folder):
         print('Cannot open logs folder : {}'.format(logs_folder))
-        return 1
+        return {}
     for filename in os.listdir(logs_folder):
         logs_instances.append(log_class(os.path.join(logs_folder, filename), rules=rules))
 
@@ -796,7 +799,7 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
                 logs_instances.append(log_class(os.path.join(checklogs_folder, filename), rules=rules, checklog=True))
         else:
             print('Cannot open checklogs folder : {}'.format(checklogs_folder))
-            return 1
+            return {}
 
     # create instances for all hams and add logs with valid header
     operator_instances = {}

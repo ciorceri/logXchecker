@@ -145,19 +145,17 @@ def print_log_human_friendly(output):
 
 
 def print_csv_output(output):
-    # single log
-    if output.get(edi.INFO_LOG, False):
-        print('NOT IMPLEMENTED')
-    # multi logs
-    if output.get(edi.INFO_MLC, False):
-        print('NOT IMPLEMENTED')
     # cross check
-    elif output.get(edi.INFO_CC, False):
+    if output.get(edi.INFO_CC, False):
         print('Callsign, ValidLog, Band, Category, ConfirmedQso, Points')
         for _call, _values in output[edi.INFO_OPERATORS].items():
             for _band, _details in _values['band'].items():
                 if not _details.get('checklog', False) is True:
                     print('{}, {}, {}, {}, {}, {}'.format(_call, _details['valid'], _band, _details['category'], _details['qsos_confirmed'], _details['points']))
+    else:
+        # if output.get(edi.INFO_LOG, False):
+        # if output.get(edi.INFO_MLC, False):
+        print('NOT IMPLEMENTED')
 
 
 def main():
