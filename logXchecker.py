@@ -178,7 +178,7 @@ def main():
         lfmodule = edi
     else:
         print('Selected log type is unsupported : {}'.format(log_format))
-        return 1
+        sys.exit(1)
 
     operator = lfmodule.Operator
     log = lfmodule.Log
@@ -191,7 +191,7 @@ def main():
         output[edi.INFO_LOG] = args.singlelogcheck
         if not os.path.isfile(args.singlelogcheck):
             print('Cannot open file : {}'.format(args.singlelogcheck))
-            return 1
+            sys.exit(1)
         _log = log(args.singlelogcheck, rules=rules)
         output.update(_log.errors)
 
@@ -200,7 +200,7 @@ def main():
         output[edi.INFO_MLC] = args.multilogcheck
         if not os.path.isdir(args.multilogcheck):
             print('Cannot open logs folder : {}'.format(args.multilogcheck))
-            return 1
+            sys.exit(1)
         logs_output = []
         for filename in os.listdir(args.multilogcheck):
             log_output = {}
@@ -223,6 +223,9 @@ def main():
 
     # crosscheck logs
     elif args.crosscheck:
+        if not rules:
+            print("No rules were provided")
+            sys.exit(1)
         output[edi.INFO_CC] = args.crosscheck
         output[edi.INFO_OPERATORS] = {}
         op_instance = crosscheck_logs_filter(log, rules=rules, logs_folder=args.crosscheck, checklogs_folder=args.checklogs)
