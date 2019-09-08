@@ -118,6 +118,8 @@ def print_human_friendly_output(output, verbose=False):
                     continue
                 for err in _details['qso_errors']:
                     print('   - {}'.format(err))
+                # for vld in _details['qso_valid']:
+                #     print('   - {}'.format(vld))
             print('--------')
 
 
@@ -243,10 +245,14 @@ def main():
                 }
                 if args.verbose is True:
                     _cc_errors = []
+                    _cc_valid = []
                     for qso in _log.qsos:
                         if qso.cc_confirmed is False:
                             _cc_errors.append('{} : {}'.format(qso.qso_line, qso.cc_error))
+                        else:
+                            _cc_valid.append('{} : {} : {}'.format(qso.qso_line, qso.points, qso.cc_confirmed))
                     op_output[edi.INFO_BANDS][_log.band]['qso_errors'] = _cc_errors
+                    op_output[edi.INFO_BANDS][_log.band]['qso_valid'] = _cc_valid
 
             output[edi.INFO_OPERATORS][_call] = op_output
 

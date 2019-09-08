@@ -1188,7 +1188,7 @@ class TestEdiHelperFunctions(TestCase):
                            'False-Qso field <date> has an invalid value (1308)-None',
                            'False-No log from YO5EEE-None',
                            'False-No log for this band from YO5FFF-None',
-                           'False-Mode mismatch-None',
+                           'False-No qso found on YO5AAA log-None',
                            'True-[]-1',
                            'True-[]-1',
                            'False-Qso already confirmed-None',

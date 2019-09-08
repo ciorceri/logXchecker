@@ -912,8 +912,8 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 if qso2.valid is False:
                     continue
 
-                _callsign = qso2.qso_fields['call']
-                if callsign1 != _callsign:
+                _callsign2 = qso2.qso_fields['call']
+                if callsign1 != _callsign2:
                     continue
 
                 _, inside_period_nr2 = qso2.qso_inside_period()
@@ -936,6 +936,9 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 qso1.points = distance * int(rules.contest_band(band_nr)['multiplier'])
                 qso1.cc_confirmed = True
                 break
+            else:
+                qso1.cc_confirmed = False
+                qso1.cc_error = 'No qso found on {} log'.format(callsign2)
 
 
 def compare_qso(log1, qso1, log2, qso2):
