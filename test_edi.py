@@ -1182,14 +1182,13 @@ class TestEdiHelperFunctions(TestCase):
         """
         mck_isfile.return_value = True
         expected_result = ['True-[]-1',
-                           'True-Mode mismatch-1',
+                           'False-Mode mismatch-None',
                            'True-[]-1',
-                           'True-[]-1',
+                           'False-No qso found on YO5CCC log-None',
                            'False-Qso field <date> has an invalid value (1308)-None',
                            'False-No log from YO5EEE-None',
                            'False-No log for this band from YO5FFF-None',
-                           'False-No qso found on YO5AAA log-None',
-                           'True-[]-1',
+                           'False-Mode mismatch-None',
                            'True-[]-1',
                            'False-Qso already confirmed-None',
                            'None-[]-None']
@@ -1241,7 +1240,6 @@ PBand=144 MHz
 [QSORecords;1]
 130803;1200;YO5AAA;2;59;001;59;002;;KN16SS;2;;;;
 130803;1200;YO5AAA;6;59;001;59;002;;KN16SS;2;;;;
-130803;1201;YO5BBB;6;59;002;59;002;;KN16SS;5;;;;
 130803;1200;YO5AAA;6;59;001;59;002;;KN16SS;3;;;;
 """
         op3 = edi.Operator('YO5CCC')  # unfair player

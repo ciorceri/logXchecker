@@ -926,7 +926,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 except ValueError as e:
                     qso1.cc_confirmed = False
                     qso1.cc_error = e
-                    continue
+                    break
 
                 if distance is None:
                     continue
