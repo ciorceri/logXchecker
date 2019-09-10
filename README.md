@@ -15,7 +15,23 @@
     
 #### Future features:
     - Support for ADIF & Cabrillo logs with generic and rules based validator
-    
+
+#### Usage
+To run the tool using source code you need Python 3.6 or Python 3.7
+
+    - For Windows download and install from: https://www.python.org/downloads/
+    - For Ubuntu install using:
+        $ sudo apt-get update
+        $ sudo apt-get install python3.7
+        $ sudo apt-get install python3-pip
+    - MacOS install using:
+        $ brew install python3
+
+Install tool requirements using command:
+
+    $ cd logXchecker
+    $ pip3 install -r requirements.txt
+
 #### Current VHF rules format (this format may be subject to change):
 ```
 [contest]
