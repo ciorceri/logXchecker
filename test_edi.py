@@ -1181,17 +1181,17 @@ class TestEdiHelperFunctions(TestCase):
         and in case something is changing this test should catch it
         """
         mck_isfile.return_value = True
-        expected_result = ['True-[]-1',
-                           'False-Mode mismatch-None',
-                           'True-[]-1',
-                           'False-No qso found on YO5CCC log-None',
-                           'False-Qso field <date> has an invalid value (1308)-None',
-                           'False-No log from YO5EEE-None',
-                           'False-No log for this band from YO5FFF-None',
-                           'False-Mode mismatch-None',
-                           'True-[]-1',
-                           'False-Qso already confirmed-None',
-                           'None-[]-None']
+        expected_result = ['True-[]-1',                 # yo5aaa 1
+                           'False-Mode mismatch-None',  # yo5aaa 2
+                           'True-[]-1',                                                # yo5bbb 1
+                           'False-No qso found on YO5CCC log-None',                    # yo5bbb 2
+                           'False-Qso field <date> has an invalid value (1308)-None',  # yo5bbb 3
+                           'False-No log from YO5EEE-None',                            # yo5bbb 4
+                           'False-No log for this band from YO5FFF-None',              # yo5bbb 5
+                           'False-Mode mismatch-None',          # yo5ccc 1
+                           'True-[]-1',                         # yo5ccc 2
+                           'False-Qso already confirmed-None',  # yo5ccc 3
+                           'None-[]-None']        # yo5fff 1
 
         log1_content = \
 """TName=Cupa Nasaud

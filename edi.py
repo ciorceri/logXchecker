@@ -874,7 +874,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 # code should never reach here
                 continue
 
-            callsign2 = qso1.qso_fields['call']
+            callsign2 = qso1.qso_fields['call'].upper()
 
             # validate that this qso isn't an duplicate for current period
             _, inside_period_nr1 = qso1.qso_inside_period()
@@ -912,7 +912,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 if qso2.valid is False:
                     continue
 
-                _callsign2 = qso2.qso_fields['call']
+                _callsign2 = qso2.qso_fields['call'].upper()
                 if callsign1 != _callsign2:
                     continue
 
