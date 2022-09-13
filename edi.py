@@ -926,7 +926,6 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 except ValueError as e:
                     qso1.cc_confirmed = False
                     qso1.cc_error = e
-                    break
 
                 if distance is None:
                     continue
@@ -935,6 +934,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 _had_qso_with.append('{}-period{}'.format(callsign2, inside_period_nr2))
                 qso1.points = distance * int(rules.contest_band(band_nr)['multiplier'])
                 qso1.cc_confirmed = True
+                qso1.cc_error = []
                 break
             else:
                 qso1.cc_confirmed = False

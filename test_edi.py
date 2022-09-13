@@ -1182,15 +1182,15 @@ class TestEdiHelperFunctions(TestCase):
         """
         mck_isfile.return_value = True
         expected_result = ['True-[]-1',                 # yo5aaa 1
-                           'False-Mode mismatch-None',  # yo5aaa 2
+                           'True-[]-1',      # yo5aaa 2
                            'True-[]-1',                                                # yo5bbb 1
                            'False-No qso found on YO5CCC log-None',                    # yo5bbb 2
                            'False-Qso field <date> has an invalid value (1308)-None',  # yo5bbb 3
                            'False-No log from YO5EEE-None',                            # yo5bbb 4
                            'False-No log for this band from YO5FFF-None',              # yo5bbb 5
-                           'False-Mode mismatch-None',          # yo5ccc 1
-                           'True-[]-1',                         # yo5ccc 2
-                           'False-Qso already confirmed-None',  # yo5ccc 3
+                           'False-No qso found on YO5AAA log-None', # yo5ccc 1
+                           'True-[]-1',                             # yo5ccc 2
+                           'False-Qso already confirmed-None',      # yo5ccc 3
                            'None-[]-None']        # yo5fff 1
 
         log1_content = \
@@ -1238,7 +1238,7 @@ PWWLo=KN16SS
 PSect=SOSB
 PBand=144 MHz
 [QSORecords;1]
-130803;1200;YO5AAA;2;59;001;59;002;;KN16SS;2;;;;
+130803;1200;YO5AAA;2;59;111;59;112;;KN16SS;2;;;;
 130803;1200;YO5AAA;6;59;001;59;002;;KN16SS;2;;;;
 130803;1200;YO5AAA;6;59;001;59;002;;KN16SS;3;;;;
 """
