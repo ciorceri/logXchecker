@@ -17,7 +17,7 @@
     - Support for ADIF & Cabrillo logs with generic and rules based validator
 
 #### Usage
-To run the tool using source code you need Python 3.6 or Python 3.7
+To run the tool using source code you need Python 3.7+
 
     - For Windows download and install from: https://www.python.org/downloads/
     - For Ubuntu install using:
@@ -215,5 +215,5 @@ Line 9 : PSect field value has an invalid value (SINGLE). Not as defined in cont
    
 #### Notes:
     - Suggestions are appreciated.
-    - Only Python 3.6+ will be supported.
+    - Only Python 3.7+ will be supported.
     - I will provide MacOS and Windows builds to make Python install optional. 
