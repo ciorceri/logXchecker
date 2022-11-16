@@ -1,5 +1,5 @@
 """
-Copyright 2016-2018 Ciorceri Petru Sorin (yo5pjb)
+Copyright 2016-2022 Ciorceri Petru Sorin (yo5pjb)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -107,6 +107,17 @@ VALID_RULES = VALID_CONTEST_SECTION + \
               VALID_CATEGORY3_SECTION + \
               VALID_CATEGORY4_SECTION + \
               VALID_EXTRA_FIELD
+
+VALID_RULES_BASIC = VALID_CONTEST_SECTION + \
+                    VALID_LOG_SECTION + \
+                    VALID_BAND1_SECTION + \
+                    VALID_BAND2_SECTION + \
+                    VALID_PERIOD1_SECTION + \
+                    VALID_PERIOD2_SECTION + \
+                    VALID_CATEGORY1_SECTION + \
+                    VALID_CATEGORY2_SECTION + \
+                    VALID_CATEGORY3_SECTION + \
+                    VALID_CATEGORY4_SECTION
 
 VALID_RULES_SECTIONS = ['contest', 'log', 'band1', 'band2', 'period1', 'period2', 'category1', 'category2',
                         'category3', 'category4', 'extra']

@@ -1,5 +1,5 @@
 """
-Copyright 2016-2018 Ciorceri Petru Sorin (yo5pjb)
+Copyright 2016-2022 Ciorceri Petru Sorin (yo5pjb)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -47,8 +47,8 @@ class Operator(object):
         self.callsign = callsign
         self.logs = []
 
-    def add_log_by_path(self, path):
-        self.logs.append(Log(path))
+    def add_log_by_path(self, path, rules=None, checklog=False):
+        self.logs.append(Log(path, rules=rules, checklog=checklog))
 
     def add_log_instance(self, log):
         self.logs.append(log)

@@ -1,5 +1,5 @@
 """
-Copyright 2016-2018 Ciorceri Petru Sorin
+Copyright 2016-2022 Ciorceri Petru Sorin (yo5pjb)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ from unittest import TestCase, mock
 from unittest.mock import mock_open, patch
 
 import rules
-from test_rules import VALID_RULES
+from test_rules import VALID_RULES, VALID_RULES_BASIC
 
 import edi
 from edi import ERR_IO, ERR_HEADER, ERR_QSO
@@ -1181,17 +1181,21 @@ class TestEdiHelperFunctions(TestCase):
         and in case something is changing this test should catch it
         """
         mck_isfile.return_value = True
-        expected_result = ['True-[]-1',                 # yo5aaa 1
-                           'True-[]-1',      # yo5aaa 2
-                           'True-[]-1',                                                # yo5bbb 1
-                           'False-No qso found on YO5CCC log-None',                    # yo5bbb 2
-                           'False-Qso field <date> has an invalid value (1308)-None',  # yo5bbb 3
-                           'False-No log from YO5EEE-None',                            # yo5bbb 4
-                           'False-No log for this band from YO5FFF-None',              # yo5bbb 5
-                           'False-No qso found on YO5AAA log-None', # yo5ccc 1
-                           'True-[]-1',                             # yo5ccc 2
-                           'False-Qso already confirmed-None',      # yo5ccc 3
-                           'None-[]-None']        # yo5fff 1
+        expected_result = ['True-[]-1',  # yo5aaa -> yo5bbb
+                           'True-[]-1',  # yo5aaa -> yo5ccc
+                           'True-[]-1',  # yo5bbb -> yo5aaa
+                           'False-No qso found on YO5CCC log-None',                    # yo5bbb -> yo5ccc (yo5ccc : no qso with yo5bbb)
+                           'False-Qso field <date> has an invalid value (1308)-None',  # yo5bbb -> yo5ddd (invalid date)
+                           'False-No log from YO5EEE-None',                            # yo5bbb -> yo5eee (no log from yo5eee)
+                           'False-No log for this band from YO5FFF-None',              # yo5bbb -> yo5fff (no log in 144mhz from yo5fff)
+                           'False-No qso found on YO5AAA log-None', # yo5ccc -> yo5aaa (no qso match)
+                           'True-[]-1',                             # yo5ccc -> yo5aaa
+                           'False-Qso already confirmed-None',      # yo5ccc -> yo5aaa (duplicate into yo5ccc log)
+                           'None-[]-None']                          # yo5fff -> yo5zzz (no log for 144mhz)
+
+        mo_rules = mock.mock_open(read_data=VALID_RULES_BASIC)
+        with patch('builtins.open', mo_rules, create=True):
+            _rules = rules.Rules('some_rule_file.rules')
 
         log1_content = \
 """TName=Cupa Nasaud
@@ -1207,7 +1211,7 @@ PBand=144 MHz
         op1 = edi.Operator('YO5AAA')  # fair player
         mo = mock.mock_open(read_data=log1_content)
         with patch('builtins.open', mo, create=True):
-            op1.add_log_by_path('some_log_file.edi')
+            op1.add_log_by_path('some_log_file.edi', rules=_rules)
             self.assertEqual(len(op1.logs), 1)
 
         log2_content = \
@@ -1227,7 +1231,7 @@ PBand=144 MHz
         op2 = edi.Operator('YO5BBB')  # fair player with mistakes
         mo = mock.mock_open(read_data=log2_content)
         with patch('builtins.open', mo, create=True):
-            op2.add_log_by_path('some_log_file.edi')
+            op2.add_log_by_path('some_log_file.edi', rules=_rules)
             self.assertEqual(len(op2.logs), 1)
 
         log3_content = \
@@ -1245,7 +1249,7 @@ PBand=144 MHz
         op3 = edi.Operator('YO5CCC')  # unfair player
         mo = mock.mock_open(read_data=log3_content)
         with patch('builtins.open', mo, create=True):
-            op3.add_log_by_path('some_log_file.edi')
+            op3.add_log_by_path('some_log_file.edi', rules=_rules)
             self.assertEqual(len(op3.logs), 1)
 
         op4 = edi.Operator('YO5DDD')  # op without logs
@@ -1263,7 +1267,7 @@ PBand=432 MHz
         op5 = edi.Operator('YO5FFF')  # op with log on another band
         mo = mock.mock_open(read_data=log5_content)
         with patch('builtins.open', mo, create=True):
-            op5.add_log_by_path('some_log_file.edi')
+            op5.add_log_by_path('some_log_file.edi', rules=_rules)
             self.assertEqual(len(op5.logs), 1)
 
         op_inst = {
@@ -1273,9 +1277,111 @@ PBand=432 MHz
             'YO5DDD': op4,
             'YO5FFF': op5,
         }
-        mo_rules = mock.mock_open(read_data=VALID_RULES)
+
+        edi.crosscheck_logs(op_inst, _rules, 1)
+
+        result = []
+        print("NIMIC")
+        for op, op_inst in op_inst.items():
+            for log in op_inst.logs:
+                for qso in log.qsos:
+                    result.append("{}-{}-{}".format(qso.cc_confirmed, qso.cc_error, qso.points))
+        self.assertListEqual(result, expected_result)
+
+
+    @mock.patch('os.path.isfile')
+    def test_crosscheck_logs_custom_1(self, mck_isfile):
+        """
+        A test based on logs from CN 2022, when a bug in cross-check was found.
+        The problem was with a duplicate form the 1st operator
+        """
+        mck_isfile.return_value = True
+        expected_result = [
+            'False-No qso found on YO4FYQ log-None',
+            'True-[]-599',
+            'True-[]-599',
+            'True-[]-599',
+            'True-[]-599']
+
+        custom_rules = \
+r"""
+[contest]
+name=CN2022
+begindate=20220820
+enddate=20220820
+beginhour=1200
+endhour=1759
+bands=1
+periods=2
+categories=1
+modes=1,2
+[log]
+format=edi
+[band1]
+band=144
+regexp=144|145|2m
+multiplier=1
+[period1]
+begindate=20220820
+enddate=20220820
+beginhour=1200
+endhour=1459
+bands=band1
+[period2]
+begindate=20220820
+enddate=20220820
+beginhour=1500
+endhour=1759
+bands=band1
+[category1]
+name=single
+regexp=A
+bands=band1
+"""
+        mo_rules = mock.mock_open(read_data=custom_rules)
         with patch('builtins.open', mo_rules, create=True):
             _rules = rules.Rules('some_rule_file.rules')
+
+        log1_content = \
+"""TName=Campionatul Național ȋn Unde Ultrascurte VHF (144 MHz)
+TDate=20220820;20220820
+PCall=YO2GL
+PWWLo=KN05OS
+PSect=A
+PBand=144 MHz
+[QSORecords;57]
+220820;1204;YO4FYQ;1;59;003;59;002;;KN44FD;599;;;;
+220820;1326;YO4FYQ;1;59;018;59;022;;KN44FD;0;;;;
+220820;1507;YO4FYQ;1;59;033;59;037;;KN44FD;0;;;;
+"""
+        op1 = edi.Operator('YO2GL')
+        mo = mock.mock_open(read_data=log1_content)
+        with patch('builtins.open', mo, create=True):
+            op1.add_log_by_path('some_log_file.edi', rules=_rules)
+            self.assertEqual(len(op1.logs), 1)
+
+        log2_content = \
+"""TName=CNVHF2022
+TDate=20220820;20220820
+PCall=YO4FYQ
+PWWLo=KN44FD
+PSect=A
+PBand=144 MHz
+[QSORecords;67]
+220820;1326;YO2GL;1;59;022;59;018;;KN05OS;599;;;;
+220820;1507;YO2GL;1;59;037;59;033;;KN05OS;599;;;;
+"""
+
+        op2 = edi.Operator('YO4FYQ')
+        mo = mock.mock_open(read_data=log2_content)
+        with patch('builtins.open', mo, create=True):
+            op2.add_log_by_path('some_log_file.edi', rules=_rules)
+            self.assertEqual(len(op2.logs), 1)
+
+        op_inst = {
+            'YO2GL': op1,
+            'YO4FYQ': op2
+        }
 
         edi.crosscheck_logs(op_inst, _rules, 1)
 
