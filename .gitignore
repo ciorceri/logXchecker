@@ -9,3 +9,4 @@ __pycache__/
 
 # Other generated files
 .coverage
+dist/
