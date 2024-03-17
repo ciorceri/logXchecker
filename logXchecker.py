@@ -1,5 +1,5 @@
 """
-Copyright 2016-2022 Ciorceri Petru Sorin (yo5pjb)
+Copyright 2016-2024 Ciorceri Petru Sorin (yo5pjb)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import os
 import sys
 
 import edi
+import cabrillo
 import rules as _rules
 import version
 from edi import crosscheck_logs_filter

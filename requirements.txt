@@ -3,3 +3,4 @@ dicttoxml==1.7.4
 validate-email==1.3
 pytest==7.2.0
 pytest-cov==4.0.0
+cabrillo==0.1.2

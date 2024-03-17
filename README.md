@@ -141,50 +141,50 @@ callregexp=.*
 #### Run examples using the provided 'test_logs' folder:
 * Single log validation (generic, no rules) and human friendly output
 ```
-$ python3 ./logXchecker.py -slc ./test_logs/logs/yo2lza_20160514_091251.edi -f edi
+$ python3 ./logXchecker.py -slc ./test_logs/logs.edi/yo2lza_20160514_091251.edi -f edi
 logXchecker - v1.0
-Checking log : ./test_logs/logs/yo2lza_20160514_091251.edi
+Checking log : ./test_logs/logs.edi/yo2lza_20160514_091251.edi
 No error found
 ```
 * Single log validation (generic, no rules) and json output
 ```
-$ python3 ./logXchecker.py -slc ./test_logs/logs/yo2lza_20160514_091251.edi -f edi -o json
+$ python3 ./logXchecker.py -slc ./test_logs/logs.edi/yo2lza_20160514_091251.edi -f edi -o json
 logXchecker - v1.0
-{"log": "./test_logs/logs/yo2lza_20160514_091251.edi", "io": [], "header": [], "qso": []}
+{"log": "./test_logs/logs.edi/yo2lza_20160514_091251.edi", "io": [], "header": [], "qso": []}
 ```
 * Single log validation (with rules) and human friendly output
 ```
-$ python3 ./logXchecker.py -slc ./test_logs/logs/yo2lza_20160514_091251.edi -r ./test_logs/rules.config
+$ python3 ./logXchecker.py -slc ./test_logs/logs.edi/yo2lza_20160514_091251.edi -r ./test_logs/rules_edi.config
 logXchecker - v1.0
-Checking log : ./test_logs/logs/yo2lza_20160514_091251.edi
+Checking log : ./test_logs/logs.edi/yo2lza_20160514_091251.edi
 QSO errors :
 Line 226 : 160508;1201;OM3RLA;1;59;186;59;185;;JN98LB;349;;;; <- Qso date/hour is invalid: not inside contest periods
 Line 227 : 160508;1213;IQ8BI;1;59;187;59;076;;JN71HU;679;;;; <- Qso date/hour is invalid: not inside contest periods
 ```
 * Single log validation (with rules) and json output
 ```
-$ python3 ./logXchecker.py -slc ./test_logs/logs/yo2lza_20160514_091251.edi -r ./test_logs/rules.config -o json
+$ python3 ./logXchecker.py -slc ./test_logs/logs.edi/yo2lza_20160514_091251.edi -r ./test_logs/rules_edi.config -o json
 logXchecker - v1.0
-{"log": "./test_logs/logs/yo2lza_20160514_091251.edi", "io": [], "header": [], "qso": [[226, "160508;1201;OM3RLA;1;59;186;59;185;;JN98LB;349;;;;", "Qso date/hour is invalid: not inside contest periods"], [227, "160508;1213;IQ8BI;1;59;187;59;076;;JN71HU;679;;;;", "Qso date/hour is invalid: not inside contest periods"]]}
+{"log": "./test_logs/logs.edi/yo2lza_20160514_091251.edi", "io": [], "header": [], "qso": [[226, "160508;1201;OM3RLA;1;59;186;59;185;;JN98LB;349;;;;", "Qso date/hour is invalid: not inside contest periods"], [227, "160508;1213;IQ8BI;1;59;187;59;076;;JN71HU;679;;;;", "Qso date/hour is invalid: not inside contest periods"]]}
 ```
 * Multiple logs validation (with rules) and human friendly output
 ```
-$ python3 ./logXchecker.py -mlc ./test_logs/logs/ -r ./test_logs/rules.config 
+$ python3 ./logXchecker.py -mlc ./test_logs/logs.edi/ -r ./test_logs/rules_edi.config 
 ...
 ```
 * Logs cross-check (rules are mandatory) and human friendly output
 ```
-$ python3 ./logXchecker.py -cc ./test_logs/logs -r ./test_logs/rules.config
+$ python3 ./logXchecker.py -cc ./test_logs/logs.edi -r ./test_logs/rules_edi.config
 ...
 ```
 * Logs + checklogs cross-check (rules are mandatory) and human friendly output
 ```
-$ python3 ./logXchecker.py -cc ./test_logs/logs -cl ./test_logs/checklogs/ -r ./test_logs/rules.config
+$ python3 ./logXchecker.py -cc ./test_logs/logs.edi -cl ./test_logs/checklogs/ -r ./test_logs/rules_edi.config
 ...
 ```
 * Logs + checklogs cross-check (rules are mandatory) and verbose human friendly output
 ```
-$ python3 ./logXchecker.py -cc ./test_logs/logs -cl ./test_logs/checklogs/ -r ./test_logs/rules.config -v
+$ python3 ./logXchecker.py -cc ./test_logs/logs.edi -cl ./test_logs/checklogs.edi/ -r ./test_logs/rules_edi.config -v
 ...
 ```
 
