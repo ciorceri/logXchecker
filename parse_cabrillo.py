@@ -334,7 +334,7 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
         operator_instances[callsign].add_log_instance(log)
 
     # if we find multiple logs for a ham on a band
-    # we set Log.itnore_this_logs for older files
+    # we set Log.ignore_this_logs for older files
         # TODO : will not implement this now... later
 
     # do the cross-check over filered logs
