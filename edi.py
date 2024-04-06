@@ -776,7 +776,6 @@ class LogException(Exception):
 
 
 def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_folder=None):
-
     ignored_logs = []
 
     if not rules:
@@ -852,7 +851,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
         if not _logs1:
             continue
 
-        # use 1st log that : is not checklog , is not to ignore & has valid header
+        # use logs that : is not checklog , is not to ignore & has valid header
         for log1 in _logs1:
             if all((log1.use_as_checklog is False,
                     log1.ignore_this_log is False,
@@ -890,14 +889,14 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 qso1.cc_error = 'No log from {}'.format(callsign2)
                 continue
 
-            # check if we have proper band logs from 2nd ham
+            # check if we have the proper band logs from 2nd ham
             _logs2 = ham2.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
             if not _logs2:
                 qso1.cc_confirmed = False
                 qso1.cc_error = 'No log for this band from {}'.format(callsign2)
                 continue
 
-            # use 1st log that : is not to ignore & has valid header
+            # use the 1st log that : is not to ignore & has valid header
             for log2 in _logs2:
                 if all((log2.ignore_this_log is False,
                         log2.valid_header is True)):
@@ -907,7 +906,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 qso1.cc_error = 'No valid log from {}'.format(callsign2)
                 continue
 
-            # get 2nd ham qsos and compare them with 1st ham qso
+            # get the 2nd ham qsos and compare them with the 1st ham qso
             for qso2 in log2.qsos:
                 if qso2.valid is False:
                     continue

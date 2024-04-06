@@ -20,10 +20,9 @@ import os
 import sys
 
 import edi
-import cabrillo
+import parse_cabrillo
 import rules as _rules
 import version
-from edi import crosscheck_logs_filter
 
 # SORT_OUTPUT = False  # TODO : sort the results output
 
@@ -91,21 +90,21 @@ def load_log_format_module(module_name):
     #         pass
 
 
-def print_human_friendly_output(output, verbose=False):
+def print_human_friendly_output(lfmodule, output, verbose=False):
     """Will print a human-fiendly output for easy read"""
     # single log
-    if output.get(edi.INFO_LOG, False):
-        print_log_human_friendly(output)
+    if output.get(lfmodule.INFO_LOG, False):
+        print_log_human_friendly(lfmodule, output)
     # multi logs
-    if output.get(edi.INFO_MLC, False):
-        print('Checking logs from folder : {}'.format(output[edi.INFO_MLC]))
+    if output.get(lfmodule.INFO_MLC, False):
+        print('Checking logs from folder : {}'.format(output[lfmodule.INFO_MLC]))
         print('#########################')
-        # print('Checking logs from folder : {}'.format(output[edi.INFO_MLC]))
-        for log in output[edi.INFO_LOGS]:
-            print_log_human_friendly(log)
+        # print('Checking logs from folder : {}'.format(output[lfmodule.INFO_MLC]))
+        for log in output[lfmodule.INFO_LOGS]:
+            print_log_human_friendly(lfmodule, log)
             print('--------')
     # cross check
-    if output.get(edi.INFO_CC, False):
+    if output.get(lfmodule.INFO_CC, False):
         print('Cross check logs from folder : {}'.format(output[edi.INFO_CC]))
         print('#########################')
         for _call, _values in output[edi.INFO_OPERATORS].items():
@@ -124,22 +123,22 @@ def print_human_friendly_output(output, verbose=False):
             print('--------')
 
 
-def print_log_human_friendly(output):
+def print_log_human_friendly(lfmodule, output):
     """Will print human fiendly info for a log"""
     has_errors = False
-    print('Checking log : {}'.format(output[edi.INFO_LOG]))
-    if output[edi.ERR_IO]:
-        print('Input/Output : {}'.format(output[edi.ERR_IO]))
+    print('Checking log : {}'.format(output[lfmodule.INFO_LOG]))
+    if output[lfmodule.ERR_IO]:
+        print('Input/Output : {}'.format(output[lfmodule.ERR_IO]))
         has_errors = True
         pass
-    if output[edi.ERR_HEADER]:
+    if output[lfmodule.ERR_HEADER]:
         print('Header errors :')
-        for err in output[edi.ERR_HEADER]:
+        for err in output[lfmodule.ERR_HEADER]:
             print('Line {} : {}'.format(err[0], err[1]))
         has_errors = True
-    if output[edi.ERR_QSO]:
+    if output[lfmodule.ERR_QSO]:
         print('QSO errors :')
-        for err in output[edi.ERR_QSO]:
+        for err in output[lfmodule.ERR_QSO]:
             print('Line {} : {} <- {}'.format(err[0], err[1], err[2]))
         has_errors = True
 
@@ -147,17 +146,17 @@ def print_log_human_friendly(output):
         print('No error found')
 
 
-def print_csv_output(output):
+def print_csv_output(lfmodule, output):
     # cross check
-    if output.get(edi.INFO_CC, False):
+    if output.get(lfmodule.INFO_CC, False):
         print('Callsign, ValidLog, Band, Category, ConfirmedQso, Points')
-        for _call, _values in output[edi.INFO_OPERATORS].items():
+        for _call, _values in output[lfmodule.INFO_OPERATORS].items():
             for _band, _details in _values['band'].items():
                 if not _details.get('checklog', False) is True:
                     print('{}, {}, {}, {}, {}, {}'.format(_call, _details['valid'], _band, _details['category'], _details['qsos_confirmed'], _details['points']))
     else:
-        # if output.get(edi.INFO_LOG, False):
-        # if output.get(edi.INFO_MLC, False):
+        # if output.get(lfmodule.INFO_LOG, False):
+        # if output.get(lfmodule.INFO_MLC, False):
         print('NOT IMPLEMENTED')
 
 
@@ -179,6 +178,8 @@ def main():
 
     if log_format == 'EDI':
         lfmodule = edi
+    elif log_format == 'CABRILLO':
+        lfmodule = parse_cabrillo
     else:
         print('Selected log type is unsupported : {}'.format(log_format))
         sys.exit(1)
@@ -191,7 +192,7 @@ def main():
 
     # if 'validate one log'
     if args.singlelogcheck:
-        output[edi.INFO_LOG] = args.singlelogcheck
+        output[lfmodule.INFO_LOG] = args.singlelogcheck
         if not os.path.isfile(args.singlelogcheck):
             print('Cannot open file : {}'.format(args.singlelogcheck))
             sys.exit(1)
@@ -200,7 +201,7 @@ def main():
 
     # validate multiple logs
     elif args.multilogcheck:
-        output[edi.INFO_MLC] = args.multilogcheck
+        output[lfmodule.INFO_MLC] = args.multilogcheck
         if not os.path.isdir(args.multilogcheck):
             print('Cannot open logs folder : {}'.format(args.multilogcheck))
             sys.exit(1)
@@ -208,10 +209,10 @@ def main():
         for filename in os.listdir(args.multilogcheck):
             log_output = {}
             _log = log(os.path.join(args.multilogcheck, filename), rules=rules)
-            log_output[edi.INFO_LOG] = filename
+            log_output[lfmodule.INFO_LOG] = filename
             log_output.update(_log.errors)
             logs_output.append(log_output)
-        output[edi.INFO_LOGS] = logs_output
+        output[lfmodule.INFO_LOGS] = logs_output
         # add also checklogs
         if args.checklogs:
             if os.path.isdir(args.checklogs):
@@ -219,24 +220,25 @@ def main():
                 for filename in os.listdir(args.checklogs):
                     log_output = {}
                     _log = log(os.path.join(args.checklogs, filename), rules=rules, checklog=True)
-                    log_output[edi.INFO_LOG] = filename
+                    log_output[lfmodule.INFO_LOG] = filename
                     log_output.update(_log.errors)
                     logs_output.append(log_output)
-                output[edi.INFO_LOGS].extend(logs_output)
+                output[lfmodule.INFO_LOGS].extend(logs_output)
 
     # crosscheck logs
     elif args.crosscheck:
         if not rules:
             print("No rules were provided")
             sys.exit(1)
-        output[edi.INFO_CC] = args.crosscheck
-        output[edi.INFO_OPERATORS] = {}
-        op_instance = crosscheck_logs_filter(log, rules=rules, logs_folder=args.crosscheck, checklogs_folder=args.checklogs)
+        output[lfmodule.INFO_CC] = args.crosscheck
+        output[lfmodule.INFO_OPERATORS] = {}
+        print("DEBUG : LOG=", log)
+        op_instance = lfmodule.crosscheck_logs_filter(log, rules=rules, logs_folder=args.crosscheck, checklogs_folder=args.checklogs)
         for _call, _instance in op_instance.items():
             op_output = {}
-            op_output[edi.INFO_BANDS] = {}
+            op_output[lfmodule.INFO_BANDS] = {}
             for _log in _instance.logs:
-                op_output[edi.INFO_BANDS][_log.band] = {
+                op_output[lfmodule.INFO_BANDS][_log.band] = {
                     'path': _log.path,
                     'points': _log.qsos_points,
                     'qsos_confirmed': _log.qsos_confirmed,
@@ -252,19 +254,19 @@ def main():
                             _cc_errors.append('{} : {}'.format(qso.qso_line, qso.cc_error))
                         else:
                             _cc_valid.append('{} : {} : {}'.format(qso.qso_line, qso.points, qso.cc_confirmed))
-                    op_output[edi.INFO_BANDS][_log.band]['qso_errors'] = _cc_errors
-                    op_output[edi.INFO_BANDS][_log.band]['qso_valid'] = _cc_valid
+                    op_output[lfmodule.INFO_BANDS][_log.band]['qso_errors'] = _cc_errors
+                    op_output[lfmodule.INFO_BANDS][_log.band]['qso_valid'] = _cc_valid
 
-            output[edi.INFO_OPERATORS][_call] = op_output
+            output[lfmodule.INFO_OPERATORS][_call] = op_output
 
     if args.output.upper() == 'HUMAN-FRIENDLY':
-        print_human_friendly_output(output, verbose=args.verbose)
+        print_human_friendly_output(lfmodule, output, verbose=args.verbose)
     elif args.output.upper() == 'JSON':
         print(edi.dict_to_json(output))
     elif args.output.upper() == 'XML':
         print(edi.dict_to_xml(output))
     elif args.output.upper() == 'CSV':
-        print_csv_output(output)
+        print_csv_output(lfmodule, output)
 
 if __name__ == '__main__':
     main()
