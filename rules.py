@@ -139,6 +139,7 @@ class Rules(object):
                 _ = self.contest_band(band)['band']
                 _ = self.contest_band(band)['regexp']
                 _ = self.contest_band(band)['multiplier']
+                _ = self.contest_band(band)['multiplier_stations']
         except KeyError as why:
             raise ValueError('Rules file has invalid settings for band {}'.format(band))
 

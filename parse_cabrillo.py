@@ -36,6 +36,7 @@ class Operator(object):
     """
     callsign = None
     logs = []           # list with Log() instances
+    points_multipliers = 1
 
     def __init__(self, callsign):
         self.callsign = callsign
@@ -326,7 +327,7 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
         return {}
     for filename in os.listdir(logs_folder):
         logs_instances.append(log_class(os.path.join(logs_folder, filename), rules=rules))
-    print("DEBUG LOG_INST :", logs_instances)
+    # print("DEBUG LOG_INST :", logs_instances)
 
     # if checklogs_folder ....
         # TODO : implement the case when checklogs are provided (not needed now, later...)
@@ -362,6 +363,7 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
                     confirmed += 1
             log.qsos_points = points
             log.qsos_confirmed = confirmed
+            # print("DEBUG callsign multi :", operator_instances[op].callsign, operator_instances[op].points_multipliers)
 
     return operator_instances
 
@@ -443,7 +445,10 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                 # print("DEBUG CONFIRMED :", confirmed, callsign1, callsign2, qso1.qso_fields['call'], qso2.qso_fields['call'])
                 if confirmed:
                     qso1.cc_confirmed = True
-                    qso1.points = 1  # TODO : I have to calculate the multipliers !!!
+                    qso1.points = int(rules.contest_band(band_nr)['multiplier'])
+                    multiplier_callsign_list = rules.contest_band(band_nr)['multiplier_stations'].split(',')
+                    if _callsign2 in multiplier_callsign_list:
+                        operator_instances[callsign1].points_multipliers += 1
                     qso1.cc_error = []
             else:
                 qso1.cc_confirmed = False
