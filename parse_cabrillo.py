@@ -91,8 +91,13 @@ class Log(object):
             return
 
         # get qso's
-        self.valid_qsos = True
         self.get_qsos(cab.valid_qso)
+        self.valid_qsos = True
+        for qso in self.qsos:
+            if qso.errors:
+                self.errors[ERR_QSO].extend(qso.errors)
+                self.valid_qsos = False
+
 
     @staticmethod
     def read_file_content(path):
@@ -282,7 +287,12 @@ class LogQso(object):
 
     def validate_qso_format(self):
     # TODO : need to implement this valiation, at this moment I trus the validation from cabrillo library 
-        self.valid = True
+        # just a single validation, check if we have 13 fields into each QSL line
+        nr_of_fields = len(str(self.qso_line).split())
+        if nr_of_fields != 13:
+            self.errors.append((self.line_nr, self.qso_line, "QSO number of fields is not 13"))
+            self.valid = False
+
 
     def parse_qso_fields(self):
         # print("QSO F DIR :", dir(self.qso_line))

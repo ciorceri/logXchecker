@@ -320,7 +320,7 @@ class Log(object):
         for qso in qso_lines:
             self.qsos.append(
                 # REMOVE self.qsos_tuple(linenr=qso[0], qso=qso[1], valid=False if message else True, error=message)
-                LogQso(qso[1], qso[0], self.rules)  # LogQso(qso_line, qso_line_number_in_log)
+                LogQso(qso[1], qso[0], self.rules)  # LogQso(qso_line, qso_line_number_in_log, rules_to_use)
             )
 
     @staticmethod
