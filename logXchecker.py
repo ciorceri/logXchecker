@@ -118,8 +118,8 @@ def print_human_friendly_output(lfmodule, output, verbose=False):
                     continue
                 for err in _details['qso_errors']:
                     print('   - {}'.format(err))
-                # for vld in _details['qso_valid']:
-                #     print('   - {}'.format(vld))
+                for vld in _details['qso_valid']:
+                    print('   - {}'.format(vld))
             print('--------')
 
 
@@ -253,7 +253,7 @@ def main():
                         if qso.cc_confirmed is False:
                             _cc_errors.append('{} : {}'.format(qso.qso_line, qso.cc_error))
                         else:
-                            _cc_valid.append('{} : {} : {}'.format(qso.qso_line, qso.points, qso.cc_confirmed))
+                            _cc_valid.append('{} , points {} , confirmed {}'.format(qso.qso_line, qso.points, qso.cc_confirmed))
                     op_output[lfmodule.INFO_BANDS][_log.band]['qso_errors'] = _cc_errors
                     op_output[lfmodule.INFO_BANDS][_log.band]['qso_valid'] = _cc_valid
 

@@ -265,8 +265,8 @@ class LogQso(object):
 
         self.errors = []
         self.cc_confirmed = None  # possible values: True, False
-        self.cc_error = []  # here we store errors from cross-check
-        self.points = None  # if qso is confirmed we store here the calculated points (multiplier included)
+        self.cc_error = []    # here we store errors from cross-check
+        self.points = None    # if qso is confirmed we store here the calculated points (multiplier included)
 
         self.qso_fields = {'freq': None,
                            'mode': None,
@@ -451,8 +451,8 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                         operator_instances[callsign1].points_multipliers += 1
                     qso1.cc_error = []
             else:
-                qso1.cc_confirmed = False
-                qso1.cc_error = 'No qso found on {} log'.format(callsign2)                    
+                if qso1.cc_confirmed == False:
+                    qso1.cc_error = 'No qso found on {} log'.format(callsign2)
 
     
 def compare_qso(log1, qso1, log2, qso2):
