@@ -113,7 +113,8 @@ def print_human_friendly_output(lfmodule, output, verbose=False):
                 if _details.get('checklog', False) is True:
                     print('   [checklog] band={} , valid={}'.format(_band, _details['valid']))
                 else:
-                    print('   band={} , valid={} , category={} , points={} , qsos_confirmed={}'.format(_band, _details['valid'], _details['category'], _details['points'], _details['qsos_confirmed']))
+                    _total_points = _details['points'] * _details['qsos_points_multipliers']
+                    print('   band={} , valid={} , category={} , points={} , qsos_confirmed={} , multipliers={} , total_points={}'.format(_band, _details['valid'], _details['category'], _details['points'], _details['qsos_confirmed'], _details['qsos_points_multipliers'], _total_points))
                 if not verbose:
                     continue
                 for err in _details['qso_errors']:
@@ -242,6 +243,7 @@ def main():
                     'path': _log.path,
                     'points': _log.qsos_points,
                     'qsos_confirmed': _log.qsos_confirmed,
+                    'qsos_points_multipliers': _log.qsos_points_multipliers,
                     'valid': _log.valid_header,
                     'category': _log.category,
                     'checklog': _log.use_as_checklog,
@@ -258,7 +260,6 @@ def main():
                     op_output[lfmodule.INFO_BANDS][_log.band]['qso_valid'] = _cc_valid
 
             output[lfmodule.INFO_OPERATORS][_call] = op_output
-
     if args.output.upper() == 'HUMAN-FRIENDLY':
         print_human_friendly_output(lfmodule, output, verbose=args.verbose)
     elif args.output.upper() == 'JSON':

@@ -36,7 +36,7 @@ class Operator(object):
     """
     callsign = None
     logs = []           # list with Log() instances
-    points_multipliers = 1
+    # points_multipliers = 1
 
     def __init__(self, callsign):
         self.callsign = callsign
@@ -69,13 +69,13 @@ class Log(object):
     callsign = None
     band = None
     mode = None
-    operator = None
     email = None
     category = None
 
     qsos = list()   # list with LogQso instances
     qsos_points = None
     qsos_confirmed = None
+    qsos_points_multipliers = 1
 
     def __init__(self, path, rules=None, checklog=False):
         self.path = path
@@ -174,7 +174,7 @@ class Log(object):
         if not cab.category_operator:
             self.errors[ERR_HEADER].append(('-', 'CATEGORY-OPERATOR field is empty'))
         # TODO : "elif..." check if operator field is present multiple times, not possible...
-        self.operator = cab.category_operator
+        self.category = cab.category_operator
 
         # validate 'EMAIL:'
         if self.rules and 'email' in self.rules.contest_extra_fields:
@@ -186,7 +186,7 @@ class Log(object):
         self.email = cab.email
 
         # are all mandatory fields valid ?
-        if all((self.callsign, self.band, self.mode, self.operator)):
+        if all((self.callsign, self.band, self.mode, self.category)):
             self.valid_header = True
 
         # return the intance of cabrillo log
@@ -363,7 +363,7 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
                     confirmed += 1
             log.qsos_points = points
             log.qsos_confirmed = confirmed
-            # print("DEBUG callsign multi :", operator_instances[op].callsign, operator_instances[op].points_multipliers)
+            # print("DEBUG callsign multi :", operator_instances[op].callsign, log.qsos_points_multipliers)
 
     return operator_instances
 
@@ -376,7 +376,7 @@ def crosscheck_logs(operator_instances, rules, band_nr):
     for callsign1, ham1 in operator_instances.items():
         # print("DEBUG CL1 :", callsign1, ham1.callsign, ham1.logs)
         # set a liwt for this ham with already made contacts
-        _had_qso_with = []
+        _county_list_for_multipliers = list()
         # get logs for band
         _logs1 = ham1.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
         if not _logs1:
@@ -447,12 +447,18 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                     qso1.cc_confirmed = True
                     qso1.points = int(rules.contest_band(band_nr)['multiplier'])
                     multiplier_callsign_list = rules.contest_band(band_nr)['multiplier_stations'].split(',')
-                    if _callsign2 in multiplier_callsign_list:
-                        operator_instances[callsign1].points_multipliers += 1
+                    _county_list_for_multipliers.append(qso1.qso_fields['exch_recv'].upper())
                     qso1.cc_error = []
+                else:
+                    qso1.cc_confirmed = False
             else:
                 if qso1.cc_confirmed == False:
-                    qso1.cc_error = 'No qso found on {} log'.format(callsign2)
+                    qso1.cc_error = 'No MATCH found on {} log'.format(callsign2)
+
+        _rro_count = _county_list_for_multipliers.count('RRO')
+        _other_count = len(set(_county_list_for_multipliers)-{'RRO'})
+        # print("DEBUG MULTIPLIERS RRO, COUNTYs : ", callsign1, _rro_count, _other_count)
+        log1.qsos_points_multipliers = _rro_count + _other_count
 
     
 def compare_qso(log1, qso1, log2, qso2):
