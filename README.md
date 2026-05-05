@@ -215,5 +215,5 @@ Line 9 : PSect field value has an invalid value (SINGLE). Not as defined in cont
    
 #### Notes:
     - Suggestions are appreciated.
-    - Only Python 3.7+ will be supported.
-    - I will provide MacOS and Windows builds to make Python install optional. 
+    - Only Python 3.10+ will be supported.
+    - On request : I can provide MacOS and Windows builds to make Python install optional. 
