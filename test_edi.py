@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import io
+import os
 from unittest import TestCase, mock
 from unittest.mock import mock_open, patch
 
@@ -952,6 +954,43 @@ class TestEdiLog(TestCase):
                 self.assertTupleEqual(edi.Log.rules_based_validate_category(test, _rules), (False, None), f"Category input {test} should be invalid with rules")
         self.assertRaisesRegex(ValueError, 'No contest rules provided !', edi.Log.rules_based_validate_category, 'none', None)
 
+    def test_get_qsos_parsing_between_markers(self):
+        mock_data = [
+            'PCall=YO5PJB\n',
+            'PWWLo=KN16SS\n',
+            'PBand=144 MHz\n',
+            'PSect=SOMB\n',
+            'TDate=20130803;20130806\n',
+            '[QSORecords;1]\n',
+            ' 130803;1200;YO5BBB;6;59;001;59;001;;KN16SS;1;;;;\n',
+            '[end]\n'
+        ]
+        with patch.object(edi.Log, 'read_file_content', return_value=mock_data):
+            log = edi.Log('some_log_file.edi')
+        self.assertEqual(1, len(log.qsos))
+        self.assertEqual('130803;1200;YO5BBB;6;59;001;59;001;;KN16SS;1;;;;', log.qsos[0].qso_line)
+        self.assertEqual(7, log.qsos[0].line_nr)
+        self.assertTrue(log.valid_header)
+        self.assertTrue(log.valid_qsos)
+
+    def test_validate_date_invalid_calendar_date(self):
+        self.assertFalse(edi.Log.validate_date('20240230;20240231'))
+
+    def test_rules_based_validate_date_no_rules(self):
+        mock_data = [
+            'PCall=YO5PJB\n',
+            'PWWLo=KN16SS\n',
+            'PBand=144 MHz\n',
+            'PSect=SOMB\n',
+            'TDate=20130803;20130806\n'
+        ]
+        with patch.object(edi.Log, 'read_file_content', return_value=mock_data):
+            log = edi.Log('some_log_file.edi')
+
+        self.assertRaisesRegex(ValueError, 'No contest rules provided !',
+                               log.rules_based_validate_date,
+                               '20170101;20170102', None)
+
 
 class TestEdiLogQso(TestCase):
     def test_init(self):
@@ -1143,11 +1182,11 @@ class TestEdiHelperFunctions(TestCase):
             (qso_list[0], qso_list[5], None, ValueError, 'Other ham qso is invalid'),
             (qso_list[0], qso_list[6], None, ValueError, 'Other ham qso is invalid'),
             # reverse test of different date
-            (qso_list[1], qso_list[0], None, ValueError, 'Qso date is invalid: before contest starts \(<130803\)'),
-            (qso_list[2], qso_list[0], None, ValueError, 'Qso date is invalid: after contest ends \(>130806\)'),
+            (qso_list[1], qso_list[0], None, ValueError, 'Qso date is invalid: before contest starts \\(<130803\\)'),
+            (qso_list[2], qso_list[0], None, ValueError, 'Qso date is invalid: after contest ends \\(>130806\\)'),
             (qso_list[3], qso_list[0], None, ValueError, 'Qso date is invalid: before contest starts \(<130803\)'),
-            (qso_list[4], qso_list[0], None, ValueError, 'Qso date is invalid: after contest ends \(>130806\)'),
-            (qso_list[5], qso_list[0], None, ValueError, 'Qso date is invalid: before contest starts \(<130803\)'),
+            (qso_list[4], qso_list[0], None, ValueError, 'Qso date is invalid: after contest ends \\(>130806\\)'),
+            (qso_list[5], qso_list[0], None, ValueError, 'Qso date is invalid: before contest starts \\(<130803\\)'),
             (qso_list[6], qso_list[0], None, ValueError, 'Qso date/hour is invalid: not inside contest periods'),
             # test different time
             (qso_list[0], qso_list[7], None, ValueError, 'Other ham qso is invalid'),
@@ -1156,8 +1195,8 @@ class TestEdiHelperFunctions(TestCase):
             (qso_list[0], qso_list[10], None, ValueError, 'Different date/time between qso\'s'),
             (qso_list[0], qso_list[11], None, ValueError, 'Different date/time between qso\'s'),
             # reverse test of different time
-            (qso_list[7], qso_list[0], None, ValueError, 'Qso hour is invalid: before contest start hour \(<1200\)'),
-            (qso_list[8], qso_list[0], None, ValueError, 'Qso hour is invalid: before contest start hour \(<1200\)'),
+            (qso_list[7], qso_list[0], None, ValueError, 'Qso hour is invalid: before contest start hour \(<1200\\)'),
+            (qso_list[8], qso_list[0], None, ValueError, 'Qso hour is invalid: before contest start hour \\(<1200\\)'),
             (qso_list[9], qso_list[0], 1, None, None),
             (qso_list[10], qso_list[0], None, ValueError, 'Different date/time between qso\'s'),
             (qso_list[11], qso_list[0], None, ValueError, 'Different date/time between qso\'s'),
@@ -1178,15 +1217,15 @@ class TestEdiHelperFunctions(TestCase):
             (qso_list[0], qso_list[18], None, ValueError, 'Other ham qso is invalid'),
             # reverse test of different modes
             (qso_list[17], qso_list[0], None, ValueError, 'Mode mismatch'),
-            (qso_list[18], qso_list[0], None, ValueError, 'Qso mode is invalid: not in defined modes \(1,2,6\)'),
+            (qso_list[18], qso_list[0], None, ValueError, 'Qso mode is invalid: not in defined modes \\(1,2,6\\)'),
             # test different rst & serial
             (qso_list[0], qso_list[19], None, ValueError, 'Rst mismatch'),
             (qso_list[0], qso_list[20], None, ValueError, 'Serial number mismatch'),
-            (qso_list[0], qso_list[21], None, ValueError, 'Rst mismatch \(other ham\)'),
-            (qso_list[0], qso_list[22], None, ValueError, 'Serial number mismatch \(other ham\)'),
+            (qso_list[0], qso_list[21], None, ValueError, 'Rst mismatch \\(other ham\\)'),
+            (qso_list[0], qso_list[22], None, ValueError, 'Serial number mismatch \\(other ham\\)'),
             # reverse test of differe rst & serial
-            (qso_list[19], qso_list[0], None, ValueError, 'Rst mismatch \(other ham\)'),
-            (qso_list[20], qso_list[0], None, ValueError, 'Serial number mismatch \(other ham\)'),
+            (qso_list[19], qso_list[0], None, ValueError, 'Rst mismatch \\(other ham\\)'),
+            (qso_list[20], qso_list[0], None, ValueError, 'Serial number mismatch \\(other ham\\)'),
             (qso_list[21], qso_list[0], None, ValueError, 'Rst mismatch'),
             (qso_list[22], qso_list[0], None, ValueError, 'Serial number mismatch'),
             # test invalid rst & serial
@@ -1197,10 +1236,10 @@ class TestEdiHelperFunctions(TestCase):
             # reverse test of invalid rst & serial
             (qso_list[23], qso_list[0], None, ValueError, 'Rst is invalid: 00'),
             (qso_list[24], qso_list[0], None, ValueError, 'Rst is invalid: 00'),
-            (qso_list[25], qso_list[0], None, ValueError, 'Qso field <rst send nr> has an invalid value \(00001\)'),
-            (qso_list[26], qso_list[0], None, ValueError, 'Qso field <rst received nr> has an invalid value \(00001\)'),
+            (qso_list[25], qso_list[0], None, ValueError, 'Qso field <rst send nr> has an invalid value \\(00001\\)'),
+            (qso_list[26], qso_list[0], None, ValueError, 'Qso field <rst received nr> has an invalid value \\(00001\\)'),
             # test different qth
-            (qso_list[0], qso_list[27], None, ValueError, 'Qth locator mismatch \(other ham\)'),
+            (qso_list[0], qso_list[27], None, ValueError, 'Qth locator mismatch \\(other ham\\)'),
             (qso_list[27], qso_list[0], None, ValueError, 'Qth locator mismatch'),
             # test invalid qth
             (qso_list[0], qso_list[28], None, ValueError, 'Other ham qso is invalid'),
@@ -1219,6 +1258,162 @@ class TestEdiHelperFunctions(TestCase):
                 self.assertEqual(edi.compare_qso(_log, q1, _log, q2), distance)
             if ex:
                 self.assertRaisesRegex(ex, '^'+ex_msg+'$', edi.compare_qso, _log, q1, _log, q2)
+
+    def test_crosscheck_logs_filter_no_rules(self):
+        with patch('builtins.print') as mock_print:
+            result = edi.crosscheck_logs_filter(edi.Log, rules=None, logs_folder='logs')
+        self.assertEqual({}, result)
+        mock_print.assert_called_once_with('No rules were provided')
+
+    def test_crosscheck_logs_filter_logs_folder_not_dir(self):
+        mo_rules = mock.mock_open(read_data=VALID_RULES_BASIC)
+        with patch('builtins.open', mo_rules, create=True), patch('os.path.isfile', return_value=True):
+            _rules = rules.Rules('some_rule_file.rules')
+
+        with patch('builtins.print') as mock_print, patch('os.path.isdir', return_value=False):
+            result = edi.crosscheck_logs_filter(edi.Log, rules=_rules, logs_folder='logs')
+
+        self.assertEqual({}, result)
+        mock_print.assert_called_once_with('Cannot open logs folder : logs')
+
+    def test_crosscheck_logs_filter_checklogs_folder_not_dir(self):
+        mo_rules = mock.mock_open(read_data=VALID_RULES_BASIC)
+        with patch('builtins.open', mo_rules, create=True), patch('os.path.isfile', return_value=True):
+            _rules = rules.Rules('some_rule_file.rules')
+
+        file_contents = {
+            os.path.join('logs', 'log1.edi'): valid_edi_log
+        }
+
+        def fake_open(path, mode='r', *args, **kwargs):
+            return io.StringIO(file_contents[path])
+
+        with patch('builtins.print') as mock_print, \
+             patch('os.path.isdir', side_effect=lambda path: path == 'logs'), \
+             patch('os.listdir', return_value=['log1.edi']), \
+             patch('builtins.open', fake_open, create=True):
+            result = edi.crosscheck_logs_filter(edi.Log, rules=_rules, logs_folder='logs', checklogs_folder='checklogs')
+
+        self.assertEqual({}, result)
+        mock_print.assert_called_once_with('Cannot open checklogs folder : checklogs')
+
+    def test_crosscheck_logs_filter_happy_path(self):
+        mo_rules = mock.mock_open(read_data=VALID_RULES_BASIC)
+        with patch('builtins.open', mo_rules, create=True), patch('os.path.isfile', return_value=True):
+            _rules = rules.Rules('some_rule_file.rules')
+
+        log1_content = '''PCall=YO5AAA
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+[QSORecords;1]
+130803;1200;YO5BBB;6;59;001;59;001;;KN16SS;1;;;;
+'''
+        log2_content = '''PCall=YO5BBB
+PWWLo=KN16SS
+PBand=144 MHz
+PSect=SOMB
+TDate=20130803;20130806
+[QSORecords;1]
+130803;1200;YO5AAA;6;59;001;59;001;;KN16SS;1;;;;
+'''
+        file_contents = {
+            os.path.join('logs', 'log1.edi'): log1_content,
+            os.path.join('logs', 'log2.edi'): log2_content,
+        }
+
+        def fake_open(path, mode='r', *args, **kwargs):
+            return io.StringIO(file_contents[path])
+
+        with patch('os.path.isdir', return_value=True), \
+             patch('os.listdir', return_value=['log1.edi', 'log2.edi']), \
+             patch('os.path.getmtime', side_effect=[100.0, 200.0]), \
+             patch('builtins.open', fake_open, create=True):
+            operator_instances = edi.crosscheck_logs_filter(edi.Log, _rules, logs_folder='logs')
+
+        self.assertSetEqual(set(operator_instances.keys()), {'YO5AAA', 'YO5BBB'})
+        self.assertEqual(1, operator_instances['YO5AAA'].logs[0].qsos_points)
+        self.assertEqual(1, operator_instances['YO5AAA'].logs[0].qsos_confirmed)
+
+    def test_delta_ord_and_conv_maidenhead_to_latlong(self):
+        self.assertEqual(5, edi.delta_ord('5'))
+        self.assertEqual(0, edi.delta_ord('A'))
+        self.assertEqual(25, edi.delta_ord('Z'))
+        self.assertEqual(-1, edi.delta_ord('!'))
+
+        longitude, latitude = edi.conv_maidenhead_to_latlong('KN16SS')
+        self.assertAlmostEqual(23.5, longitude, places=6)
+        self.assertAlmostEqual(46.75, latitude, places=6)
+
+    def test_qth_distance_nontrivial(self):
+        self.assertEqual(111, edi.qth_distance('KN16SS', 'KN17SS'))
+
+    def test_mark_older_logs(self):
+        log1 = mock.Mock(path='log1.edi')
+        log2 = mock.Mock(path='log2.edi')
+        log1.ignore_this_log = False
+        log2.ignore_this_log = False
+
+        with patch('os.path.getmtime', side_effect=[100.0, 200.0]):
+            edi.mark_older_logs([log1, log2])
+
+        self.assertTrue(log1.ignore_this_log)
+        self.assertFalse(log2.ignore_this_log)
+
+    def test_compare_qso_raises_first_qso_error(self):
+        qso1 = edi.LogQso('999999;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;', 1)
+        qso2 = edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16SS;1;;;;', 2)
+        log1 = mock.Mock(callsign='YO5AAA', maidenhead_locator='KN16SS')
+        log2 = mock.Mock(callsign='YO8SSB', maidenhead_locator='KN27OD')
+
+        self.assertRaisesRegex(ValueError,
+                               'Qso date is invalid: unconverted data remains: 99',
+                               edi.compare_qso, log1, qso1, log2, qso2)
+
+    def test_compare_qso_raises_other_ham_invalid_error(self):
+        qso1 = edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16SS;1;;;;', 1)
+        qso2 = edi.LogQso('999999;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;', 2)
+        log1 = mock.Mock(callsign='YO5AAA', maidenhead_locator='KN16SS')
+        log2 = mock.Mock(callsign='YO5BBB', maidenhead_locator='KN16SS')
+
+        self.assertRaisesRegex(ValueError,
+                               'Other ham qso is invalid',
+                               edi.compare_qso, log1, qso1, log2, qso2)
+
+    def test_compare_qso_callsign_mismatch(self):
+        qso1 = edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16SS;1;;;;', 1)
+        qso2 = edi.LogQso('130803;1200;YO5BBB;6;59;001;59;001;;KN16SS;1;;;;', 2)
+        log1 = mock.Mock(callsign='YO5AAA', maidenhead_locator='KN16SS')
+        log2 = mock.Mock(callsign='YO5AAA', maidenhead_locator='KN16SS')
+
+        self.assertRaisesRegex(ValueError,
+                               'Callsign mismatch',
+                               edi.compare_qso, log1, qso1, log2, qso2)
+
+    def test_compare_qso_date_format_invalid(self):
+        qso1 = edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16SS;1;;;;', 1)
+        qso1.qso_fields['date'] = 'ABCDEF'
+        qso1.valid = True
+        qso2 = edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16SS;1;;;;', 2)
+        log1 = mock.Mock(callsign='YO5AAA', maidenhead_locator='KN16SS')
+        log2 = mock.Mock(callsign='YO5AAA', maidenhead_locator='KN16SS')
+
+        self.assertRaisesRegex(ValueError,
+                               'Date format is invalid : ABCDEF',
+                               edi.compare_qso, log1, qso1, log2, qso2)
+
+    def test_compare_qso_hour_format_invalid(self):
+        qso1 = edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16SS;1;;;;', 1)
+        qso1.qso_fields['hour'] = '12A0'
+        qso1.valid = True
+        qso2 = edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16SS;1;;;;', 2)
+        log1 = mock.Mock(callsign='YO5AAA', maidenhead_locator='KN16SS')
+        log2 = mock.Mock(callsign='YO5AAA', maidenhead_locator='KN16SS')
+
+        self.assertRaisesRegex(ValueError,
+                               'Hour format is invalid : 12A0',
+                               edi.compare_qso, log1, qso1, log2, qso2)
 
     @mock.patch('os.path.isfile')
     def test_crosscheck_logs(self, mck_isfile):
