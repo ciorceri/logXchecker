@@ -52,18 +52,19 @@ class TestParser(TestCase):
     def test_parse(self):
         for (arg, exitCode) in self.testcase_with_error_checks:
             try:
-                print('1. testing parser agument:', arg)
                 parsed = self.p.parse(arg)
             except SystemExit as e:
-                print('error code:', e.code, '| expected error code:', exitCode)
-                self.assertEqual(e.code, exitCode)
+                self.assertEqual(e.code, exitCode,
+                                 f"Parser should exit with code {exitCode} for args {arg}, got {e.code}")
             else:  # only tests with expected exitCode = 0 should get here
                 if exitCode != 0:
-                    raise ValueError('Should exit with exit code 0, but it didn\'t')
+                    raise ValueError(f"Parser should have exited for args {arg} with code {exitCode}")
 
         for (arg, format, singlelogcheck, multilogcheck) in self.testcase_with_success:
-            print('2. testing parser argument:', arg)
             result = self.p.parse(arg)
-            self.assertEqual(result.format.upper(), format.upper())
-            self.assertEqual(result.singlelogcheck, singlelogcheck)
-            self.assertEqual(result.multilogcheck, multilogcheck)
+            self.assertEqual(result.format.upper(), format.upper(),
+                             f"Parsed format should match expected {format} for args {arg}")
+            self.assertEqual(result.singlelogcheck, singlelogcheck,
+                             f"Parsed singlelogcheck should match expected {singlelogcheck} for args {arg}")
+            self.assertEqual(result.multilogcheck, multilogcheck,
+                             f"Parsed multilogcheck should match expected {multilogcheck} for args {arg}")

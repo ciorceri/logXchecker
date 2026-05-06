@@ -415,45 +415,76 @@ class TestRules(TestCase):
         with patch('builtins.open', mo, create=True):
             _rules = rules.Rules('some_rule_file.rules')
 
-        self.assertEqual(_rules.config.sections(), VALID_RULES_SECTIONS)
-        self.assertEqual(_rules.contest_begin_date, '20130803')
+        self.assertEqual(_rules.config.sections(), VALID_RULES_SECTIONS,
+                         "Rules sections should match expected section order")
+        self.assertEqual(_rules.contest_begin_date, '20130803',
+                         "Contest begin date should be parsed correctly")
 
-        self.assertEqual(_rules.contest_end_date, '20130806')
-        self.assertEqual(_rules.contest_begin_hour, '1200')
-        self.assertEqual(_rules.contest_end_hour, '1159')
+        self.assertEqual(_rules.contest_end_date, '20130806',
+                         "Contest end date should be parsed correctly")
+        self.assertEqual(_rules.contest_begin_hour, '1200',
+                         "Contest begin hour should be parsed correctly")
+        self.assertEqual(_rules.contest_end_hour, '1159',
+                         "Contest end hour should be parsed correctly")
 
-        self.assertEqual(_rules.contest_bands_nr, 2)
-        self.assertEqual(_rules.contest_band(1)['band'], '144')
-        self.assertEqual(_rules.contest_band(2)['band'], '432')
+        self.assertEqual(_rules.contest_bands_nr, 2,
+                         "Contest bands count should match rules")
+        self.assertEqual(_rules.contest_band(1)['band'], '144',
+                         "First contest band should be 144")
+        self.assertEqual(_rules.contest_band(2)['band'], '432',
+                         "Second contest band should be 432")
 
-        self.assertEqual(_rules.contest_qso_modes, [1, 2, 6])
+        self.assertEqual(_rules.contest_qso_modes, [1, 2, 6],
+                         "Contest QSO modes should be parsed as integers")
 
-        self.assertEqual(_rules.contest_periods_nr, 2)
-        self.assertEqual(_rules.contest_period(1)['begindate'], '20130803')
-        self.assertEqual(_rules.contest_period(1)['enddate'], '20130803')
-        self.assertEqual(_rules.contest_period(1)['beginhour'], '1200')
-        self.assertEqual(_rules.contest_period(1)['endhour'], '1759')
-        self.assertEqual(_rules.contest_period(1)['bands'], 'band1,band2')
-        self.assertEqual(list(_rules.contest_period_bands(1)), ['band1', 'band2'])
+        self.assertEqual(_rules.contest_periods_nr, 2,
+                         "Contest periods count should match rules")
+        self.assertEqual(_rules.contest_period(1)['begindate'], '20130803',
+                         "First contest period begin date should be parsed correctly")
+        self.assertEqual(_rules.contest_period(1)['enddate'], '20130803',
+                         "First contest period end date should be parsed correctly")
+        self.assertEqual(_rules.contest_period(1)['beginhour'], '1200',
+                         "First contest period start hour should be parsed correctly")
+        self.assertEqual(_rules.contest_period(1)['endhour'], '1759',
+                         "First contest period end hour should be parsed correctly")
+        self.assertEqual(_rules.contest_period(1)['bands'], 'band1,band2',
+                         "First contest period bands should be parsed correctly")
+        self.assertEqual(list(_rules.contest_period_bands(1)), ['band1', 'band2'],
+                         "Period bands list should be derived correctly")
 
-        self.assertEqual(_rules.contest_categories_nr, 4)
-        self.assertEqual(_rules.contest_category(1)['name'], 'Single Operator 144')
-        self.assertEqual(_rules.contest_category(1)['regexp'], 'so|single')
-        self.assertEqual(_rules.contest_category(1)['bands'], 'band1')
-        self.assertEqual(_rules.contest_category(2)['name'], 'Single Operator 432')
-        self.assertEqual(_rules.contest_category(2)['regexp'], 'so|single')
-        self.assertEqual(_rules.contest_category(2)['bands'], 'band2')
-        self.assertEqual(_rules.contest_category(3)['name'], 'Single Operator Multi Band')
-        self.assertEqual(_rules.contest_category(3)['regexp'], 'somb')
-        self.assertEqual(_rules.contest_category(3)['bands'], 'band1,band2')
-        self.assertEqual(_rules.contest_category(4)['name'], 'Multi Operator')
-        self.assertEqual(_rules.contest_category(4)['regexp'], 'mo|multi')
-        self.assertEqual(_rules.contest_category(4)['bands'], 'band1,band2')
-        self.assertEqual(_rules.contest_extra_fields, ['callregexp', 'name', 'email', 'address'])
+        self.assertEqual(_rules.contest_categories_nr, 4,
+                         "Contest categories count should match rules")
+        self.assertEqual(_rules.contest_category(1)['name'], 'Single Operator 144',
+                         "Category 1 name should match rules")
+        self.assertEqual(_rules.contest_category(1)['regexp'], 'so|single',
+                         "Category 1 regexp should match rules")
+        self.assertEqual(_rules.contest_category(1)['bands'], 'band1',
+                         "Category 1 bands should match rules")
+        self.assertEqual(_rules.contest_category(2)['name'], 'Single Operator 432',
+                         "Category 2 name should match rules")
+        self.assertEqual(_rules.contest_category(2)['regexp'], 'so|single',
+                         "Category 2 regexp should match rules")
+        self.assertEqual(_rules.contest_category(2)['bands'], 'band2',
+                         "Category 2 bands should match rules")
+        self.assertEqual(_rules.contest_category(3)['name'], 'Single Operator Multi Band',
+                         "Category 3 name should match rules")
+        self.assertEqual(_rules.contest_category(3)['regexp'], 'somb',
+                         "Category 3 regexp should match rules")
+        self.assertEqual(_rules.contest_category(3)['bands'], 'band1,band2',
+                         "Category 3 bands should match rules")
+        self.assertEqual(_rules.contest_category(4)['name'], 'Multi Operator',
+                         "Category 4 name should match rules")
+        self.assertEqual(_rules.contest_category(4)['regexp'], 'mo|multi',
+                         "Category 4 regexp should match rules")
+        self.assertEqual(_rules.contest_category(4)['bands'], 'band1,band2',
+                         "Category 4 bands should match rules")
+        self.assertEqual(_rules.contest_extra_fields, ['callregexp', 'name', 'email', 'address'],
+                         "Extra field names should be parsed correctly")
 
     def test_init_fail(self):
         # test 'file not found'
-        self.assertRaises(FileNotFoundError, rules.Rules, 'some_missing_file.rules')
+        with self.assertRaises(FileNotFoundError):
+            rules.Rules('some_missing_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_read_config_file_content(self, mock_isfile):
@@ -461,7 +492,8 @@ class TestRules(TestCase):
         mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
             _content = rules.Rules.read_config_file_content('some_rule_file.rules')
-            self.assertEqual(_content, VALID_RULES)
+            self.assertEqual(_content, VALID_RULES,
+                             "read_config_file_content() should return the exact rules text")
 
     @mock.patch('os.path.isfile')
     def test_missing_contest_section_fields(self, mock_isfile):
@@ -469,7 +501,9 @@ class TestRules(TestCase):
         for rule_band in MISSING_CONTEST_SECTION_FIELDS:
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(KeyError, 'ERROR: Rules has missing fields from .contest. section', rules.Rules, 'some_rule_file.rules')
+                with self.subTest(rule=rule_band):
+                    self.assertRaisesRegex(KeyError, 'ERROR: Rules has missing fields from .contest. section',
+                                           rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_invalid_modes_value(self, mock_isfile):
@@ -477,7 +511,9 @@ class TestRules(TestCase):
         for mode_value in INVALID_MODES_VALUE:
             mo = mock.mock_open(read_data=mode_value)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, "The rules have invalid 'modes' value in \[contest\] section", rules.Rules, 'some_rule_file.rules')
+                with self.subTest(mode_value=mode_value):
+                    self.assertRaisesRegex(ValueError, "The rules have invalid 'modes' value in \\[contest\\] section",
+                                           rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_invalid_bands_value(self, mock_isfile):
@@ -485,8 +521,9 @@ class TestRules(TestCase):
         for rule_band in INVALID_BANDS_VALUE:
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, "The rules have invalid 'bands' value in \[contest\] section",
-                                       rules.Rules, 'some_rule_file.rules')
+                with self.subTest(rule=rule_band):
+                    self.assertRaisesRegex(ValueError, "The rules have invalid 'bands' value in \\[contest\\] section",
+                                           rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_missing_band_section(self, mock_isfile):
@@ -494,7 +531,8 @@ class TestRules(TestCase):
         for rule_band, exit_code, error_msg in MISSING_BAND_SECTION:
             mo = mock.mock_open(read_data=rule_band)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, error_msg, rules.Rules, 'some_rule_file.rules')
+                with self.subTest(rule=rule_band):
+                    self.assertRaisesRegex(ValueError, error_msg, rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_periods_value(self, mock_isfile):
@@ -502,8 +540,9 @@ class TestRules(TestCase):
         for rule_period in INVALID_PERIODS_VALUE:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, "The rules have invalid 'periods' value in \[contest\] section",
-                                       rules.Rules, 'some_rule_file.rules')
+                with self.subTest(rule=rule_period):
+                    self.assertRaisesRegex(ValueError, "The rules have invalid 'periods' value in \\[contest\\] section",
+                                           rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_invalid_period_values(self, mock_isfile):
@@ -522,7 +561,8 @@ class TestRules(TestCase):
         for rule_period, exit_code, error_raise, error_msg in MISSING_PERIOD_SECTION:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(error_raise, error_msg, rules.Rules, 'some_rule_file.rules')
+                with self.subTest(rule=rule_period):
+                    self.assertRaisesRegex(error_raise, error_msg, rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_rules_category_syntax(self, mock_isfile):
@@ -530,8 +570,9 @@ class TestRules(TestCase):
         for rule_period, error_raise, error_msg in INVALID_RULES_CATEGORIES_SYNTAX:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(error_raise, error_msg,
-                                       rules.Rules, 'some_rule_file.rules')
+                with self.subTest(rule=rule_period):
+                    self.assertRaisesRegex(error_raise, error_msg,
+                                           rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_missing_band_section_in_period(self, mock_isfile):
@@ -539,8 +580,9 @@ class TestRules(TestCase):
         for rule_period in MISSING_BAND_SECTION_IN_PERIOD:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, 'Rules file has invalid band settings .band10. for period 1',
-                                       rules.Rules, 'some_rule_file.rules')
+                with self.subTest(rule=rule_period):
+                    self.assertRaisesRegex(ValueError, 'Rules file has invalid band settings .band10. for period 1',
+                                           rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_missing_band_section_in_category(self, mock_isfile):
@@ -548,8 +590,9 @@ class TestRules(TestCase):
         for rule_period in MISSING_BAND_SECTION_IN_CATEGORY:
             mo = mock.mock_open(read_data=rule_period)
             with patch('builtins.open', mo, create=True):
-                self.assertRaisesRegex(ValueError, 'Rules file has invalid band settings .band2. for period 1',
-                                       rules.Rules, 'some_rule_file.rules')
+                with self.subTest(rule=rule_period):
+                    self.assertRaisesRegex(ValueError, 'Rules file has invalid band settings .band2. for period 1',
+                                           rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
     def test_contest_log_format(self, mock_isfile):
@@ -557,7 +600,8 @@ class TestRules(TestCase):
         mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
             _rules = rules.Rules('some_rule_file.rules')
-            self.assertEqual(_rules.contest_log_format, 'EDI')
+            self.assertEqual(_rules.contest_log_format, 'EDI',
+                             "Contest log format should be parsed as EDI")
 
     @mock.patch('os.path.isfile')
     def test_contest_extra_fields(self, mock_isfile):
@@ -567,7 +611,8 @@ class TestRules(TestCase):
         mo = mock.mock_open(read_data=modif_rules)
         with patch('builtins.open', mo, create=True):
             _rules = rules.Rules('some_rule_file.rules')
-            self.assertEqual(_rules.contest_extra_fields, ['callregexp', 'name', 'email', 'address'])
+            self.assertEqual(_rules.contest_extra_fields, ['callregexp', 'name', 'email', 'address'],
+                             "Extra fields should be present when [extra] section exists")
 
         # remove [extra] section from rules
         extra_rules_list = VALID_EXTRA_FIELD.split()
@@ -577,4 +622,5 @@ class TestRules(TestCase):
         mo = mock.mock_open(read_data=modif_rules)
         with patch('builtins.open', mo, create=True):
             _rules = rules.Rules('some_rule_file.rules')
-            self.assertEqual(_rules.contest_extra_fields, [])
+            self.assertEqual(_rules.contest_extra_fields, [],
+                             "Extra fields should be empty when [extra] section is removed")
