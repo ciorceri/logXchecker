@@ -1184,7 +1184,7 @@ class TestEdiHelperFunctions(TestCase):
             # reverse test of different date
             (qso_list[1], qso_list[0], None, ValueError, 'Qso date is invalid: before contest starts \\(<130803\\)'),
             (qso_list[2], qso_list[0], None, ValueError, 'Qso date is invalid: after contest ends \\(>130806\\)'),
-            (qso_list[3], qso_list[0], None, ValueError, 'Qso date is invalid: before contest starts \(<130803\)'),
+            (qso_list[3], qso_list[0], None, ValueError, 'Qso date is invalid: before contest starts \\(<130803\\)'),
             (qso_list[4], qso_list[0], None, ValueError, 'Qso date is invalid: after contest ends \\(>130806\\)'),
             (qso_list[5], qso_list[0], None, ValueError, 'Qso date is invalid: before contest starts \\(<130803\\)'),
             (qso_list[6], qso_list[0], None, ValueError, 'Qso date/hour is invalid: not inside contest periods'),
@@ -1195,7 +1195,7 @@ class TestEdiHelperFunctions(TestCase):
             (qso_list[0], qso_list[10], None, ValueError, 'Different date/time between qso\'s'),
             (qso_list[0], qso_list[11], None, ValueError, 'Different date/time between qso\'s'),
             # reverse test of different time
-            (qso_list[7], qso_list[0], None, ValueError, 'Qso hour is invalid: before contest start hour \(<1200\\)'),
+            (qso_list[7], qso_list[0], None, ValueError, 'Qso hour is invalid: before contest start hour \\(<1200\\)'),
             (qso_list[8], qso_list[0], None, ValueError, 'Qso hour is invalid: before contest start hour \\(<1200\\)'),
             (qso_list[9], qso_list[0], 1, None, None),
             (qso_list[10], qso_list[0], None, ValueError, 'Different date/time between qso\'s'),

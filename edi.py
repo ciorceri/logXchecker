@@ -142,7 +142,7 @@ class Log(object):
         _callsign, line_nr = self.get_field('PCall')
         call_regexp = None
         if self.rules and self.rules.contest_extra_field_value('callregexp'):
-            call_regexp = '^\s*(' + self.rules.contest_extra_field_value('callregexp') + ').*'
+            call_regexp = '^\\s*(' + self.rules.contest_extra_field_value('callregexp') + ').*'
 
         if not _callsign:
             self.errors[ERR_HEADER].append((line_nr, 'PCall field is not present'))
@@ -327,7 +327,7 @@ class Log(object):
     def validate_callsign(callsign):
         if not callsign:
             return False
-        regex_pcall = '^\s*(\w+[0-9]+\w+/?\w*)\s*$'  # \s*(\w+\d+[a-zA-Z]+(/(M|AM|P|MM))?)\s*$"
+        regex_pcall = '^\\s*(\\w+[0-9]+\\w+/?\\w*)\\s*$'  # \s*(\w+\d+[a-zA-Z]+(/(M|AM|P|MM))?)\s*$"
         res = re.match(regex_pcall, callsign)
         return True if res else False
 
@@ -502,8 +502,8 @@ class LogQso(object):
                               '(?P<rst_sent>.*?);(?P<nr_sent>.*?);(?P<rst_recv>.*?);(?P<nr_recv>.*?);' \
                               '(?P<exchange_recv>.*?);(?P<wwl>.*?);(?P<points>.*?);' \
                               '(?P<new_exchange>.*?);(?P<new_wwl>.*?);(?P<new_dxcc>.*?);(?P<duplicate_qso>.*?)'
-    REGEX_MEDIUM_QSO_CHECK = '\d{6};\d{4};.*?;.?;\d{2,3}.?;\d{1,4};\d{2,3}.?;\d{1,4};.*?;' \
-                             '[a-zA-Z]{2}\d{2}[a-zA-Z]{2};.*?;.*?;.*?;.*?;.*?'
+    REGEX_MEDIUM_QSO_CHECK = '\\d{6};\\d{4};.*?;.?;\\d{2,3}.?;\\d{1,4};\\d{2,3}.?;\\d{1,4};.*?;' \
+                             '[a-zA-Z]{2}\\d{2}[a-zA-Z]{2};.*?;.*?;.*?;.*?;.*?'
     #                          date  time   id  m    rst       nr      rst       nr    .  qth  km  .   .   .   .
 
     def __init__(self, qso_line=None, qso_line_number=None, rules=None):
@@ -678,7 +678,7 @@ class LogQso(object):
         # if field 'callregexp' from rules file is present, will filter the accepted callsigns in the contest
         # this is usefull for national contests
         if self.rules.contest_extra_field_value('callregexp'):
-            call_regexp = '^\s*' + self.rules.contest_extra_field_value('callregexp')
+            call_regexp = '^\\s*' + self.rules.contest_extra_field_value('callregexp')
             if not re.match(call_regexp, self.qso_fields['call'], re.IGNORECASE):
                 self.valid = False
                 self.errors.append((self.line_nr,
@@ -961,8 +961,8 @@ def compare_qso(log1, qso1, log2, qso2):
         raise ValueError('Callsign mismatch')  # this is never raised
 
     # calculate absolute date+time
-    REGEX_DATE = '(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})'
-    REGEX_HOUR = '(?P<hour>\d{2})(?P<minute>\d{2})'
+    REGEX_DATE = '(?P<year>\\d{2})(?P<month>\\d{2})(?P<day>\\d{2})'
+    REGEX_HOUR = '(?P<hour>\\d{2})(?P<minute>\\d{2})'
 
     date_res1 = re.match(REGEX_DATE, qso1.qso_fields['date'])
     if not date_res1:
