@@ -412,10 +412,11 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid for empty log")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None for empty log")
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [(None, 'Log is empty')], ERR_HEADER: [], ERR_QSO: []})
+                                 {ERR_IO: [(None, 'Log is empty')], ERR_HEADER: [], ERR_QSO: []},
+                                 "Errors should match expected for empty log")
 
         # test with missing PCall
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PCall=')]
@@ -423,20 +424,22 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when PCall is missing")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when PCall is missing")
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(None, 'PCall field is not present')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(None, 'PCall field is not present')], ERR_QSO: []},
+                                 "Errors should indicate missing PCall field")
 
         # test with multiple PCall
         invalid_edi_log = 'PCall=test\n' + valid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when PCall appears multiple times")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when PCall appears multiple times")
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(4, 'PCall field is present multiple times')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(4, 'PCall field is present multiple times')], ERR_QSO: []},
+                                 "Errors should indicate multiple PCall fields")
 
         # test with invalid PCall
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PCall=')]
@@ -444,10 +447,11 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid for invalid PCall content")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None for invalid PCall content")
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(1, 'PCall field content is not valid')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(1, 'PCall field content is not valid')], ERR_QSO: []},
+                                 "Errors should indicate invalid PCall content")
 
         # test with missing PWWLo
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PWWLo=')]
@@ -455,30 +459,33 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when PWWLo is missing")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when PWWLo is missing")
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(None, 'PWWLo field is not present')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(None, 'PWWLo field is not present')], ERR_QSO: []},
+                                 "Errors should indicate missing PWWLo field")
 
         # test with invalid PWWLo
         invalid_edi_log = 'PWWLo=test\n' + invalid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid for invalid PWWLo value")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None for invalid PWWLo value")
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(1, 'PWWLo field value is not valid')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(1, 'PWWLo field value is not valid')], ERR_QSO: []},
+                                 "Errors should indicate invalid PWWLo value")
 
         # test with multiple PWWLo
         invalid_edi_log = 'PWWLo=test\n' + valid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when PWWLo appears multiple times")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when PWWLo appears multiple times")
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(5, 'PWWLo field is present multiple times')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(5, 'PWWLo field is present multiple times')], ERR_QSO: []},
+                                 "Errors should indicate multiple PWWLo fields")
 
         # test with missing PBand
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PBand=')]
@@ -486,30 +493,33 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when PBand is missing")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when PBand is missing")
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(None, 'PBand field is not present')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(None, 'PBand field is not present')], ERR_QSO: []},
+                                 "Errors should indicate missing PBand field")
 
         # test with invalid PBand
         invalid_edi_log = 'PBand=test\n' + invalid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid for invalid PBand value")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None for invalid PBand value")
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(1, 'PBand field value is not valid')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(1, 'PBand field value is not valid')], ERR_QSO: []},
+                                 "Errors should indicate invalid PBand value")
 
         # test with multiple PBand
         invalid_edi_log = 'PBand=test\n' + valid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when PBand appears multiple times")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when PBand appears multiple times")
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(10, 'PBand field is present multiple times')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(10, 'PBand field is present multiple times')], ERR_QSO: []},
+                                 "Errors should indicate multiple PBand fields")
 
         # test with missing PSect
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('PSect=')]
@@ -517,30 +527,33 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when PSect is missing")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when PSect is missing")
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(None, 'PSect field is not present')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(None, 'PSect field is not present')], ERR_QSO: []},
+                                 "Errors should indicate missing PSect field")
 
         # test with invalid PSect
         invalid_edi_log = 'PSect=test\n' + invalid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid for invalid PSect value")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None for invalid PSect value")
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(1, 'PSect field value is not valid (test)')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(1, 'PSect field value is not valid (test)')], ERR_QSO: []},
+                                 "Errors should indicate invalid PSect value")
 
         # test with multiple PSect
         invalid_edi_log = 'PSect=test\n' + valid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when PSect appears multiple times")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when PSect appears multiple times")
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(9, 'PSect field is present multiple times')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(9, 'PSect field is present multiple times')], ERR_QSO: []},
+                                 "Errors should indicate multiple PSect fields")
 
         # test with missing TDate
         invalid_edi_log = [x for x in valid_edi_log.split('\n') if not x.startswith('TDate=')]
@@ -548,58 +561,63 @@ class TestEdiLog(TestCase):
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when TDate is missing")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when TDate is missing")
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(None, 'TDate field is not present')], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(None, 'TDate field is not present')], ERR_QSO: []},
+                                 "Errors should indicate missing TDate field")
 
         # test with invalid TDate
         invalid_edi_log2 = 'TDate=20170101,20170102\n' + invalid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log2)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid for invalid TDate format with comma")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None for invalid TDate format")
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [], ERR_HEADER: [(1, 'TDate field value is not valid (20170101,20170102)')],
-                                  ERR_QSO: []})
+                                  ERR_QSO: []},
+                                 "Errors should indicate invalid TDate format with comma")
 
         invalid_edi_log2 = 'TDate=20170101;201701020\n' + invalid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log2)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid for invalid TDate format with extra digit")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None for invalid TDate format")
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [(1, 'TDate field value is not valid (20170101;201701020)')],
-                                  ERR_QSO: []})
+                                  ERR_QSO: []},
+                                 "Errors should indicate invalid TDate format with extra digit")
 
         # test with multiple TDate
         invalid_edi_log2 = 'TDate=test\n' + valid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log2)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when TDate appears multiple times")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when TDate appears multiple times")
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [(3, 'TDate field is present multiple times')],
-                                  ERR_QSO: []})
+                                  ERR_QSO: []},
+                                 "Errors should indicate multiple TDate fields")
 
         # test with valid header and invalid QSO
         invalid_edi_log = valid_edi_log + '\n999999;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;'
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-            self.assertTrue(log.valid_header)
-            self.assertFalse(log.valid_qsos)
+            self.assertTrue(log.valid_header, "Header should be valid for valid header fields")
+            self.assertFalse(log.valid_qsos, "QSOs should be invalid when containing invalid QSO line")
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [],
                                   ERR_QSO: [(55,
                                              '999999;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;',
-                                             'Qso date is invalid: unconverted data remains: 99')]})
+                                             'Qso date is invalid: unconverted data remains: 99')]},
+                                 "Errors should indicate invalid QSO date")
 
     @mock.patch('os.path.isfile')
     def test_init_with_rules(self, mock_isfile):
@@ -617,17 +635,18 @@ class TestEdiLog(TestCase):
         mo_log = mock.mock_open(read_data=invalid_edi_log_PCall)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when PCall doesn't match callregexp")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when PCall doesn't match callregexp")
             self.assertDictEqual(log.errors,
-                                 {ERR_IO: [], ERR_HEADER: [(2, "PCall field content doesn't match 'callregexp' value from rules")], ERR_QSO: []})
+                                 {ERR_IO: [], ERR_HEADER: [(2, "PCall field content doesn't match 'callregexp' value from rules")], ERR_QSO: []},
+                                 "Errors should indicate PCall doesn't match callregexp")
 
         # test with valid rules and with invalid edi log (invalid PBand)
         mo_log = mock.mock_open(read_data=invalid_edi_log_PBand)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when PBand is not defined in rules")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when PBand is not defined in rules")
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [(4, 'PBand field value has an invalid value (200 MHz). '
@@ -637,14 +656,15 @@ class TestEdiLog(TestCase):
                                                (None, 'RHBBS field is not present'),
                                                (None, 'PAdr1 field is not present'),
                                                (None, 'RName field is not present')],
-                                  ERR_QSO: []})
+                                  ERR_QSO: []},
+                                 "Errors should indicate PBand not defined in rules and missing fields")
 
         # test with valid rules and with invalid edi log (invalid PSect)
         mo_log = mock.mock_open(read_data=invalid_edi_log_PSect)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when PSect is not defined in rules")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when PSect is not defined in rules")
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [(5, 'PSect field value has an invalid value (extraterrestrial). '
@@ -653,14 +673,15 @@ class TestEdiLog(TestCase):
                                                (None, 'RHBBS field is not present'),
                                                (None, 'PAdr1 field is not present'),
                                                (None, 'RName field is not present')],
-                                  ERR_QSO: []})
+                                  ERR_QSO: []},
+                                 "Errors should indicate PSect not defined in rules and missing fields")
 
         # test with valid rules and with invalid edi log (invalid TDate)
         mo_log = mock.mock_open(read_data=invalid_edi_log_TDate)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when TDate is outside contest dates")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when TDate is outside contest dates")
             self.assertDictEqual(log.errors,
                                  {ERR_IO: [],
                                   ERR_HEADER: [(6, 'TDate field value has an invalid value (20250101;20250102). '
@@ -668,111 +689,120 @@ class TestEdiLog(TestCase):
                                                (None, 'RHBBS field is not present'),
                                                (None, 'PAdr1 field is not present'),
                                                (None, 'RName field is not present')],
-                                  ERR_QSO: []})
+                                  ERR_QSO: []},
+                                 "Errors should indicate TDate outside contest dates and missing fields")
 
         # test with valid rules and with invalid edi log (invalid RHBBS)
         mo_log = mock.mock_open(read_data=invalid_edi_log_RHBBS)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid for invalid email address in RHBBS")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None for invalid email address in RHBBS")
             self.assertDictEqual(log.errors,
                                  {'header': [(7, 'RHBBS field value is not valid (invalid email address)'),
                                              (None, 'PAdr1 field is not present'),
                                              (None, 'RName field is not present')],
                                   'io': [],
-                                  'qso': []})
+                                  'qso': []},
+                                 "Errors should indicate invalid email and missing fields")
 
         # test with valid rules and with duplicate RHBBS
         mo_log = mock.mock_open(read_data=invalid_edi_log_RHBBS_2)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when RHBBS appears multiple times")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when RHBBS appears multiple times")
             self.assertDictEqual(log.errors,
                                  {'header': [(8, 'RHBBS is present multiple times'),
                                              (None, 'PAdr1 field is not present'),
                                              (None, 'RName field is not present')],
                                   'io': [],
-                                  'qso': []})
+                                  'qso': []},
+                                 "Errors should indicate multiple RHBBS fields and missing fields")
 
         # test with valid rules and with invalid edi log (invalid PAdr1)
         mo_log = mock.mock_open(read_data=invalid_edi_log_PAdr1)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid for too short PAdr1")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None for too short PAdr1")
             self.assertDictEqual(log.errors,
                                  {'header': [(8, 'PAdr1 field is too short (None)'),
                                              (None, 'RName field is not present')],
                                   'io': [],
-                                  'qso': []})
+                                  'qso': []},
+                                 "Errors should indicate too short PAdr1 and missing RName")
 
         # test with valid rules and with duplicate address
         mo_log = mock.mock_open(read_data=invalid_edi_log_PAdr1_2)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when PAdr1 appears multiple times")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when PAdr1 appears multiple times")
             self.assertDictEqual(log.errors,
                                  {'header': [(9, 'PAdr1 is present multiple times'),
                                              (None, 'RName field is not present')],
                                   'io': [],
-                                  'qso': []})
+                                  'qso': []},
+                                 "Errors should indicate multiple PAdr1 fields and missing RName")
 
         # test with valid rules and with invalid edi log (invalid RName)
         mo_log = mock.mock_open(read_data=invalid_edi_log_RName)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid for too short RName")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None for too short RName")
             self.assertDictEqual(log.errors,
                                  {'header': [(9, 'RName field is too short (cucu)')],
                                   'io': [],
-                                  'qso': []})
+                                  'qso': []},
+                                 "Errors should indicate too short RName")
 
         # test with valid rules and with duplicate name
         mo_log = mock.mock_open(read_data=invalid_edi_log_RName_2)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
-            self.assertFalse(log.valid_header)
-            self.assertIsNone(log.valid_qsos)
+            self.assertFalse(log.valid_header, "Header should be invalid when RName appears multiple times")
+            self.assertIsNone(log.valid_qsos, "QSOs should be None when RName appears multiple times")
             self.assertDictEqual(log.errors,
                                  {'header': [(10, 'RName is present multiple times')],
                                   'io': [],
-                                  'qso': []})
+                                  'qso': []},
+                                 "Errors should indicate multiple RName fields")
 
         # test with valid rules and valid header
         mo_log = mock.mock_open(read_data=valid_edi_log_header)
         with patch('builtins.open', mo_log, create=True):
             log = edi.Log('some_log_file.edi', rules=_rules)
-            self.assertTrue(log.valid_header)
-            self.assertTrue(log.valid_qsos)
+            self.assertTrue(log.valid_header, "Header should be valid for valid header fields with rules")
+            self.assertTrue(log.valid_qsos, "QSOs should be valid when no QSOs present")
             self.assertDictEqual(log.errors,
                                  {'header': [],
                                   'io': [],
-                                  'qso': []})
+                                  'qso': []},
+                                 "No errors should be present for valid header")
 
     def test_read_file_content(self):
         # test 'read_file_content', the buildins.open is mocked
         mo = mock_open(read_data=valid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
-        self.assertEqual(valid_edi_log, ''.join(log.log_lines))
+        self.assertEqual(valid_edi_log, ''.join(log.log_lines), "Log lines should match the input data")
 
         # test 'read_file_content' exceptions
         log = edi.Log('non-existing-log-file.edi')
-        self.assertFalse(log.valid_header)
+        self.assertFalse(log.valid_header, "Header should be invalid for non-existing file")
         self.assertDictEqual(log.errors,
                              {ERR_IO: [(None, 'Cannot read edi log. Error: [Errno 2] No such file or directory: '
-                                              "'non-existing-log-file.edi'")], ERR_HEADER: [], ERR_QSO: []})
+                                              "'non-existing-log-file.edi'")], ERR_HEADER: [], ERR_QSO: []},
+                             "Errors should indicate file not found")
 
     @mock.patch.object(edi.Log, 'read_file_content')
     def test_get_field(self, mock_read_file_content):
         mock_read_file_content.return_value = valid_edi_log.split('\n')
         log = edi.Log('some_log_file.edi')
-        self.assertTupleEqual((['YO5PJB'], 3), log.get_field('PCall'))
-        self.assertTupleEqual((['YO5PJB'], 3), log.get_field('pcall'))
+        self.assertTupleEqual((['YO5PJB'], 3), log.get_field('PCall'), "PCall field should return YO5PJB at line 3")
+        self.assertTupleEqual((['YO5PJB'], 3), log.get_field('pcall'), "PCall field should be case insensitive")
 
     @mock.patch.object(edi.Log, 'read_file_content')
     def test_get_qsos(self, mock_read_file_content):
@@ -780,7 +810,7 @@ class TestEdiLog(TestCase):
         mock_read_file_content.return_value = valid_edi_log.split('\n')
         mock_read_file_content.return_value.append('[END; SomeToolSignature]')
         log = edi.Log('some_log_file.edi')
-        self.assertEqual(len(test_logQso_qsos), len(log.qsos))
+        self.assertEqual(len(test_logQso_qsos), len(log.qsos), "Number of QSOs should match expected count")
         for qso1, qso2 in zip(test_logQso_qsos, log.qsos):
             _ln1 = qso1.linenr
             _qso1 = qso1.qso
@@ -790,10 +820,10 @@ class TestEdiLog(TestCase):
             _qso2 = qso2.qso_line
             _valid2 = qso2.valid
             _error2 = qso2.errors
-            self.assertEqual(_ln1, _ln2)
-            self.assertEqual(_qso1, _qso2)
-            self.assertEqual(_valid1, _valid2)
-            self.assertEqual(_error1, _error2)
+            self.assertEqual(_ln1, _ln2, f"QSO line numbers should match for QSO {_ln1}")
+            self.assertEqual(_qso1, _qso2, f"QSO lines should match for line {_ln1}")
+            self.assertEqual(_valid1, _valid2, f"QSO validity should match for line {_ln1}")
+            self.assertEqual(_error1, _error2, f"QSO errors should match for line {_ln1}")
         # self.assertEqual(test_logQso_qsos, log.qsos)
 
     def test_validate_callsign(self):
@@ -802,34 +832,42 @@ class TestEdiLog(TestCase):
         negative_tests = [None, '', 'yo%pjb', 'yoSpjb']
 
         for test in positive_tests:
-            self.assertTrue(edi.Log.validate_callsign(test))
+            with self.subTest(callsign=test):
+                self.assertTrue(edi.Log.validate_callsign(test), f"Callsign {test} should be valid")
         for test in negative_tests:
-            self.assertFalse(edi.Log.validate_callsign(test))
+            with self.subTest(callsign=test):
+                self.assertFalse(edi.Log.validate_callsign(test), f"Callsign {test} should be invalid")
 
     def test_validate_email(self):
         positive_tests = ['yo5pjb@mail.com']
         negative_tests = [None, '', 'yo5pjb.mail.com', 'yo5pjb', '@mail.com']
         for test in positive_tests:
-            self.assertTrue(edi.Log.validate_email(test))
+            with self.subTest(email=test):
+                self.assertTrue(edi.Log.validate_email(test), f"Email {test} should be valid")
         for test in negative_tests:
-            self.assertFalse(edi.Log.validate_email(test))
+            with self.subTest(email=test):
+                self.assertFalse(edi.Log.validate_email(test), f"Email {test} should be invalid")
 
     def test_validate_address(self):
         positive_tests = ['Sesame Street', 'SesameStreet,13', 'SesameStreetNo.13']
         negative_tests = [None, '', 'short', 'SesameStreet']
         for test in positive_tests:
-            self.assertTrue(edi.Log.validate_address(test))
+            with self.subTest(address=test):
+                self.assertTrue(edi.Log.validate_address(test), f"Address {test} should be valid")
         for test in negative_tests:
-            self.assertFalse(edi.Log.validate_address(test))
+            with self.subTest(address=test):
+                self.assertFalse(edi.Log.validate_address(test), f"Address {test} should be invalid")
 
     def test_validate_qth_locator(self):
         positive_tests = ['KN16SS', 'kn16ss', 'AA00AA', 'RR00XX']
         negative_tests = [None, '', '0016SS', 'KNXXSS', 'KN1600', 'KN16SS00', '00KN16SS']
 
         for test in positive_tests:
-            self.assertTrue(edi.Log.validate_qth_locator(test))
+            with self.subTest(locator=test):
+                self.assertTrue(edi.Log.validate_qth_locator(test), f"QTH locator {test} should be valid")
         for test in negative_tests:
-            self.assertFalse(edi.Log.validate_qth_locator(test))
+            with self.subTest(locator=test):
+                self.assertFalse(edi.Log.validate_qth_locator(test), f"QTH locator {test} should be invalid")
 
     def test_get_band(self):
         positive_tests_144 = ['144', '145', '144mhz', '145mhz']
@@ -838,25 +876,29 @@ class TestEdiLog(TestCase):
         negative_tests_432 = [None, '', '431', '433', '434']
 
         for test in positive_tests_144:
-            self.assertEqual('144', edi.Log.get_band(test))
-
+            with self.subTest(band_input=test):
+                self.assertEqual('144', edi.Log.get_band(test), f"Band input {test} should map to 144")
         for test in negative_tests_144:
-            self.assertIsNone(edi.Log.get_band(test))
+            with self.subTest(band_input=test):
+                self.assertIsNone(edi.Log.get_band(test), f"Band input {test} should not map to any band")
 
         for test in positive_tests_432:
-            self.assertEqual('432', edi.Log.get_band(test))
-
+            with self.subTest(band_input=test):
+                self.assertEqual('432', edi.Log.get_band(test), f"Band input {test} should map to 432")
         for test in negative_tests_432:
-            self.assertIsNone(edi.Log.get_band(test))
+            with self.subTest(band_input=test):
+                self.assertIsNone(edi.Log.get_band(test), f"Band input {test} should not map to any band")
 
     def test_validate_band(self):
         positive_tests = ['144', '145', '144mhz', '145mhz', '430', '432', '435', '430mhz', '432mhz', '432.2',
                           '435hz', '1296', '1296mhz', '1.2g', '1.3g']
         negative_tests = [None, '', '143', '146', '431', '433', '1200']
         for test in positive_tests:
-            self.assertTrue(edi.Log.validate_band(test))
+            with self.subTest(band=test):
+                self.assertTrue(edi.Log.validate_band(test), f"Band {test} should be valid")
         for test in negative_tests:
-            self.assertFalse(edi.Log.validate_band(test))
+            with self.subTest(band=test):
+                self.assertFalse(edi.Log.validate_band(test), f"Band {test} should be invalid")
 
     @mock.patch('os.path.isfile')
     def test_rules_based_validate_band(self, mock_isfile):
@@ -868,9 +910,11 @@ class TestEdiLog(TestCase):
         with patch('builtins.open', mo, create=True):
             _rules = rules.Rules('some_rule_file.rules')
         for test in positive_tests:
-            self.assertTrue(edi.Log.rules_based_validate_band(test, _rules))
+            with self.subTest(band=test):
+                self.assertTrue(edi.Log.rules_based_validate_band(test, _rules), f"Band {test} should be valid according to rules")
         for test in negative_tests:
-            self.assertFalse(edi.Log.rules_based_validate_band(test, _rules))
+            with self.subTest(band=test):
+                self.assertFalse(edi.Log.rules_based_validate_band(test, _rules), f"Band {test} should be invalid according to rules")
         self.assertRaisesRegex(ValueError, 'No contest rules provided !', edi.Log.rules_based_validate_band, positive_tests[0], None)
 
     def test_validate_category(self):
@@ -882,9 +926,11 @@ class TestEdiLog(TestCase):
         negative_tests = [None, '', 'operator', 'band']
         for _category, test_list in positive_tests.items():
             for test in test_list:
-                self.assertTupleEqual(edi.Log.validate_category(test), (True, _category))
+                with self.subTest(category_input=test, expected_category=_category):
+                    self.assertTupleEqual(edi.Log.validate_category(test), (True, _category), f"Category input {test} should validate to {_category}")
         for test in negative_tests:
-            self.assertTupleEqual(edi.Log.validate_category(test), (False, None))
+            with self.subTest(category_input=test):
+                self.assertTupleEqual(edi.Log.validate_category(test), (False, None), f"Category input {test} should be invalid")
 
     @mock.patch('os.path.isfile')
     def test_rules_based_validate_category(self, mock_isfile):
@@ -899,9 +945,11 @@ class TestEdiLog(TestCase):
             _rules = rules.Rules('some_rule_file.rules')
         for _category, test_list in positive_tests.items():
             for test in test_list:
-                self.assertTupleEqual(edi.Log.rules_based_validate_category(test, _rules), (True, _category))
+                with self.subTest(category_input=test, expected_category=_category):
+                    self.assertTupleEqual(edi.Log.rules_based_validate_category(test, _rules), (True, _category), f"Category input {test} should validate to {_category} with rules")
         for test in negative_tests:
-            self.assertTupleEqual(edi.Log.rules_based_validate_category(test, _rules), (False, None))
+            with self.subTest(category_input=test):
+                self.assertTupleEqual(edi.Log.rules_based_validate_category(test, _rules), (False, None), f"Category input {test} should be invalid with rules")
         self.assertRaisesRegex(ValueError, 'No contest rules provided !', edi.Log.rules_based_validate_category, 'none', None)
 
 
