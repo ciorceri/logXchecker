@@ -33,6 +33,13 @@ ERR_IO = 'io'
 ERR_HEADER = 'header'
 ERR_QSO = 'qso'
 
+# Shared band patterns used by both get_band() and validate_band()
+_BAND_PATTERNS = {
+    '144': ['144.*', '145.*'],
+    '432': ['430.*', '432.*', '435.*'],
+    '1296': ['1296.*', '1[.,][23].*'],
+}
+
 
 class Operator(object):
     """
@@ -41,7 +48,6 @@ class Operator(object):
 
     def __init__(self, callsign):
         self.callsign = callsign
-        self.info = {}           # FIXME : no idea what was this for :(
         self.logs = []           # list with Log() instances
 
     def add_log_by_path(self, path, rules=None, checklog=False):
@@ -338,11 +344,8 @@ class Log(object):
         if not band:
             return None
 
-        regexp_band = {'144': ['144.*', '145.*'],
-                       '432': ['430.*', '432.*', '435.*'],
-                       '1296': ['1296.*', '1[.,][23].*']}
-        for _band in regexp_band:
-            for regexp in regexp_band[_band]:
+        for _band, patterns in _BAND_PATTERNS.items():
+            for regexp in patterns:
                 res = re.match(regexp, band)
                 if res:
                     return _band
@@ -353,27 +356,23 @@ class Log(object):
         """
         This will validate PBand based on generic rules
         """
-        is_valid = False
         if not band_value:
-            return is_valid
+            return False
 
-        regexp_band_check = ['144.*', '145.*',
-                             '430.*', '432.*', '435.*',
-                             '1296.*', '1[.,][23].*']
-        for _regex in regexp_band_check:
-            res = re.match(_regex, band_value)
-            if res:
-                is_valid = True
-        return is_valid
+        for _patterns in _BAND_PATTERNS.values():
+            for _regex in _patterns:
+                res = re.match(_regex, band_value)
+                if res:
+                    return True
+        return False
 
     @staticmethod
     def rules_based_validate_band(band_value, rules):
         """
         This will validate PBand based on Rules class instance
         """
-        is_valid = False
         if not band_value:
-            return is_valid
+            return False
 
         if rules is None:
             raise ValueError('No contest rules provided !')
@@ -381,8 +380,8 @@ class Log(object):
             _regex = r'\s*(' + rules.contest_band(_nr)['regexp'] + r')\s*'
             res = re.match(_regex, band_value)
             if res:
-                is_valid = True
-        return is_valid
+                return True
+        return False
 
     @staticmethod
     def validate_category(category_value):
@@ -426,18 +425,15 @@ class Log(object):
         """
         This will validate TDate based on generic rules
         """
-        is_valid = False
         dates = date_value.split(';')
         if len(dates) != 2:
-            return is_valid
-        is_valid = True
+            return False
         for _date in dates:
             try:
                 datetime.strptime(_date, '%Y%m%d')
             except ValueError:
-                is_valid = False
-                break
-        return is_valid
+                return False
+        return True
 
     @staticmethod
     def validate_email(email):
@@ -466,15 +462,12 @@ class Log(object):
         """
         This will validate TDate based on Ruless class instance
         """
-        is_valid = False
-
         if rules is None:
             raise ValueError('No contest rules provided !')
         _begin_date, _end_date = date_value.split(';')
         if _begin_date >= rules.contest_begin_date and _end_date <= rules.contest_end_date:
-            is_valid = True
-
-        return is_valid
+            return True
+        return False
 
 
 class LogQso(object):
@@ -717,9 +710,6 @@ class LogQso(object):
         :return: True, period_number
                  False, None
         """
-        inside_period = False
-        inside_period_nr = None
-
         if not self.rules:
             return True, None
 
@@ -732,36 +722,20 @@ class LogQso(object):
             delta_days = _enddate - _begindate
             # if period is in same day
             if delta_days == timedelta(0) and self.rules.contest_period(period)['beginhour'] <= self.qso_fields['hour'] <= self.rules.contest_period(period)['endhour']:
-                    inside_period = True
-                    inside_period_nr = period
-                    break
+                    return True, period
             # if period is in multiple days
             elif delta_days > timedelta(0):
                 if self.rules.contest_period(period)['begindate'][2:] == self.qso_fields['date'] and self.rules.contest_period(period)['beginhour'] <= self.qso_fields['hour']:
-                    inside_period = True
-                    inside_period_nr = period
-                    break
+                    return True, period
                 if self.qso_fields['date'] == self.rules.contest_period(period)['enddate'][2:] and self.qso_fields['hour'] <= self.rules.contest_period(period)['endhour']:
-                    inside_period = True
-                    inside_period_nr = period
-                    break
+                    return True, period
                 # if begin_period < qso_date < end_period
                 if self.rules.contest_period(period)['begindate'][2:] < self.qso_fields['date'] < self.rules.contest_period(period)['enddate'][2:]:
-                    inside_period = True
-                    inside_period_nr = period
-                    break
-        return inside_period, inside_period_nr
-
-
-class LogException(Exception):
-    def __init__(self, message, line):
-        self.message = message
-        self.line = line
+                    return True, period
+        return False, None
 
 
 def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_folder=None):
-
-    ignored_logs = []
 
     if not rules:
         print('No rules were provided')
@@ -790,7 +764,6 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
     for log in logs_instances:
         if not log.valid_header:
             log.ignore_this_log = True
-            ignored_logs.append(log)
             continue
         callsign = log.callsign.upper()
         if not operator_instances.get(callsign, None):
