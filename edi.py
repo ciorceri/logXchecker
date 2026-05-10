@@ -16,7 +16,6 @@ limitations under the License.
 import math
 import os
 import re
-import datetime
 from collections import namedtuple
 import json
 from datetime import datetime, timedelta
@@ -39,13 +38,11 @@ class Operator(object):
     """
     Keep operator callsign, info and logs path
     """
-    callsign = None
-    info = {}           # FIXME : no idea what was this for :(
-    logs = []           # list with Log() instances
 
     def __init__(self, callsign):
         self.callsign = callsign
-        self.logs = []
+        self.info = {}           # FIXME : no idea what was this for :(
+        self.logs = []           # list with Log() instances
 
     def add_log_by_path(self, path, rules=None, checklog=False):
         self.logs.append(Log(path, rules=rules, checklog=checklog))
@@ -77,38 +74,32 @@ class Log(object):
         'qso': [ (line, 'error: message'), ...],
     }
     """
-    use_as_checklog = False
-    ignore_this_log = None  # if flag is set this log will not be used in cross-check
-
-    path = None
-    rules = None
-    log_lines = None
-    valid_header = None
-    valid_qsos = None
-    errors = None
-    callsign = None
-    maidenhead_locator = None
-    band = None
-    category = None  # section
-    category_raw = None
-    date = None
-    email = None
-    address = None
-    name = None
-
-    qsos_tuple = namedtuple('qso_tuple', ['linenr', 'qso', 'valid', 'errors']) # REMOVE
-    qsos = list()   # list with LogQso instances
-    qsos_points = None
-    qsos_confirmed = None
+    # Kept as class attribute for backward compatibility (used in tests)
+    qsos_tuple = namedtuple('qso_tuple', ['linenr', 'qso', 'valid', 'errors'])
 
     def __init__(self, path, rules=None, checklog=False):
+        self.use_as_checklog = checklog
+        self.ignore_this_log = False  # if flag is set this log will not be used in cross-check
         self.path = path
         self.rules = rules
-        self.use_as_checklog = checklog
-        self.ignore_this_log = False
+        self.log_lines = None
+        self.valid_header = None
+        self.valid_qsos = None
         self.errors = {ERR_IO: [],
                        ERR_HEADER: [],
                        ERR_QSO: []}
+        self.callsign = None
+        self.maidenhead_locator = None
+        self.band = None
+        self.category = None  # section
+        self.category_raw = None
+        self.date = None
+        self.email = None
+        self.address = None
+        self.name = None
+        self.qsos = []   # list with LogQso instances
+        self.qsos_points = None
+        self.qsos_confirmed = None
 
         self.validate_header()
         if not self.valid_header:
@@ -276,13 +267,8 @@ class Log(object):
 
     @staticmethod
     def read_file_content(path):
-        try:
-            with open(path, 'r') as _file:
-                content = _file.readlines()
-        except IOError:
-            raise
-        except Exception:
-            raise
+        with open(path, 'r') as _file:
+            content = _file.readlines()
         return content
 
     def get_field(self, field):
@@ -323,10 +309,7 @@ class Log(object):
         # validate qso lines
         self.qsos = list()
         for qso in qso_lines:
-            self.qsos.append(
-                # REMOVE self.qsos_tuple(linenr=qso[0], qso=qso[1], valid=False if message else True, error=message)
-                LogQso(qso[1], qso[0], self.rules)  # LogQso(qso_line, qso_line_number_in_log)
-            )
+            self.qsos.append(LogQso(qso[1], qso[0], self.rules))  # LogQso(qso_line, qso_line_number_in_log)
 
     @staticmethod
     def validate_callsign(callsign):
@@ -437,10 +420,6 @@ class Log(object):
             if res:
                 return True, rules.contest_category(_nr)['name']
         return False, None
-
-    @staticmethod
-    def normalize_category(category_value, rules):
-        pass
 
     @staticmethod
     def validate_date(date_value):
@@ -1040,9 +1019,9 @@ def delta_ord(letter):
     Ex: for input '5' will return '5'-'0' = 5
         for input 'C' will return 'C'-'A' = 3
     """
-    if (letter>='0') & (letter<='9'):
+    if '0' <= letter <= '9':
         return ord(letter)-ord('0')
-    if (letter>='A') & (letter<='Z'):
+    if 'A' <= letter <= 'Z':
         return ord(letter)-ord('A')
     return -1
 
@@ -1097,7 +1076,6 @@ def qth_distance(qth1, qth2):
         return 1
     else:
         return int(round(arc*6373))
-        #return arc*6373
 
 
 def dict_to_json(dictionary):
