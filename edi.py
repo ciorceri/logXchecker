@@ -137,60 +137,66 @@ class Log(object):
             self.errors[ERR_IO].append((None, 'Log is empty'))
             return
 
+        # small helpers to reduce repetition while keeping exact error messages
+        def _err_header(line_nr, msg):
+            self.errors[ERR_HEADER].append((line_nr, msg))
+
+        def _field(field):
+            return self.get_field(field)
 
         # get & validate callsign
-        _callsign, line_nr = self.get_field('PCall')
+        _callsign, line_nr = _field('PCall')
         call_regexp = None
         if self.rules and self.rules.contest_extra_field_value('callregexp'):
             call_regexp = '^\\s*(' + self.rules.contest_extra_field_value('callregexp') + ').*'
 
         if not _callsign:
-            self.errors[ERR_HEADER].append((line_nr, 'PCall field is not present'))
+            _err_header(line_nr, 'PCall field is not present')
         elif len(_callsign) > 1:
-            self.errors[ERR_HEADER].append((line_nr, 'PCall field is present multiple times'))
+            _err_header(line_nr, 'PCall field is present multiple times')
         elif not self.validate_callsign(_callsign[0]):
-            self.errors[ERR_HEADER].append((line_nr, 'PCall field content is not valid'))
+            _err_header(line_nr, 'PCall field content is not valid')
         elif call_regexp and not re.match(call_regexp, _callsign[0], re.IGNORECASE):
-            self.errors[ERR_HEADER].append((line_nr, 'PCall field content doesn\'t match \'callregexp\' value from rules'))
+            _err_header(line_nr, "PCall field content doesn't match 'callregexp' value from rules")
         else:
             self.callsign = _callsign[0].upper()
 
         # get & validate maidenhead locator
-        _qthlocator, line_nr = self.get_field('PWWLo')
+        _qthlocator, line_nr = _field('PWWLo')
         if not _qthlocator:
-            self.errors[ERR_HEADER].append((line_nr, 'PWWLo field is not present'))
+            _err_header(line_nr, 'PWWLo field is not present')
         elif len(_qthlocator) > 1:
-            self.errors[ERR_HEADER].append((line_nr, 'PWWLo field is present multiple times'))
+            _err_header(line_nr, 'PWWLo field is present multiple times')
         elif not self.validate_qth_locator(_qthlocator[0]):
-            self.errors[ERR_HEADER].append((line_nr, 'PWWLo field value is not valid'))
+            _err_header(line_nr, 'PWWLo field value is not valid')
         else:
             self.maidenhead_locator = _qthlocator[0].upper()
 
         # get & validate band based on generic rules and by custom rules if provided (rules.contest_band['regexp'])
-        _band, line_nr = self.get_field('PBand')
+        _band, line_nr = _field('PBand')
         if not _band:
-            self.errors[ERR_HEADER].append((line_nr, 'PBand field is not present'))
+            _err_header(line_nr, 'PBand field is not present')
         elif len(_band) > 1:
-            self.errors[ERR_HEADER].append((line_nr, 'PBand field is present multiple times'))
+            _err_header(line_nr, 'PBand field is present multiple times')
         elif not self.rules and not self.validate_band(_band[0]):
-            self.errors[ERR_HEADER].append((line_nr, 'PBand field value is not valid'))
+            _err_header(line_nr, 'PBand field value is not valid')
         elif self.rules and not self.rules_based_validate_band(_band[0], self.rules):
-            self.errors[ERR_HEADER].append((line_nr, 'PBand field value has an invalid value ({}). '
-                                                  'Not as defined in contest rules'.format(_band[0])))
+            _err_header(line_nr, 'PBand field value has an invalid value ({}). '
+                          'Not as defined in contest rules'.format(_band[0]))
         else:
             self.band = _band[0]
 
         # get & validate PSect based on generic rules and by custom rules if provided (rules.contest_category['regexp']
-        _category, line_nr = self.get_field('PSect')
+        _category, line_nr = _field('PSect')
         if not _category:
-            self.errors[ERR_HEADER].append((line_nr, 'PSect field is not present'))
+            _err_header(line_nr, 'PSect field is not present')
         elif len(_category) > 1:
-            self.errors[ERR_HEADER].append((line_nr, 'PSect field is present multiple times'))
+            _err_header(line_nr, 'PSect field is present multiple times')
         elif not self.rules and self.validate_category(_category[0]) == (False, None):
-            self.errors[ERR_HEADER].append((line_nr, 'PSect field value is not valid ({})'.format(_category[0])))
+            _err_header(line_nr, 'PSect field value is not valid ({})'.format(_category[0]))
         elif self.rules and self.rules_based_validate_category(_category[0], self.rules) == (False, None):
-            self.errors[ERR_HEADER].append((line_nr, 'PSect field value has an invalid value ({}). '
-                                          'Not as defined in contest rules'.format(_category[0])))
+            _err_header(line_nr, 'PSect field value has an invalid value ({}). '
+                          'Not as defined in contest rules'.format(_category[0]))
         else:
             self.category_raw = _category[0]
             # normalize self.category_raw
@@ -201,19 +207,18 @@ class Log(object):
                 _res, _cat = self.validate_category(self.category_raw)
                 self.category = _cat
 
-
         # get & validate TDate based on generic rules format and by custom rules if provided
         # (rules.contest_begin_date & rules.contest_end_date)
-        _date, line_nr = self.get_field('TDate')
+        _date, line_nr = _field('TDate')
         if not _date:
-            self.errors[ERR_HEADER].append((line_nr, 'TDate field is not present'))
+            _err_header(line_nr, 'TDate field is not present')
         elif len(_date) > 1:
-            self.errors[ERR_HEADER].append((line_nr, 'TDate field is present multiple times'))
+            _err_header(line_nr, 'TDate field is present multiple times')
         elif not self.validate_date(_date[0]):
-            self.errors[ERR_HEADER].append((line_nr, 'TDate field value is not valid ({})'.format(_date[0])))
+            _err_header(line_nr, 'TDate field value is not valid ({})'.format(_date[0]))
         elif self.rules and not self.rules_based_validate_date(_date[0], self.rules):
-            self.errors[ERR_HEADER].append((line_nr, 'TDate field value has an invalid value ({}). '
-                                                  'Not as defined in contest rules'.format(_date[0])))
+            _err_header(line_nr, 'TDate field value has an invalid value ({}). '
+                          'Not as defined in contest rules'.format(_date[0]))
         else:
             self.date = _date[0]
 
@@ -222,15 +227,15 @@ class Log(object):
             self.valid_header = True
 
         # validate email from [extra] @ rules
-        _email, line_nr = self.get_field('RHBBS')
+        _email, line_nr = _field('RHBBS')
         _email_valid = False
         if self.rules and 'email' in self.rules.contest_extra_fields:
             if not _email:
-                self.errors[ERR_HEADER].append((line_nr, 'RHBBS field is not present'))
+                _err_header(line_nr, 'RHBBS field is not present')
             elif len(_email) > 1:
-                self.errors[ERR_HEADER].append((line_nr, 'RHBBS is present multiple times'))
+                _err_header(line_nr, 'RHBBS is present multiple times')
             elif not self.validate_email(_email[0]):
-                self.errors[ERR_HEADER].append((line_nr, 'RHBBS field value is not valid ({})'.format(_email[0])))
+                _err_header(line_nr, 'RHBBS field value is not valid ({})'.format(_email[0]))
             else:
                 self.email = _email[0]
                 _email_valid = True
@@ -238,15 +243,15 @@ class Log(object):
                 self.valid_header = False
 
         # validate address from [extra] @ rules
-        _address, line_nr = self.get_field('PAdr1')
+        _address, line_nr = _field('PAdr1')
         _address_valid = False
         if self.rules and 'address' in self.rules.contest_extra_fields:
             if not _address:
-                self.errors[ERR_HEADER].append((line_nr, 'PAdr1 field is not present'))
+                _err_header(line_nr, 'PAdr1 field is not present')
             elif len(_address) > 1:
-                self.errors[ERR_HEADER].append((line_nr, 'PAdr1 is present multiple times'))
+                _err_header(line_nr, 'PAdr1 is present multiple times')
             elif not self.validate_address(_address[0]):
-                self.errors[ERR_HEADER].append((line_nr, 'PAdr1 field is too short ({})'.format(_address[0])))
+                _err_header(line_nr, 'PAdr1 field is too short ({})'.format(_address[0]))
             else:
                 self.address = _address[0]
                 _address_valid = True
@@ -254,15 +259,15 @@ class Log(object):
                 self.valid_header = False
 
         # validate name from [extra] @ rules
-        _name, line_nr = self.get_field('RName')
+        _name, line_nr = _field('RName')
         _name_valid = False
         if self.rules and 'name' in self.rules.contest_extra_fields:
             if not _name:
-                self.errors[ERR_HEADER].append((line_nr, 'RName field is not present'))
+                _err_header(line_nr, 'RName field is not present')
             elif len(_name) > 1:
-                self.errors[ERR_HEADER].append((line_nr, 'RName is present multiple times'))
+                _err_header(line_nr, 'RName is present multiple times')
             elif len(_name[0]) < 8:
-                self.errors[ERR_HEADER].append((line_nr, 'RName field is too short ({})'.format(_name[0])))
+                _err_header(line_nr, 'RName field is too short ({})'.format(_name[0]))
             else:
                 self.name = _name[0]
                 _name_valid = True
