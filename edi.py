@@ -23,15 +23,8 @@ from datetime import datetime, timedelta
 from dicttoxml import dicttoxml
 from validate_email import validate_email
 
-INFO_MLC = 'multi_logs_folder'
-INFO_CC = 'cross_check_folder'
-INFO_LOG = 'log'
-INFO_LOGS = 'logs'
-INFO_BANDS = 'band'
-INFO_OPERATORS = 'operators'
-ERR_IO = 'io'
-ERR_HEADER = 'header'
-ERR_QSO = 'qso'
+# Import shared constants for consistency (keeps own definitions for backward compatibility)
+from constants import INFO_MLC, INFO_CC, INFO_LOG, INFO_LOGS, INFO_BANDS, INFO_OPERATORS, ERR_IO, ERR_HEADER, ERR_QSO
 
 # Shared band patterns used by both get_band() and validate_band()
 _BAND_PATTERNS = {
