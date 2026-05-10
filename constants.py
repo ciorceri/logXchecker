@@ -27,9 +27,11 @@ ERR_IO = 'io'
 ERR_HEADER = 'header'
 ERR_QSO = 'qso'
 
-# Map user-facing format names to Python module names
+# Map user-facing format names to Python module names.
+# Each value is a fully qualified dotted module path that
+# will be lazy-imported on demand.
 FORMAT_MODULE_MAP = {
-    'EDI': 'edi',
+    'EDI': 'formats.edi',
     'ADIF': 'adif',
     'CABRILLO': 'cabrillo',
 }

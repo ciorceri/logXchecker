@@ -29,6 +29,9 @@ from constants import (
     FORMAT_MODULE_MAP,
 )
 
+# Import output formatters from the output package.
+from output import print_human_friendly_output, print_log_human_friendly, print_csv_output
+
 # SORT_OUTPUT = False  # TODO : sort the results output
 
 
@@ -85,7 +88,7 @@ class ArgumentParser(object):
 def load_log_format_module(module_name):
     """
     Lazy-load a log format module by name.
-    :param module_name: Python module name (e.g., 'edi', 'adif', 'cabrillo')
+    :param module_name: Python module name (e.g., 'formats.edi', 'adif', 'cabrillo')
     :return: the loaded module
     :raises ImportError: if the module cannot be found
     """
@@ -112,77 +115,6 @@ def _get_log_format_module(log_format):
             'Module for format "{}" ({}) is not available. '
             'Make sure the required package is installed.'.format(log_format, module_name)
         )
-
-
-def print_human_friendly_output(output, verbose=False):
-    """Will print a human-fiendly output for easy read"""
-    # single log
-    if output.get(INFO_LOG, False):
-        print_log_human_friendly(output)
-    # multi logs
-    if output.get(INFO_MLC, False):
-        print('Checking logs from folder : {}'.format(output[INFO_MLC]))
-        print('#########################')
-        for log in output[INFO_LOGS]:
-            print_log_human_friendly(log)
-            print('--------')
-    # cross check
-    if output.get(INFO_CC, False):
-        print('Cross check logs from folder : {}'.format(output[INFO_CC]))
-        print('#########################')
-        for _call, _values in output[INFO_OPERATORS].items():
-            print('Callsign : {}'.format(_call))
-            for _band, _details in _values['band'].items():
-                if _details.get('checklog', False) is True:
-                    print('   [checklog] band={} , valid={}'.format(_band, _details['valid']))
-                else:
-                    print('   band={} , valid={} , category={} , points={} , qsos_confirmed={}'.format(
-                        _band, _details['valid'], _details['category'],
-                        _details['points'], _details['qsos_confirmed']
-                    ))
-                if not verbose:
-                    continue
-                for err in _details['qso_errors']:
-                    print('   - {}'.format(err))
-            print('--------')
-
-
-def print_log_human_friendly(output):
-    """Will print human fiendly info for a log"""
-    has_errors = False
-    print('Checking log : {}'.format(output[INFO_LOG]))
-    if output[ERR_IO]:
-        print('Input/Output : {}'.format(output[ERR_IO]))
-        has_errors = True
-    if output[ERR_HEADER]:
-        print('Header errors :')
-        for err in output[ERR_HEADER]:
-            print('Line {} : {}'.format(err[0], err[1]))
-        has_errors = True
-    if output[ERR_QSO]:
-        print('QSO errors :')
-        for err in output[ERR_QSO]:
-            print('Line {} : {} <- {}'.format(err[0], err[1], err[2]))
-        has_errors = True
-
-    if has_errors is False:
-        print('No error found')
-
-
-def print_csv_output(output):
-    # cross check
-    if output.get(INFO_CC, False):
-        print('Callsign, ValidLog, Band, Category, ConfirmedQso, Points')
-        for _call, _values in output[INFO_OPERATORS].items():
-            for _band, _details in _values['band'].items():
-                if not _details.get('checklog', False) is True:
-                    print('{}, {}, {}, {}, {}, {}'.format(
-                        _call, _details['valid'], _band,
-                        _details['category'], _details['qsos_confirmed'], _details['points']
-                    ))
-    else:
-        # TODO: implement CSV output for single-log and multi-log modes
-        raise NotImplementedError('CSV output is only implemented for cross-check mode')
 
 
 def main():
