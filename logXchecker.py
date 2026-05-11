@@ -1,5 +1,5 @@
 """
-Copyright 2016-2022 Ciorceri Petru Sorin (yo5pjb)
+Copyright 2016-2026 Ciorceri Petru Sorin (yo5pjb)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import importlib
 import os
 import sys
 
-import rules as _rules
 import version
 
 # Import shared constants (no hard dependency on any optional format module)
@@ -33,6 +32,26 @@ from constants import (
 from output import print_human_friendly_output, print_log_human_friendly, print_csv_output
 
 # SORT_OUTPUT = False  # TODO : sort the results output
+
+
+# Map log format to the corresponding rules class.
+# Each value is a dotted path to a class, e.g. 'rules_vhf.RulesVhf'.
+FORMAT_RULES_MAP = {
+    'EDI': 'rules_vhf.RulesVhf',
+    'CABRILLO': 'rules_hf.RulesHf',
+}
+
+
+def _get_rules_class(log_format):
+    """Return the appropriate Rules sub-class for the given log format."""
+    cls_path = FORMAT_RULES_MAP.get(log_format)
+    if not cls_path:
+        # fallback: use the base Rules class
+        import rules as _rules
+        return _rules.Rules
+    module_name, class_name = cls_path.rsplit('.', 1)
+    mod = importlib.import_module(module_name)
+    return getattr(mod, class_name)
 
 
 class ArgumentParser(object):
@@ -124,8 +143,27 @@ def main():
 
     rules = None
     if args.rules:
-        rules = _rules.Rules(args.rules)
-        log_format = rules.contest_log_format
+        # Detect the log format from the INI file first, then load the
+        # appropriate rules class (VHF or HF).
+        # We read the INI file quickly to get the [log] format field.
+        try:
+            with open(args.rules, 'r') as f:
+                ini_content = f.read()
+        except IOError:
+            print('Cannot open rules file: {}'.format(args.rules))
+            sys.exit(1)
+
+        import configparser
+        interim = configparser.ConfigParser()
+        interim.read_string(ini_content)
+        try:
+            log_format = interim['log']['format'].upper()
+        except (KeyError, configparser.Error):
+            print('Rules file does not have a [log] section with a format field')
+            sys.exit(1)
+
+        RulesClass = _get_rules_class(log_format)
+        rules = RulesClass(args.rules)
     elif args.format:
         log_format = args.format
     else:
