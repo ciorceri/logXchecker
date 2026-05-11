@@ -96,6 +96,7 @@ HEADER_FIELDS_CABRILLO = {
 CABRILLO_MODE_ALIASES = {
     'SSB': 'SSB',
     'PHONE': 'SSB',
+    'PH': 'SSB',
     'LSB': 'SSB',
     'USB': 'SSB',
     'CW': 'CW',
