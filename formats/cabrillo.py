@@ -517,8 +517,8 @@ class LogQso(object):
         where trailing fields after the exchange are ignored.
     """
 
-    # Cabrillo V2 regex pattern (whitespace-separated)
-    REGEX_V2_QSO = (
+    # Cabrillo V2/V3 regex pattern (whitespace-separated)
+    REGEX_V2_V3_QSO = (
         r'^QSO:\s+'                           # QSO: marker
         r'(\d+(?:\.\d+)?)\s+'                 # 1  frequency (Hz or MHz)
         r'(\S+)\s+'                           # 2  mode
@@ -527,27 +527,13 @@ class LogQso(object):
         r'(\S+)\s+'                           # 5  station A callsign
         r'(\S+)\s+'                           # 6  rst sent
         r'(\S+)\s+'                           # 7  nr sent
-        r'(\S+)\s+'                           # 8  station B callsign
-        r'(\S+)\s+'                           # 9  rst recv
-        r'(\S+)'                              # 10 nr recv
-        r'(?:\s+(.*))?$'                      # 11 optional exchange
+        r'(\S+)\s+'                           # 8  county
+        r'(\S+)\s+'                           # 9  station B callsign
+        r'(\S+)\s+'                           # 10 rst recv
+        r'(\S+)'                              # 11 nr recv
+        r'(?:\s+(.*))?$'                      # 12 optional exchange
     )
 
-    # Cabrillo V3 regex pattern (semicolon-separated)
-    REGEX_V3_QSO = (
-        r'^QSO:\s+'
-        r'([^;]+);'                           # 1  frequency
-        r'([^;]+);'                           # 2  mode
-        r'([^;]+);'                           # 3  date YYYY-MM-DD
-        r'([^;]+);'                           # 4  time HHMM
-        r'([^;]+);'                           # 5  station A callsign
-        r'([^;]+);'                           # 6  rst sent
-        r'([^;]+);'                           # 7  nr sent
-        r'([^;]+);'                           # 8  station B callsign
-        r'([^;]+);'                           # 9  rst recv
-        r'([^;]+)'                            # 10 nr recv
-        r'(?:;(.*))?$'                        # 11 optional exchange
-    )
 
     def __init__(self, qso_line=None, qso_line_number=None, rules=None):
         self.qso_line = qso_line
@@ -566,9 +552,10 @@ class LogQso(object):
                            'mode': None,
                            'rst_sent': None,
                            'nr_sent': None,
+                           'county_sent': None,
                            'rst_recv': None,
                            'nr_recv': None,
-                           'exchange_recv': None,
+                           'county_recv': None,
                            'wwl': '',
                            'points': None,
                            'new_exchange': None,
@@ -600,16 +587,12 @@ class LogQso(object):
     def parse_qso_fields(self):
         """Parse QSO fields from the matched regex groups."""
         # Try V2 first, then V3
-        m = re.match(self.REGEX_V2_QSO, self.qso_line, re.IGNORECASE)
+        m = re.match(self.REGEX_V2_V3_QSO, self.qso_line, re.IGNORECASE)
         if m:
-            self._assign_fields_v2(m)
-            return
+            self._assign_fields_v2_v3(m)
 
-        m = re.match(self.REGEX_V3_QSO, self.qso_line, re.IGNORECASE)
-        if m:
-            self._assign_fields_v3(m)
 
-    def _assign_fields_v2(self, m):
+    def _assign_fields_v2_v3(self, m):
         freq = m.group(1)
         mode = m.group(2)
         date_raw = m.group(3)   # YYYY-MM-DD
@@ -617,10 +600,11 @@ class LogQso(object):
         call_a = m.group(5).upper()
         rst_a = m.group(6)
         nr_a = m.group(7)
-        call_b = m.group(8).upper()
-        rst_b = m.group(9)
-        nr_b = m.group(10)
-        exchange = m.group(11) or ''
+        county_a = m.group(8)
+        call_b = m.group(9).upper()
+        rst_b = m.group(10)
+        nr_b = m.group(11)
+        county_b = m.group(12) or ''
 
         # The "call" field in qso_fields is the OTHER station's callsign
         self.qso_fields['call'] = call_b
@@ -631,33 +615,11 @@ class LogQso(object):
         self.qso_fields['mode'] = normalize_cabrillo_mode(mode)
         self.qso_fields['rst_sent'] = rst_a
         self.qso_fields['nr_sent'] = nr_a
+        self.qso_fields['county_sent'] = county_a
         self.qso_fields['rst_recv'] = rst_b
         self.qso_fields['nr_recv'] = nr_b
-        self.qso_fields['exchange_recv'] = exchange
-        # wwl is not available in Cabrillo — leave as empty string
+        self.qso_fields['county_recv'] = county_b
 
-    def _assign_fields_v3(self, m):
-        freq = m.group(1)
-        mode = m.group(2)
-        date_raw = m.group(3)   # YYYY-MM-DD
-        hour = m.group(4)       # HHMM
-        call_a = m.group(5).upper()
-        rst_a = m.group(6)
-        nr_a = m.group(7)
-        call_b = m.group(8).upper()
-        rst_b = m.group(9)
-        nr_b = m.group(10)
-        exchange = m.group(11) or ''
-
-        self.qso_fields['call'] = call_b
-        self.qso_fields['date'] = date_raw[2:4] + date_raw[5:7] + date_raw[8:10]
-        self.qso_fields['hour'] = hour
-        self.qso_fields['mode'] = normalize_cabrillo_mode(mode)
-        self.qso_fields['rst_sent'] = rst_a
-        self.qso_fields['nr_sent'] = nr_a
-        self.qso_fields['rst_recv'] = rst_b
-        self.qso_fields['nr_recv'] = nr_b
-        self.qso_fields['exchange_recv'] = exchange
 
     @classmethod
     def regexp_qso_validator(cls, line):
@@ -667,9 +629,8 @@ class LogQso(object):
         if not line.upper().startswith('QSO:'):
             return 'QSO line does not start with QSO:'
         # Must match either V2 or V3 regex
-        m2 = re.match(cls.REGEX_V2_QSO, line, re.IGNORECASE)
-        m3 = re.match(cls.REGEX_V3_QSO, line, re.IGNORECASE)
-        if not m2 and not m3:
+        m = re.match(cls.REGEX_V2_V3_QSO, line, re.IGNORECASE)
+        if not m:
             return 'Incorrect QSO line format'
         return None
 
@@ -821,7 +782,6 @@ class LogQso(object):
 # ── Cross-check functions ──────────────────────────────────────────────
 
 def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_folder=None):
-    # TODO : to review !
     if not rules:
         print('No rules were provided')
         return {}
