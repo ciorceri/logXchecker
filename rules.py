@@ -232,3 +232,39 @@ class Rules(object):
         if field in self.contest_extra_fields:
             return self.config['extra'][field]
         return None
+
+    # ── Scoring properties ──────────────────────────────────────────────
+
+    @property
+    def contest_qso_points(self):
+        """
+        Points awarded for a regular QSO (default 1).
+        Set in [scoring] section as qso_points.
+        """
+        try:
+            return int(self.config['scoring']['qso_points'])
+        except (KeyError, ValueError):
+            return 1
+
+    @property
+    def contest_special_qso_points(self):
+        """
+        Points awarded for a QSO with the special station (default 0).
+        Set in [scoring] section as special_qso_points.
+        """
+        try:
+            return int(self.config['scoring']['special_qso_points'])
+        except (KeyError, ValueError):
+            return 0
+
+    @property
+    def contest_special_callsign(self):
+        """
+        Callsign of the special station that awards bonus points.
+        Set in [scoring] section as special_callsign.
+        Returns None if not configured.
+        """
+        try:
+            return str(self.config['scoring']['special_callsign']).upper()
+        except (KeyError, ValueError):
+            return None

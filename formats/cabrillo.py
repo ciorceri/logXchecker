@@ -819,8 +819,9 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
             _logs = _ham.logs_by_band_regexp(rules.contest_band(band)['regexp'])
             mark_older_logs(_logs)
 
+    confirmed_pairs = set()
     for band in range(1, rules.contest_bands_nr + 1):
-        crosscheck_logs(operator_instances, rules, band)
+        crosscheck_logs(operator_instances, rules, band, confirmed_pairs)
 
     for op, op_inst in operator_instances.items():
         for log in op_inst.logs:
@@ -836,8 +837,11 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
     return operator_instances
 
 
-def crosscheck_logs(operator_instances, rules, band_nr):
+def crosscheck_logs(operator_instances, rules, band_nr, confirmed_pairs):
     """Cross-check QSOs between operators on a given band."""
+    special_callsign = rules.contest_special_callsign
+    qso_points_normal = rules.contest_qso_points
+    qso_points_special = rules.contest_special_qso_points
     for callsign1, ham1 in operator_instances.items():
         _had_qso_with = []
         _logs1 = ham1.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
@@ -916,7 +920,21 @@ def crosscheck_logs(operator_instances, rules, band_nr):
                     continue
 
                 _had_qso_with.append('{}-period{}'.format(callsign2, inside_period_nr2))
-                qso1.points = distance * int(rules.contest_band(band_nr)['multiplier'])
+                # Scoring: apply contest-specific rules
+                if callsign2 == special_callsign:
+                    # YR20RRO = 10 points per band (different band = another 10)
+                    qso1.points = qso_points_special
+                elif qso_points_normal != 1:
+                    # Regular nominated station: 5 points, once per mode across all bands
+                    pair_key = (qso1.qso_fields['mode'], min(callsign1, callsign2), max(callsign1, callsign2))
+                    if pair_key not in confirmed_pairs:
+                        confirmed_pairs.add(pair_key)
+                        qso1.points = qso_points_normal
+                    else:
+                        qso1.points = 0
+                else:
+                    # Default (backward-compatible): 1 point per QSO
+                    qso1.points = distance * int(rules.contest_band(band_nr)['multiplier'])
                 qso1.cc_confirmed = True
                 qso1.cc_error = []
                 break
