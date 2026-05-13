@@ -804,6 +804,7 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
             print('Cannot open checklogs folder : {}'.format(checklogs_folder))
             return {}
 
+    # create instances for all hams and add logs with valid header
     operator_instances = {}
     for log in logs_instances:
         if not log.valid_header:
@@ -813,16 +814,20 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
         if not operator_instances.get(callsign, None):
             operator_instances[callsign] = Operator(callsign)
         operator_instances[callsign].add_log_instance(log)
-
+    
+    # if we find multiple logs for a ham on a band
+    # we set Log.ignore_this_log for older files
     for band in range(1, rules.contest_bands_nr + 1):
         for _, _ham in operator_instances.items():
             _logs = _ham.logs_by_band_regexp(rules.contest_band(band)['regexp'])
             mark_older_logs(_logs)
 
+    # do the corss-check over filtered logs
     confirmed_pairs = set()
     for band in range(1, rules.contest_bands_nr + 1):
         crosscheck_logs(operator_instances, rules, band, confirmed_pairs)
 
+    # calculate points in every logs
     for op, op_inst in operator_instances.items():
         for log in op_inst.logs:
             points = 0
@@ -834,12 +839,38 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
             log.qsos_points = points
             log.qsos_confirmed = confirmed
 
+    # ── Multiplier processing -> [rules][scoring]multiplier_enabled=true ────────────────
+    if rules.contest_multiplier_enabled:
+        exchange_field = rules.contest_multiplier_exchange_field
+        special_exchange = rules.contest_multiplier_special_exchange
+        for op, op_inst in operator_instances.items():
+            unique_multipliers = set()
+            for log in op_inst.logs:
+                for qso in log.qsos:
+                    if not qso.cc_confirmed or not (qso.points and qso.points > 0):
+                        continue
+                    # Get the exchange value from the partner's QSO
+                    exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
+                    if not exchange_val:
+                        continue
+                    if special_exchange and exchange_val == special_exchange:
+                        # Category A station: use partner's callsign as multiplier
+                        partner_call = qso.qso_fields.get('call', '').upper()
+                        if partner_call:
+                            unique_multipliers.add(('CAT_A', partner_call))
+                    else:
+                        # Regular station: use the county/exchange value as multiplier
+                        unique_multipliers.add(('COUNTY', exchange_val))
+            for log in op_inst.logs:
+                log.multiplier_count = len(unique_multipliers)
+                log.final_score = log.qsos_points * log.multiplier_count if log.qsos_points else 0
+
     return operator_instances
 
 
 def crosscheck_logs(operator_instances, rules, band_nr, confirmed_pairs):
     """Cross-check QSOs between operators on a given band."""
-    special_callsign = rules.contest_special_callsign
+    special_callsign_list = rules.contest_special_callsign
     qso_points_normal = rules.contest_qso_points
     qso_points_special = rules.contest_special_qso_points
     for callsign1, ham1 in operator_instances.items():
@@ -921,7 +952,7 @@ def crosscheck_logs(operator_instances, rules, band_nr, confirmed_pairs):
 
                 _had_qso_with.append('{}-period{}'.format(callsign2, inside_period_nr2))
                 # Scoring: apply contest-specific rules
-                if callsign2 == special_callsign:
+                if callsign2.upper() in special_callsign_list:
                     # YR20RRO = 10 points per band (different band = another 10)
                     qso1.points = qso_points_special
                 elif qso_points_normal != 1:

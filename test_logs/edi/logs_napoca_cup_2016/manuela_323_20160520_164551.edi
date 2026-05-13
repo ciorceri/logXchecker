@@ -1,0 +1,50 @@
+[REGITEST;1]
+TName=Concurs Cluj Napoca
+TDate=20160508;20160508
+PCall=YO5OJC
+PWWLo=kn17wp
+PExch=
+PAdr1= pasul rotunda
+PAdr2= 
+PSect=single 
+PBand=432
+PClub=
+RName= molnar ioan
+RCall=yo5ojc 
+RName= molnar ioan
+RAdr1= zimbrului nr 61a
+RAdr2= 
+RPoCo= 
+RCity= sighetu-marmatiei
+RCoun= romania
+RPhon= 
+RAdr1= zimbrului nr 61a
+RHBBS=
+MOpe1=
+MOpe2=
+STXEq=
+SPowe=50w
+SRXEq=
+SAnte=2
+SAntH=dk7zb;home made
+CQSOs=6;1
+CQSOP=515
+CWWLs=;0;1
+CWWLB=0
+CExcs=0;0;1
+CExcB=0
+CDXCs=;0;1
+CDXCB=0
+CToSc=6416
+CODXC=YO6OBK;KN26TR;167
+[Remarks]
+
+
+
+[QSORecords;6]
+20160508;0603;YO5PVA;1;59;007;59;001;;KN27FH;58;;;;;
+20160508;0603;YO5KAS;1;59;004;59;002;;KN16SQ;110;;;;;
+20160508;0735;YO5KLD;1;59;017;59;003;;KN17UL;23;;;;;
+20160508;0737;YO6OBK;1;59;009;59;004;;KN26TR;167;;;;;
+20160508;0751;YO5CRI;1;59;008;59;005;;KN16TS;99;;;;;
+20160508;0757;YO5PLP/P;1;59;008;59;006;;KN27FH;58;;;;;

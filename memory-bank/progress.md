@@ -24,7 +24,8 @@
 - Scoring system:
   - Default: 1 point per confirmed QSO (legacy)
   - Configurable: regular QSO points, special station bonus points
-  - YR20RRO rules: 10 pts per YR20RRO QSO per band, 5 pts per regular station once per mode
+  - YR20RRO rules: 2 pts per confirmed QSO, multiplier-based scoring (counties + Category A stations)
+  - Multiplier system: `multiplier_enabled`, `multiplier_exchange_field`, `multiplier_special_exchange`
 
 ### Rules Engine
 - Generic and contest-specific validation for dates, hours, modes, bands
@@ -53,10 +54,12 @@
 - `test_formatters.py` added with 19 tests covering all output formatter functions
 
 ## Current Status
-The project is actively developed with a focus on supporting the **YR20RRO Diploma** contest (Romanian 20th anniversary contest, April 27 - May 12, 2024). The Cabrillo parser and cross-check are functional and have been verified with 88 real contest logs with a confirmation rate of ~84.8%. Scoring system is implemented with configurable regular QSO points (5) and special station bonus points (10 for YR20RRO).
+The project is actively developed with a focus on supporting the **YR20RRO Diploma** contest (Romanian 20th anniversary contest, April 27 - May 12, 2024). The Cabrillo parser and cross-check are functional and have been verified with 88 real contest logs with a confirmation rate of ~84.8%. Scoring system is implemented with configurable regular QSO points (2), multiplier-based scoring (counties + Category A RRO stations), and post-processing for final score calculation.
 
 ## Known Issues
 1. Scoring path detection uses `qso_points_normal != 1` which is fragile — should check for `[scoring]` section existence instead
+>>>>>>>
+
 2. Cabrillo `validate_band()` and `validate_date()` methods are implemented but never called
 3. Cabrillo regex expects county exchange field — may break for logs without county data
 4. Category regex patterns in Cabrillo are hardcoded to match EDI-like values (SINGLE, MULTI, CHECKLOG)
@@ -64,5 +67,8 @@ The project is actively developed with a focus on supporting the **YR20RRO Diplo
 6. `validate_email()` in Cabrillo imports `validate_email` library but the function is never called
 
 ## Evolution of Project Decisions
-- **<2026**: Original project supported only EDI format for VHF contests
+- **2025**: Original project supported only EDI format for VHF contests
 - **2026 Q1**: Added Cabrillo V2/V3 parser for HF contests
+- **2026 Q2 (April)**: Added PH→SSB mode alias for Romanian contest logs
+- **2026 Q2 (May)**: Added configurable scoring system for YR20RRO Diploma contest; added test_formatters.py with 19 tests
+- **2026 Q2 (May)**: Unified Cabrillo V2 & V3 parser; added 88 YR20RRO test logs; full cross-check verified with ~84.8% confirmation rate

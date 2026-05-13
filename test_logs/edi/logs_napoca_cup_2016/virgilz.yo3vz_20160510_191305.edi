@@ -1,0 +1,41 @@
+[REG1TEST;1]
+TName=CUPA NAPOCA
+TDate=20160507;20160508
+PCall=YO3VZ
+PWWLo=KN25TF
+PExch=KN25TF
+PAdr1=
+PAdr2=
+PSect=SINGLE 
+PBand=430 MHz
+PClub=RADIOCLUB MUNICIPAL BUCURESTI
+RName=Virgil Zorila
+RCall=YO3VZ
+RAdr1=Str. Ghiosesti nr. 279, Comarnic, Prahova, 105700
+RAdr2=
+RPoCo=
+RCity=
+RCoun=Romania
+RPhon=
+RHBBS=virgilz.yo3vz@gmail.com
+MOpe1=YO3VZ
+MOpe2=
+STXEq=
+SPowe=0
+SRXEq=
+SAnte=
+SAntH=0;0
+CQSOs=1;1
+CQSOP=25
+CWWLs=1;0;1
+CWWLB=0
+CExcs=0;0;1
+CExcB=0
+CDXCs=1;0;1
+CDXCB=0
+CToSc=25
+CODXC=YO9AYN/P;KN25SA;25
+[Remarks]
+[QSORecords;1]
+160508;1048;YO9AYN/P;1;59;001;59;003;;KN25SA;25;;N;N;
+[END; UcxLog 7.16]

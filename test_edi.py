@@ -1331,7 +1331,6 @@ TDate=20130803;20130806
              patch('os.path.getmtime', side_effect=[100.0, 200.0]), \
              patch('builtins.open', fake_open, create=True):
             operator_instances = edi.crosscheck_logs_filter(edi.Log, _rules, logs_folder='logs')
-
         self.assertSetEqual(set(operator_instances.keys()), {'YO5AAA', 'YO5BBB'})
         self.assertEqual(1, operator_instances['YO5AAA'].logs[0].qsos_points)
         self.assertEqual(1, operator_instances['YO5AAA'].logs[0].qsos_confirmed)

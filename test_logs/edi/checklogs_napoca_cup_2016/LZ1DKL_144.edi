@@ -1,0 +1,64 @@
+[REG1TEST;1]
+TName=Ден на радиото
+TDate=20160507;20160507
+PCall=LZ1DKL
+PWWLo=KN12QQ
+PExch=
+PAdr1=
+PAdr2=
+PSect=SINGLE
+PBand=145 MHz
+PClub=
+RName=Kalin Dimitrov
+RCall=LZ1DKL
+RAdr1=
+RAdr2=
+RPoCo=
+RCity=
+RCoun=
+RPhon=
+RHBBS=kld@tu-sofia.bg
+MOpe1=
+MOpe2=
+STXEq=Yaesu 857, dipole
+SPowe=
+SRXEq=
+SAnte=
+SAntH=
+CQSOs=5;1
+CQSOP=70
+CWWLs=1;0;1
+CWWLB=
+CExcs=;;;
+CExcB=
+CDXCs=
+CDXCB=
+CToSc=70
+CODXC=LZ2HQ;KN12KR;42
+[Remarks]
+nalTName=1;1;1
+nalPClubname=
+nalPreg=
+nalPregk=
+nalKateg=3
+nalOpName1=!;;
+nalOpCall1=LZ1DKL
+nalOpYear1=  .  .
+nalOpRazr1=0
+nalOpTrnr1=
+nalOpAdr11=
+nalOpAdr21=
+nalOpPoCo1=
+nalOpCity1=
+nalOpCoun1=
+nalOpPhon1=
+nalOpHBBS1=
+nalSkmp=
+nalSdop=''
+[QSORecords;5]
+160507;1900;LZ5ZX;6;599;001;59;002;;KN12PP;9;;N;;
+160507;1902;LZ1MW;6;59;002;59;005;;KN12PQ;7;;;;
+160507;1916;LZ3PZ;6;59;003;59;001;;KN12PQ;7;;;;
+160507;2000;LZ3A;1;59;004;59;057;;KN12QP;5;;;;
+160507;2002;LZ2HQ;1;59;005;59;048;;KN12KR;42;;;;
+[END;PaperQSO version 0.0.9.803]

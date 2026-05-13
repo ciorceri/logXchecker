@@ -1,0 +1,42 @@
+[REG1TEST;1]
+TName=2. subregionalni zavod 2016
+TDate=20160507;20160508
+PCall=LZ1XE
+PWWLo=KN12PQ
+PExch=
+PAdr1=Sofia
+PAdr2=
+PSect=CHECK
+PBand=144 MHz
+PClub=
+RName=Petko Markov
+RCall=
+RAdr1=
+RAdr2=
+RPoCo=
+RCity=
+RCoun=Bulgaria
+RPhon=
+RHBBS=
+MOpe1=
+MOpe2=
+STXEq=FT-290RII
+SPowe=2.5
+SRXEq=1
+SAnte=GP
+SAntH=1;1
+CQSOs=2;1
+CQSOP=10
+CWWLs=0;0;1
+CWWLB=0
+CsExcs=0;0;1
+CExcB=0
+CDXCs=0;0;1
+CDXCB=0
+CToSc=10
+CODXC=LZ3A;KN12QP;9
+[Remarks]
+Online EDI Generator ver 0.3, http://ok2kjt.net/edi
+[QSORecords;2]
+160508;0854;LZ1JH;1;59;001;59;052;;KN12PQ;1;;;;
+160508;1023;LZ3A;1;59;002;59;095;;KN12QP;9;;;;

@@ -1,0 +1,43 @@
+[REG1TEST;1]
+TName=VHF Region 1
+TDate=20160511;20160512
+PCall=LZ2EHO
+PWWLo=KN13NF
+PExch=001
+PAdr1=k. Zaryanitsa ,bl-28,et.3
+PAdr2=
+PSect=SINGLE
+PBand=144 MHz
+PClub=
+RName=Emil Raykov
+RCall=LZ2EHO
+RAdr1=k. Zaryanitsa ,bl-28,et.3
+RAdr2=
+RPoCo=3500
+RCity=Berkovitsa 
+RCoun=Bulgaria
+RPhon=
+RHBBS=nil
+MOpe1=
+MOpe2=
+STXEq=Baofeng UV82
+SPowe=5W
+SRXEq=Baofeng UV82
+SAnte=3el.yagi
+SAntH=2.5m.;160m
+CQSOs=3;1
+CQSOP=195
+CWWLs=2;0;1
+CWWLB=0
+CExcs=0;0;1
+CExcB=0
+CDXCs=1;0;1
+CDXCB=0
+CToSc=195
+CODXC=LZ2VR;KN14GA;100
+[Remarks]
+
+[QSORecords;3]
+160507;1450;LZ2ZY;6;59;001;59;012;;KN13OT;66;;;;
+160507;1457;LZ2CM;6;59;002;59;008;;KN13OL;29;;;;
+160507;1635;LZ2VR;6;59;003;59;003;;KN14GA;100;;;;

@@ -1,0 +1,44 @@
+[REG1TEST;1]
+TName=Cupa Napoca
+TDate=20160507;20160508
+PCall=YO8RHM/P
+PWWLo=KN37GR
+PExch=
+PAdr1=Botosani
+PAdr2=
+PSect=SINGLE
+PBand=432 MHz
+PClub=YO8KGL
+RName=Mihai Mugurel
+RCall=YO8RHM
+RAdr1=Ghe. Filipescu nr.13 sc.B ap.
+RAdr2=
+RPoCo=710367
+RCity=Botosani
+RCoun=Romania
+RPhon=
+RHBBS=yo8rhm@yahoo.com
+MOpe1=
+MOpe2=
+STXEq=FT847
+SPowe=50
+SRXEq=FT847
+SAnte=19el DK7ZB
+SAntH=7;310
+CQSOs=3;1
+CQSOP=377
+CWWLs=2;0;1
+CWWLB=0
+CExcs=0;0;1
+CExcB=0
+CDXCs=1;0;1
+CDXCB=0
+CToSc=377
+CODXC=YO5ER/P;KN27FH;164
+[Remarks]
+
+[QSORecords;3]
+160507;1415;YO5ER/P;1;59;001;59;001;;KN27FH;164;;N;N;
+160507;1514;YO8KRR/P;1;59;002;59;001;;KN27SK;82;;;;
+160507;1546;YO6OBK;1;59;003;59;001;;KN26TR;131;;N;;
+[END;VUSC for Win by OK1DIX, version 6.41]

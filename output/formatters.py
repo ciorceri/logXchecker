@@ -66,10 +66,19 @@ def print_human_friendly_output(output, verbose=False):
                 if _details.get('checklog', False) is True:
                     print('   [checklog] band={} , valid={}'.format(_band, _details['valid']))
                 else:
-                    print('   band={} , valid={} , category={} , points={} , qsos_confirmed={}'.format(
-                        _band, _details['valid'], _details['category'],
-                        _details['points'], _details['qsos_confirmed']
-                    ))
+                    multipliers = _details.get('multipliers')
+                    final_score = _details.get('final_score')
+                    if multipliers is not None and final_score is not None:
+                        print('   band={} , valid={} , category={} , points={} , qsos_confirmed={} , multipliers={} , final_score={}'.format(
+                            _band, _details['valid'], _details['category'],
+                            _details['points'], _details['qsos_confirmed'],
+                            multipliers, final_score
+                        ))
+                    else:
+                        print('   band={} , valid={} , category={} , points={} , qsos_confirmed={}'.format(
+                            _band, _details['valid'], _details['category'],
+                            _details['points'], _details['qsos_confirmed']
+                        ))
                 if not verbose:
                     continue
                 for err in _details['qso_errors']:

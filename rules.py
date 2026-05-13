@@ -260,11 +260,50 @@ class Rules(object):
     @property
     def contest_special_callsign(self):
         """
-        Callsign of the special station that awards bonus points.
+        Callsigns list of the special station that awards bonus points.
         Set in [scoring] section as special_callsign.
-        Returns None if not configured.
+        Returns [] if not configured.
         """
         try:
-            return str(self.config['scoring']['special_callsign']).upper()
+            sp_callsigns = str(self.config['scoring']['special_callsign']).upper()
+            return [s.strip() for s in sp_callsigns.split(',')]
         except (KeyError, ValueError):
+            return []
+
+    # ── Multiplier properties ──────────────────────────────────────────
+
+    @property
+    def contest_multiplier_enabled(self):
+        """
+        Whether multiplier-based scoring is active (default False).
+        Set in [scoring] section as multiplier_enabled.
+        When True, final score = qso_points * unique_multiplier_count.
+        """
+        try:
+            return self.config['scoring'].getboolean('multiplier_enabled')
+        except (KeyError, ValueError):
+            return False
+
+    @property
+    def contest_multiplier_exchange_field(self):
+        """
+        Name of the QSO field to use for multiplier counting (default 'county_recv').
+        Set in [scoring] section as multiplier_exchange_field.
+        """
+        try:
+            return self.config['scoring']['multiplier_exchange_field']
+        except KeyError:
+            return 'county_recv'
+
+    @property
+    def contest_multiplier_special_exchange(self):
+        """
+        Exchange value that identifies a special (Category A) station
+        whose callsign is used as a multiplier instead of the exchange value.
+        Returns None if not configured.
+        Set in [scoring] section as multiplier_special_exchange.
+        """
+        try:
+            return self.config['scoring']['multiplier_special_exchange'].upper()
+        except KeyError:
             return None

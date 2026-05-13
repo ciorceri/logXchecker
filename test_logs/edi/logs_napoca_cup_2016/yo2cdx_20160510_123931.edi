@@ -1,0 +1,45 @@
+[REG1TEST;1]
+TName=Cupa Napoca
+TDate=20160507;20160508
+PCall=YO2CDX
+PWWLo=KN05WQ
+PExch=
+PAdr1=
+PAdr2=
+PSect=single
+PBand=435 MHz
+PClub=videocolor Tm
+RName=Claudiu Iacob
+RCall=
+Radr1=Lugoj str C.D.Loga
+Radr2=Jud.Timis
+RPoCo=
+RCity=
+RCoun=Romania
+RPhon=
+RHBBS=yo2cdx@yahoo.com
+MOpe1=
+MOpe2=
+STXEq=ft897d
+SPowe=50W
+SRXEq=
+SAnte=5+8ele DK7ZB
+SAntH=16;120
+CQSOs=3,1
+CQSOP=239
+CWWLs=
+CWWLB=
+CExcs=
+CExcB=
+CDXCs=
+CDXCB=
+CToSc=239
+CODXC=YO5KDX/P;KN16NH;118
+[Remarks]
+
+
+
+[QSORecords;3]
+160507;1615;YU7ACO;1;59;001;59;012;;KN05QC;75;;;;
+160508;0942;YO2GL;1;59;002;59;010;;KN05PS;46;;;;
+160508;1102;YO5KDX/P;1;59;003;59;027;;KN16NH;118;;;;

@@ -62,11 +62,14 @@ else → distance * multiplier (default 1 point per QSO, legacy)
 - YR20RRO special station gets separate per-band dedup via `_had_qso_with`
 
 #### Scoring Configuration (rules INI `[scoring]` section)
-| Field                | Type | Default | Description                             |
-|----------------------|------|---------|-----------------------------------------|
-| `qso_points`         | int  | 1       | Points for a regular confirmed QSO      |
-| `special_qso_points` | int  | 0       | Points for QSO with the special station |
-| `special_callsign`   | str  | None    | Callsign of the special/bonus station   |
+| Field                         | Type    | Default         | Description                                      |
+|-------------------------------|---------|-----------------|--------------------------------------------------|
+| `qso_points`                  | int     | 1               | Points for a regular confirmed QSO               |
+| `special_qso_points`          | int     | 0               | Points for QSO with the special station          |
+| `special_callsign`            | str     | None            | Callsign of the special/bonus station            |
+| `multiplier_enabled`          | bool    | false           | Enable multiplier-based scoring (score = pts × mults) |
+| `multiplier_exchange_field`   | str     | 'county_recv'   | QSO field name containing the exchange value     |
+| `multiplier_special_exchange` | str     | None            | Exchange value indicating Category A station     |
 
 Scoring properties are defined in `Rules` base class (`rules.py`) with `@property` decorators that read from `self.config['scoring']` and return safe defaults on `KeyError`/`ValueError`.
 

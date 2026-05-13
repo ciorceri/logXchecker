@@ -1,0 +1,43 @@
+[REG1TEST;1]
+TName=Day of radio
+TDate=20160507;20160508
+PCall=LZ1UK
+PWWLo=KN22HI
+PExch=
+PAdr1=Nedelevo
+PAdr2=
+PSect=SINGLE
+PBand=144 MHz
+PClub=
+RName=Savko Dimitrov
+RCall=
+RAdr1=
+RAdr2=
+RPoCo=
+RCity=
+RCoun=Bulgaria
+RPhon=
+RHBBS=
+MOpe1=
+MOpe2=
+STXEq=1
+SPowe=1
+SRXEq=1
+SAnte=1
+SAntH=1;1
+CQSOs=3;1
+CQSOP=154
+CWWLs=0;0;1
+CWWLB=0
+CsExcs=0;0;1
+CExcB=0
+CDXCs=0;0;1
+CDXCB=0
+CToSc=154
+CODXC=LZ1VQ;KN21QT;87
+[Remarks]
+Online EDI Generator ver 0.3, http://ok2kjt.net/edi
+[QSORecords;3]
+160508;0618;LZ7J;1;59;001;59;068;;KN22HB;33;;;;
+160508;0655;LZ1VQ;2;599;002;599;016;;KN21QT;87;;;;
+160508;0722;LZ1GJ;1;59;003;59;022;;KN22IB;34;;;;

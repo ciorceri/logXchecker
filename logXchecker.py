@@ -153,6 +153,7 @@ def main():
             print('Cannot open rules file: {}'.format(args.rules))
             sys.exit(1)
 
+        # mandatory : is rules files exists -> get log format (edi, cabrillo) from the INI content
         import configparser
         interim = configparser.ConfigParser()
         interim.read_string(ini_content)
@@ -161,7 +162,6 @@ def main():
         except (KeyError, configparser.Error):
             print('Rules file does not have a [log] section with a format field')
             sys.exit(1)
-
         RulesClass = _get_rules_class(log_format)
         rules = RulesClass(args.rules)
     elif args.format:
@@ -237,6 +237,8 @@ def main():
                     'valid': _log.valid_header,
                     'category': _log.category,
                     'checklog': _log.use_as_checklog,
+                    'multipliers': getattr(_log, 'multiplier_count', None),
+                    'final_score': getattr(_log, 'final_score', None),
                 }
                 if args.verbose is True:
                     _cc_errors = []

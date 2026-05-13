@@ -1,0 +1,45 @@
+[REG1TEST;1]
+TName=Day of the Radio
+TDate=20160507;20160508
+PCall=LZ7J
+PWWLo=KN22HB
+PExch=
+PAdr1=Brestovitza
+PAdr2=
+PSect=MULTI
+PBand=1,3 GHz
+PClub=LZ1KSP
+RName=Georgi Nestorov
+RCall=LZ1ZP
+RAdr1=p.o.box 185
+RAdr2=
+RPoCo=4000
+RCity=Plovdiv
+RCoun=Bulgaria
+RPhon=
+RHBBS=nestorov.georgi@gmail.com
+MOpe1=LZ1ZL; LZ1HI; LZ3SQ
+MOpe2=
+STXEq=IC706MK + transverter
+SPowe=10
+SRXEq=IC706MK + transverter
+SAnte=35el F9FT
+SAntH=12;620
+CQSOs=4;1
+CQSOP=391
+CWWLs=6;0;1
+CWWLB=0
+CExcs=0;0;1
+CExcB=0
+CDXCs=1;0;1
+CDXCB=0
+CToSc=391
+CODXC=LZ2JD;KN23TB;139
+[Remarks]
+
+[QSORecords;4]
+160507;1544;LZ1ZB;2;599;001;599;001;;KN12QO;120;;N;N;
+160507;1746;LZ2JD;1;59;002;59;002;;KN23TB;139;;N;;
+160508;0830;LZ1GJ;2;599;003;599;001;;KN22IB;7;;N;;
+160508;0834;LZ5HP;1;59;004;59;002;;KN12QQ;125;;;;
+[END;VUSC for Win by OK1DIX, version 6.41]
