@@ -1026,9 +1026,7 @@ def _dracula_scoring(callsign1, callsign2, rules, qso1):
             qso1.points = rules.contest_yo_to_nonyo_points
     else:
         # Non-YO station
-        if is_dracula_special(callsign2, rules):
-            qso1.points = rules.contest_non_yo_to_special_points
-        elif is_yo_callsign(callsign2):
+        if is_yo_callsign(callsign2):
             qso1.points = rules.contest_non_yo_to_yo_points
         else:
             prefix1 = callsign1[:2].upper()
