@@ -1,9 +1,38 @@
 # Active Context
 
 ## Current Work Focus
-Implementing YR20RRO Diploma contest scoring rules (corrected) and multiplier-based scoring system for Cabrillo HF cross-check.
+Adding DRACULA contest support (October 2026) and generalising the cross-check engine for custom-scoring contests.
 
 ## Recent Changes (May 2026)
+
+### DRACULA Contest Support (2026-05-13)
+- **Created `test_logs/rules_hf_dracula.config`** — DRACULA contest rules INI file with:
+  - 5 bands (3.5, 7, 14, 21, 28 MHz), 2 modes (CW, SSB), 7 categories (A1-A3, B1-B3, C)
+  - 1 period (31 Oct 12:00 UTC → 1 Nov 11:59 UTC, 24 hours)
+  - Custom scoring: `custom_scoring=DRACULA` flag to enable special logic
+  - 6 scoring point values for the various QSO type combinations
+  - Multiplier system: per-band, with exchange field handling non-numeric values
+  - 9 special DRACULA station callsigns (YP2/YR2/YQ2, YP5/YR5/YQ5, YP6/YR6/YQ6...DRACULA)
+- **Added 6 new DRACULA scoring properties to `Rules` base class (`rules.py`)**:
+  - `contest_custom_scoring`: string flag identifying the scoring engine ('DRACULA', default None)
+  - `contest_non_yo_to_special_points`: 10 pts (any station → special DRACULA)
+  - `contest_non_yo_to_yo_points`: 5 pts (non-YO → YO station)
+  - `contest_yo_to_nonyo_points`: 5 pts (YO → non-YO station)
+  - `contest_non_yo_dxcc_points`: 2 pts (non-YO → different DXCC)
+  - `contest_non_yo_same_country_points`: 1 pt (non-YO → same country)
+- **Added DRACULA helper functions to `formats/cabrillo.py`**:
+  - `YO_COUNTIES` dict and `ALL_YO_COUNTIES` set (Romanian county abbreviations)
+  - `is_yo_callsign()`: detect YO/YP/YQ/YR prefix callsigns
+  - `is_dracula_special()`: check if callsign is in special station list
+  - `is_yo_county()`: check if exchange value is a Romanian county code
+  - `is_dracula_contest()`: check if custom_scoring == 'DRACULA'
+- **Modified `generic_qso_validator()`**: accepts alphanumeric exchanges (1-6 chars) for DRACULA
+- **Modified `compare_qso()`**: skips serial number comparison for DRACULA (exchanges can be county codes/DRC)
+- **Modified `crosscheck_logs()`**: DRACULA scoring branch with 6-way point determination based on:
+  - Whether caller is YO or non-YO
+  - Whether partner is special DRACULA, YO, or non-YO
+  - Whether partner is same-country DXCC or different
+- **Modified `crosscheck_logs_filter()`**: DRACULA multiplier logic with DXCC/YO_COUNTY/DRC types, supporting per-band multipliers
 
 ### Corrected YR20RRO Scoring (2026-05-12)
 - **Fixed `rules_rro.config`** scoring values per actual contest rules:

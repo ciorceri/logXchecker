@@ -270,6 +270,20 @@ class Rules(object):
         except (KeyError, ValueError):
             return []
 
+    # ── DRACULA Custom Scoring Flag ─────────────────────────────────────
+
+    @property
+    def contest_custom_scoring(self):
+        """
+        Returns the custom scoring identifier (e.g. 'DRACULA') if set,
+        or None if not configured.
+        Set in [contest] section as custom_scoring.
+        """
+        try:
+            return self.config['contest']['custom_scoring'].strip().upper()
+        except (KeyError, ValueError):
+            return None
+
     # ── Multiplier properties ──────────────────────────────────────────
 
     @property
@@ -285,15 +299,27 @@ class Rules(object):
             return False
 
     @property
+    def contest_multiplier_per_band(self):
+        """
+        Whether multipliers are counted per band (default False).
+        Set in [scoring] section as multiplier_per_band.
+        When True, each band has its own multiplier set.
+        """
+        try:
+            return self.config['scoring'].getboolean('multiplier_per_band')
+        except (KeyError, ValueError):
+            return False
+
+    @property
     def contest_multiplier_exchange_field(self):
         """
-        Name of the QSO field to use for multiplier counting (default 'county_recv').
+        Name of the QSO field to use for multiplier counting (default 'nr_recv').
         Set in [scoring] section as multiplier_exchange_field.
         """
         try:
             return self.config['scoring']['multiplier_exchange_field']
         except KeyError:
-            return 'county_recv'
+            return 'nr_recv'
 
     @property
     def contest_multiplier_special_exchange(self):
@@ -307,3 +333,90 @@ class Rules(object):
             return self.config['scoring']['multiplier_special_exchange'].upper()
         except KeyError:
             return None
+
+    # ── DRACULA-specific scoring properties ────────────────────────────
+
+    @property
+    def contest_non_yo_to_special_points(self):
+        """
+        Points for non-YO working a special DRACULA station (default 10).
+        """
+        try:
+            return int(self.config['scoring']['non_yo_to_special_points'])
+        except (KeyError, ValueError):
+            return 10
+
+    @property
+    def contest_non_yo_to_yo_points(self):
+        """
+        Points for non-YO working a YO station (default 5).
+        """
+        try:
+            return int(self.config['scoring']['non_yo_to_yo_points'])
+        except (KeyError, ValueError):
+            return 5
+
+    @property
+    def contest_non_yo_dxcc_points(self):
+        """
+        Points for non-YO working a different DXCC entity (default 2).
+        """
+        try:
+            return int(self.config['scoring']['non_yo_dxcc_points'])
+        except (KeyError, ValueError):
+            return 2
+
+    @property
+    def contest_non_yo_same_country_points(self):
+        """
+        Points for non-YO working same country (default 1).
+        """
+        try:
+            return int(self.config['scoring']['non_yo_same_country_points'])
+        except (KeyError, ValueError):
+            return 1
+
+    @property
+    def contest_yo_to_special_points(self):
+        """
+        Points for YO working a special DRACULA station (default 10).
+        """
+        try:
+            return int(self.config['scoring']['yo_to_special_points'])
+        except (KeyError, ValueError):
+            return 10
+
+    @property
+    def contest_yo_to_nonyo_points(self):
+        """
+        Points for YO working a non-YO station (default 5).
+        """
+        try:
+            return int(self.config['scoring']['yo_to_nonyo_points'])
+        except (KeyError, ValueError):
+            return 5
+
+    @property
+    def contest_dracula_county_list(self):
+        """
+        Mapping of YO2..YO9 county abbreviations per district,
+        used for DRACULA multiplier counting.
+        Returns dict or empty dict if not configured.
+        """
+        try:
+            # ConfigParser stores multi-line as a single string with \\n\\r
+            raw = self.config['scoring'].get('dracula_county_list', '')
+            if not raw:
+                return {}
+            result = {}
+            for line in raw.replace('\r', '').split('\n'):
+                line = line.strip()
+                if ':' not in line:
+                    continue
+                district, counties = line.split(':', 1)
+                result[district.strip().upper()] = [c.strip() for c in counties.split(',')]
+            return result
+        except Exception:
+            return {}
+
+

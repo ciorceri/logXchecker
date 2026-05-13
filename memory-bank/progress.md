@@ -26,12 +26,22 @@
   - Configurable: regular QSO points, special station bonus points
   - YR20RRO rules: 2 pts per confirmed QSO, multiplier-based scoring (counties + Category A stations)
   - Multiplier system: `multiplier_enabled`, `multiplier_exchange_field`, `multiplier_special_exchange`
+- **DRACULA contest support** (added May 2026):
+  - Custom scoring engine with `is_dracula_contest()` flag-based dispatch
+  - 6-way point determination: special/10pts, YO→non-YO/5pts, non-YO→YO/5pts, non-YO→DXCC/2pts, non-YO→same/1pt, YO→YO/0pts
+  - Per-band multipliers with three types: DXCC entities, YO_COUNTY codes, DRC special stations
+  - Alphanumeric exchange validation (county codes/DRC instead of serial numbers)
+  - Serial number comparison skipped for DRACULA QSO matching
+  - YO callsign detection, county abbreviation recognition, DRC special station detection
 
 ### Rules Engine
 - Generic and contest-specific validation for dates, hours, modes, bands
 - Per-period and per-category validation
 - Extra field validation (email, address, name, callsign regex)
 - Multi-band, multi-period contest support
+- **Custom scoring flag** (`custom_scoring=DRACULA` in `[scoring]`) to switch scoring engines
+- **6 DRACULA-specific scoring properties** in Rules base class with safe defaults
+- **Per-band multiplier mode** (`multiplier_per_band=true`) for DRACULA-style contests
 
 ## What's Left to Build
 
@@ -72,3 +82,4 @@ The project is actively developed with a focus on supporting the **YR20RRO Diplo
 - **2026 Q2 (April)**: Added PH→SSB mode alias for Romanian contest logs
 - **2026 Q2 (May)**: Added configurable scoring system for YR20RRO Diploma contest; added test_formatters.py with 19 tests
 - **2026 Q2 (May)**: Unified Cabrillo V2 & V3 parser; added 88 YR20RRO test logs; full cross-check verified with ~84.8% confirmation rate
+- **2026 Q2 (May)**: Added DRACULA contest support (Oct 2026 rules) with custom scoring engine, per-band multipliers, YO station detection, alphanumeric exchange validation, and 6-way point determination system

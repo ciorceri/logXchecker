@@ -51,7 +51,9 @@ Rules (base - rules.py)
    - If match found, award points based on scoring rules
 3. **Post-processing**: Sum points per operator per band
 
-### 5. Scoring System for HF contests (based on an YO contest)
+### 5. Scoring System for HF contests
+
+#### Standard (RRO-style) Scoring
 Points calculation logic in `crosscheck_logs()`:
 ```
 if partner == special_callsign → special_qso_points (e.g. 10)
@@ -61,15 +63,42 @@ else → distance * multiplier (default 1 point per QSO, legacy)
 - Deduplication via global `confirmed_pairs` set across all bands
 - YR20RRO special station gets separate per-band dedup via `_had_qso_with`
 
+#### DRACULA Custom Scoring
+When `[scoring] custom_scoring = DRACULA`, the cross-check engine uses a completely different scoring path:
+
+```
+if partner is special DRACULA station → 10 pts (any station → special)
+elif caller is YO:
+    if partner is YO → 0 pts (YO-YO not allowed)
+    else → 5 pts (YO → non-YO)
+else (caller is non-YO):
+    if partner is special → 10 pts
+    elif partner is YO → 5 pts (non-YO → YO)
+    elif partner same prefix → 1 pt (same country/DXCC)
+    else → 2 pts (different DXCC)
+```
+
+DRACULA multiplier rules (per-band):
+- **Non-YO stations**: DXCC entities + YO counties + DRC (each unique per band)
+- **YO stations**: DXCC entities + DRC (each unique per band)
+- Controlled by `multiplier_per_band=true` in config
+
 #### Scoring Configuration (rules INI `[scoring]` section)
-| Field                         | Type    | Default         | Description                                      |
-|-------------------------------|---------|-----------------|--------------------------------------------------|
-| `qso_points`                  | int     | 1               | Points for a regular confirmed QSO               |
-| `special_qso_points`          | int     | 0               | Points for QSO with the special station          |
-| `special_callsign`            | str     | None            | Callsign of the special/bonus station            |
-| `multiplier_enabled`          | bool    | false           | Enable multiplier-based scoring (score = pts × mults) |
-| `multiplier_exchange_field`   | str     | 'county_recv'   | QSO field name containing the exchange value     |
-| `multiplier_special_exchange` | str     | None            | Exchange value indicating Category A station     |
+| Field                            | Type    | Default         | Description                                              |
+|----------------------------------|---------|-----------------|----------------------------------------------------------|
+| `qso_points`                     | int     | 1               | Points for a regular confirmed QSO (legacy)              |
+| `special_qso_points`             | int     | 0               | Points for QSO with the special station                  |
+| `special_callsign`               | str     | None            | Callsign of the special/bonus station                    |
+| `multiplier_enabled`             | bool    | false           | Enable multiplier-based scoring (score = pts × mults)    |
+| `multiplier_exchange_field`      | str     | 'county_recv'   | QSO field name containing the exchange value             |
+| `multiplier_special_exchange`    | str     | None            | Exchange value indicating Category A station             |
+| `multiplier_per_band`            | bool    | false           | Per-band multipliers (DRACULA uses this)                 |
+| `custom_scoring`                 | str     | None            | Custom scoring engine name ('DRACULA', None = standard)  |
+| `non_yo_to_special_points`       | int     | 10              | DRACULA: any station → special station                   |
+| `non_yo_to_yo_points`            | int     | 5               | DRACULA: non-YO → YO station                             |
+| `yo_to_nonyo_points`             | int     | 5               | DRACULA: YO → non-YO station                             |
+| `non_yo_dxcc_points`             | int     | 2               | DRACULA: non-YO → different DXCC                         |
+| `non_yo_same_country_points`     | int     | 1               | DRACULA: non-YO → same country/DXCC                      |
 
 Scoring properties are defined in `Rules` base class (`rules.py`) with `@property` decorators that read from `self.config['scoring']` and return safe defaults on `KeyError`/`ValueError`.
 

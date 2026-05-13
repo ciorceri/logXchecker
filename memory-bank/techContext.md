@@ -37,10 +37,12 @@
 ## Rules Config Files
 | File                         | Type        | Purpose                                                         |
 |------------------------------|-------------|-----------------------------------------------------------------|
-| `test_logs/rules_hf.config`  | HF/Cabrillo | Generic HF contest rules                                        |
-| `test_logs/rules_vhf.config` | VHF/EDI     | VHF contest rules                                               |
-| `test_logs/rules_rro.config` | HF/Cabrillo | YR20RRO Diploma contest rules with `[scoring]` section          |
-|                                            | (qso_points=5, special_qso_points=10, special_callsign=YR20RRO) |
+| `test_logs/rules_hf.config`           | HF/Cabrillo | Generic HF contest rules                                             |
+| `test_logs/rules_vhf.config`          | VHF/EDI     | VHF contest rules                                                    |
+| `test_logs/rules_rro.config`          | HF/Cabrillo | YR20RRO Diploma contest rules with `[scoring]` section               |
+|                                       |             | (qso_points=5, special_qso_points=10, special_callsign=YR20RRO)      |
+| `test_logs/rules_hf_dracula.config`   | HF/Cabrillo | DRACULA contest rules (Oct 2026) with custom scoring + per-band mults |
+| `test_logs/rules_vhf_napoca_2016.config` | VHF/EDI  | NAPOCA 2016 VHF contest rules                                        |
 
 ## Dependencies (from requirements.txt)
 - colorama

@@ -41,6 +41,54 @@ def qth_distance(qth1, qth2):
     return 1
 
 
+# ── DRACULA helpers ────────────────────────────────────────────────────
+
+# Romanian county abbreviations per YO district
+YO_COUNTIES = {
+    'YO2': ['AR', 'CS', 'HD', 'TM'],
+    'YO3': ['BU', 'IF'],
+    'YO4': ['CT', 'BR', 'GL', 'TL', 'VN'],
+    'YO5': ['AB', 'BH', 'BN', 'CJ', 'SM', 'SJ', 'MM'],
+    'YO6': ['BV', 'CV', 'HR', 'MS', 'SB'],
+    'YO7': ['AG', 'DJ', 'GJ', 'MH', 'OT', 'VL'],
+    'YO8': ['BC', 'BT', 'IS', 'NT', 'SV', 'VS'],
+    'YO9': ['BZ', 'CL', 'DB', 'GR', 'IL', 'PH', 'TR'],
+}
+ALL_YO_COUNTIES = {c for counties in YO_COUNTIES.values() for c in counties}
+
+
+def is_yo_callsign(callsign):
+    """Check if a callsign is a Romanian (YO) station."""
+    if not callsign:
+        return False
+    cs = callsign.upper().strip()
+    # YO prefix (standard Romanian callsigns)
+    if cs.startswith('YO') or cs.startswith('YP') or cs.startswith('YQ') or cs.startswith('YR'):
+        return True
+    return False
+
+
+def is_dracula_special(callsign, rules):
+    """Check if a callsign is in the DRACULA special station list."""
+    if not rules or not callsign:
+        return False
+    cs = callsign.upper().strip()
+    return cs in rules.contest_special_callsign
+
+
+def is_yo_county(exchange):
+    """Check if an exchange value is a Romanian county abbreviation."""
+    if not exchange:
+        return False
+    return exchange.upper().strip() in ALL_YO_COUNTIES
+
+
+def is_dracula_contest(rules):
+    """Check if the contest has DRACULA custom scoring."""
+    return rules is not None and rules.contest_custom_scoring == 'DRACULA'
+
+
+
 # ── Operator ───────────────────────────────────────────────────────────
 
 class Operator(object):
@@ -510,29 +558,28 @@ class LogQso(object):
     """
     Keep a single QSO (in Cabrillo format).
 
-    Cabrillo V2 QSO format (space/tab separated):
-        QSO: <freq> <mode> <date> <time> <call1> <rst_sent> <nr_sent> <call2> <rst_recv> <nr_recv> [exchange]
+    Standard Cabrillo V2 QSO format (space/tab separated):
+        QSO: <freq> <mode> <date> <time> <call_sent> <rst_sent> <exch_sent> <call_recv> <rst_recv> <exch_recv> [tx_id]
 
-    Cabrillo V3 QSO format (semicolon separated):
-        QSO: <freq>;<mode>;<date>;<time>;<call1>;<rst_sent>;<nr_sent>;<call2>;<rst_recv>;<nr_recv>[;<exchange>]
-        where trailing fields after the exchange are ignored.
+    Standard Cabrillo V3 QSO format (semicolon separated):
+        QSO: <freq>;<mode>;<date>;<time>;<call_sent>;<rst_sent>;<exch_sent>;<call_recv>;<rst_recv>;<exch_recv>[;<tx_id>]
+        where trailing fields after the transmitter ID are ignored.
     """
 
-    # Cabrillo V2/V3 regex pattern (whitespace-separated)
-    REGEX_V2_V3_QSO = (
+    # Standard Cabrillo QSO regex (11 groups — no non-standard county fields)
+    REGEX_CABRILLO_QSO = (
         r'^QSO:\s+'                           # QSO: marker
         r'(\d+(?:\.\d+)?)\s+'                 # 1  frequency (Hz or MHz)
         r'(\S+)\s+'                           # 2  mode
         r'(\d{4}-\d{2}-\d{2})\s+'             # 3  date YYYY-MM-DD
         r'(\d{4})\s+'                         # 4  time HHMM
-        r'(\S+)\s+'                           # 5  station A callsign
+        r'(\S+)\s+'                           # 5  station A callsign (our station)
         r'(\S+)\s+'                           # 6  rst sent
-        r'(\S+)\s+'                           # 7  nr sent
-        r'(\S+)\s+'                           # 8  county
-        r'(\S+)\s+'                           # 9  station B callsign
-        r'(\S+)\s+'                           # 10 rst recv
-        r'(\S+)'                              # 11 nr recv
-        r'(?:\s+(.*))?$'                      # 12 optional exchange
+        r'(\S+)\s+'                           # 7  exchange sent (serial, county, or contest code)
+        r'(\S+)\s+'                           # 8  station B callsign (other station)
+        r'(\S+)\s+'                           # 9  rst recv
+        r'(\S+)'                              # 10 exchange recv (serial, county, or contest code)
+        r'(?:\s+(.*))?$'                      # 11 optional transmitter ID
     )
 
 
@@ -553,10 +600,8 @@ class LogQso(object):
                            'mode': None,
                            'rst_sent': None,
                            'nr_sent': None,
-                           'county_sent': None,
                            'rst_recv': None,
                            'nr_recv': None,
-                           'county_recv': None,
                            'wwl': '',
                            'points': None,
                            'new_exchange': None,
@@ -587,25 +632,38 @@ class LogQso(object):
 
     def parse_qso_fields(self):
         """Parse QSO fields from the matched regex groups."""
-        # Try V2 first, then V3
-        m = re.match(self.REGEX_V2_V3_QSO, self.qso_line, re.IGNORECASE)
+        m = re.match(self.REGEX_CABRILLO_QSO, self.qso_line, re.IGNORECASE)
         if m:
-            self._assign_fields_v2_v3(m)
+            self._assign_fields(m)
 
+    def _assign_fields(self, m):
+        """
+        Standard Cabrillo field assignment (11 capture groups).
 
-    def _assign_fields_v2_v3(self, m):
-        freq = m.group(1)
-        mode = m.group(2)
+        Regex captures:
+            group 1:  frequency
+            group 2:  mode
+            group 3:  date (YYYY-MM-DD)
+            group 4:  time (HHMM)
+            group 5:  station A callsign (our station)
+            group 6:  rst sent
+            group 7:  exchange sent (nr_sent)
+            group 8:  station B callsign (the other station)
+            group 9:  rst recv
+            group 10: exchange recv (nr_recv)
+            group 11: optional transmitter ID
+        """
+        freq = m.group(1)       # frequency in KHz (for HF) or MHz (for VHF), GHz (for microwaves)
+        mode = m.group(2)       # mode string (e.g. SSB, CW, RTTY, etc.)
         date_raw = m.group(3)   # YYYY-MM-DD
         hour = m.group(4)       # HHMM
-        call_a = m.group(5).upper()
-        rst_a = m.group(6)
-        nr_a = m.group(7)
-        county_a = m.group(8)
-        call_b = m.group(9).upper()
-        rst_b = m.group(10)
-        nr_b = m.group(11)
-        county_b = m.group(12) or ''
+        call_a = m.group(5).upper()  # station A callsign (only A-Z, 0-9 and / permitted)
+        rst_a = m.group(6)      # contest rst (ex: 59, 599)
+        exch_a = m.group(7)     # contest exchange sent (serial number, county code, etc.)
+        call_b = m.group(8).upper()  # station B callsign
+        rst_b = m.group(9)      # contest rst (ex: 59, 599)
+        exch_b = m.group(10)    # contest exchange recv (serial number, county code, etc.)
+        t = m.group(11) or ''   # transmitter ID (optional)
 
         # The "call" field in qso_fields is the OTHER station's callsign
         self.qso_fields['call'] = call_b
@@ -615,22 +673,20 @@ class LogQso(object):
         # Normalise mode
         self.qso_fields['mode'] = normalize_cabrillo_mode(mode)
         self.qso_fields['rst_sent'] = rst_a
-        self.qso_fields['nr_sent'] = nr_a
-        self.qso_fields['county_sent'] = county_a
+        self.qso_fields['nr_sent'] = exch_a
         self.qso_fields['rst_recv'] = rst_b
-        self.qso_fields['nr_recv'] = nr_b
-        self.qso_fields['county_recv'] = county_b
+        self.qso_fields['nr_recv'] = exch_b
 
 
     @classmethod
     def regexp_qso_validator(cls, line):
-        """Validate the QSO line format."""
+        """Validate the QSO line format against the standard Cabrillo regex."""
         if not line:
             return 'QSO line is empty'
         if not line.upper().startswith('QSO:'):
             return 'QSO line does not start with QSO:'
-        # Must match either V2 or V3 regex
-        m = re.match(cls.REGEX_V2_V3_QSO, line, re.IGNORECASE)
+        # Must match the standard Cabrillo regex
+        m = re.match(cls.REGEX_CABRILLO_QSO, line, re.IGNORECASE)
         if not m:
             return 'Incorrect QSO line format'
         return None
@@ -682,17 +738,20 @@ class LogQso(object):
                                 'Rst is invalid: {}'.format(self.qso_fields['rst_recv'])))
 
         # Validate NR (sent & recv) format
-        re_nr = r'^\d{1,4}$'
-        result = re.match(re_nr, self.qso_fields['nr_sent'])
+        # Accept alphanumeric exchange values (1-6 chars).
+        # This covers: numeric serial numbers, county codes, "DRC", etc.
+        re_exchange = r'^\w{1,6}$'
+        result = re.match(re_exchange, self.qso_fields['nr_sent'])
         if not result:
             self.valid = False
             self.errors.append((self.line_nr, self.qso_line,
-                                'Sent Qso number is invalid: {}'.format(self.qso_fields['nr_sent'])))
-        result = re.match(re_nr, self.qso_fields['nr_recv'])
+                                'Sent exchange is invalid: {}'.format(self.qso_fields['nr_sent'])))
+        result = re.match(re_exchange, self.qso_fields['nr_recv'])
         if not result:
             self.valid = False
             self.errors.append((self.line_nr, self.qso_line,
-                                'Received Qso number is invalid: {}'.format(self.qso_fields['nr_recv'])))
+                                'Received exchange is invalid: {}'.format(self.qso_fields['nr_recv'])))
+
 
     # ── Rules-based QSO validation ─────────────────────────────────────
 
@@ -843,29 +902,167 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
     if rules.contest_multiplier_enabled:
         exchange_field = rules.contest_multiplier_exchange_field
         special_exchange = rules.contest_multiplier_special_exchange
+        is_dracula = is_dracula_contest(rules)
+        per_band_mult = rules.contest_multiplier_per_band
+
         for op, op_inst in operator_instances.items():
-            unique_multipliers = set()
-            for log in op_inst.logs:
-                for qso in log.qsos:
-                    if not qso.cc_confirmed or not (qso.points and qso.points > 0):
-                        continue
-                    # Get the exchange value from the partner's QSO
-                    exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
-                    if not exchange_val:
-                        continue
-                    if special_exchange and exchange_val == special_exchange:
-                        # Category A station: use partner's callsign as multiplier
-                        partner_call = qso.qso_fields.get('call', '').upper()
-                        if partner_call:
-                            unique_multipliers.add(('CAT_A', partner_call))
-                    else:
-                        # Regular station: use the county/exchange value as multiplier
-                        unique_multipliers.add(('COUNTY', exchange_val))
-            for log in op_inst.logs:
-                log.multiplier_count = len(unique_multipliers)
-                log.final_score = log.qsos_points * log.multiplier_count if log.qsos_points else 0
+            if per_band_mult:
+                # Per-band multipliers: each band has its own multiplier set
+                for log in op_inst.logs:
+                    band_unique_mult = set()
+                    for qso in log.qsos:
+                        if not qso.cc_confirmed or not (qso.points and qso.points > 0):
+                            continue
+                        if is_dracula:
+                            # DRACULA: multipliers are DXCC entities + YO counties + DRC
+                            partner_call = qso.qso_fields.get('call', '').upper()
+                            exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
+                            if not partner_call:
+                                continue
+                            if is_dracula_special(partner_call, rules):
+                                # DRC multiplier (special station callsign)
+                                band_unique_mult.add(('DRC', partner_call))
+                            elif is_yo_callsign(partner_call):
+                                # YO station: use their exchange value (county) as multiplier
+                                if exchange_val:
+                                    band_unique_mult.add(('YO_COUNTY', exchange_val))
+                            else:
+                                # Non-YO station: DXCC entity (use callsign prefix as approximation)
+                                dxcc_prefix = partner_call[:2]
+                                band_unique_mult.add(('DXCC', dxcc_prefix))
+                        else:
+                            # Standard (RRO-style) multiplier processing
+                            exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
+                            if not exchange_val:
+                                continue
+                            if special_exchange and exchange_val == special_exchange:
+                                partner_call = qso.qso_fields.get('call', '').upper()
+                                if partner_call:
+                                    band_unique_mult.add(('CAT_A', partner_call))
+                            else:
+                                band_unique_mult.add(('COUNTY', exchange_val))
+                    log.multiplier_count = len(band_unique_mult)
+                    log.final_score = log.qsos_points * log.multiplier_count if log.qsos_points else 0
+            else:
+                # Global multipliers (across all bands)
+                unique_multipliers = set()
+                for log in op_inst.logs:
+                    for qso in log.qsos:
+                        if not qso.cc_confirmed or not (qso.points and qso.points > 0):
+                            continue
+                        if is_dracula:
+                            partner_call = qso.qso_fields.get('call', '').upper()
+                            exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
+                            if not partner_call:
+                                continue
+                            if is_dracula_special(partner_call, rules):
+                                unique_multipliers.add(('DRC', partner_call))
+                            elif is_yo_callsign(partner_call):
+                                if exchange_val:
+                                    unique_multipliers.add(('YO_COUNTY', exchange_val))
+                            else:
+                                dxcc_prefix = partner_call[:2]
+                                unique_multipliers.add(('DXCC', dxcc_prefix))
+                        else:
+                            exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
+                            if not exchange_val:
+                                continue
+                            if special_exchange and exchange_val == special_exchange:
+                                partner_call = qso.qso_fields.get('call', '').upper()
+                                if partner_call:
+                                    unique_multipliers.add(('CAT_A', partner_call))
+                            else:
+                                unique_multipliers.add(('COUNTY', exchange_val))
+                for log in op_inst.logs:
+                    log.multiplier_count = len(unique_multipliers)
+                    log.final_score = log.qsos_points * log.multiplier_count if log.qsos_points else 0
 
     return operator_instances
+
+
+# ── Custom scoring dispatcher ─────────────────────────────────────────
+
+def apply_custom_scoring(callsign1, callsign2, rules, qso1, confirmed_pairs,
+                         band_nr, qso_points_normal, qso_points_special,
+                         special_callsign_list, distance):
+    """
+    Apply custom (DRACULA) or standard scoring based on rules.contest_custom_scoring.
+
+    Sets qso1.points. For future custom contests, add a new _xxx_scoring()
+    function and a new elif branch here.
+
+    :return: (cc_confirmed, cc_error) tuple
+    """
+    custom_type = rules.contest_custom_scoring if rules else None
+    if custom_type == 'DRACULA':
+        return _dracula_scoring(callsign1, callsign2, rules, qso1)
+    elif custom_type is None:
+        return _standard_scoring(callsign1, callsign2, rules, qso1, confirmed_pairs,
+                                 band_nr, qso_points_normal, qso_points_special,
+                                 special_callsign_list, distance)
+    else:
+        raise NotImplementedError('Custom scoring type "{}" is not implemented'.format(custom_type))
+
+
+def _dracula_scoring(callsign1, callsign2, rules, qso1):
+    """
+    DRACULA contest scoring logic.
+
+    Rules:
+      - Anyone working a special DRACULA station = 10 points
+      - YO-YO QSO = 0 points (not allowed per rules)
+      - YO working non-YO = 5 points
+      - Non-YO working YO = 5 points
+      - Non-YO working non-YO same country = 1 point
+      - Non-YO working non-YO different DXCC = 2 points
+    """
+    if is_dracula_special(callsign2, rules):
+        qso1.points = rules.contest_non_yo_to_special_points
+    elif is_yo_callsign(callsign1):
+        # YO station
+        if is_yo_callsign(callsign2):
+            qso1.points = 0
+        else:
+            qso1.points = rules.contest_yo_to_nonyo_points
+    else:
+        # Non-YO station
+        if is_dracula_special(callsign2, rules):
+            qso1.points = rules.contest_non_yo_to_special_points
+        elif is_yo_callsign(callsign2):
+            qso1.points = rules.contest_non_yo_to_yo_points
+        else:
+            prefix1 = callsign1[:2].upper()
+            prefix2 = callsign2[:2].upper()
+            if prefix1 == prefix2:
+                qso1.points = rules.contest_non_yo_same_country_points
+            else:
+                qso1.points = rules.contest_non_yo_dxcc_points
+    return True, []
+
+
+def _standard_scoring(callsign1, callsign2, rules, qso1, confirmed_pairs,
+                      band_nr, qso_points_normal, qso_points_special,
+                      special_callsign_list, distance):
+    """
+    Standard (RRO-style) contest scoring logic.
+
+    Rules:
+      - QSO with a special callsign (e.g. YR20RRO) = special points (10)
+      - QSO with a nominated station = normal points (5), once per mode
+      - Default: distance * band multiplier
+    """
+    if callsign2.upper() in special_callsign_list:
+        qso1.points = qso_points_special
+    elif qso_points_normal != 1:
+        pair_key = (qso1.qso_fields['mode'], min(callsign1, callsign2), max(callsign1, callsign2))
+        if pair_key not in confirmed_pairs:
+            confirmed_pairs.add(pair_key)
+            qso1.points = qso_points_normal
+        else:
+            qso1.points = 0
+    else:
+        qso1.points = distance * int(rules.contest_band(band_nr)['multiplier'])
+    return True, []
 
 
 def crosscheck_logs(operator_instances, rules, band_nr, confirmed_pairs):
@@ -951,23 +1148,12 @@ def crosscheck_logs(operator_instances, rules, band_nr, confirmed_pairs):
                     continue
 
                 _had_qso_with.append('{}-period{}'.format(callsign2, inside_period_nr2))
-                # Scoring: apply contest-specific rules
-                if callsign2.upper() in special_callsign_list:
-                    # YR20RRO = 10 points per band (different band = another 10)
-                    qso1.points = qso_points_special
-                elif qso_points_normal != 1:
-                    # Regular nominated station: 5 points, once per mode across all bands
-                    pair_key = (qso1.qso_fields['mode'], min(callsign1, callsign2), max(callsign1, callsign2))
-                    if pair_key not in confirmed_pairs:
-                        confirmed_pairs.add(pair_key)
-                        qso1.points = qso_points_normal
-                    else:
-                        qso1.points = 0
-                else:
-                    # Default (backward-compatible): 1 point per QSO
-                    qso1.points = distance * int(rules.contest_band(band_nr)['multiplier'])
-                qso1.cc_confirmed = True
-                qso1.cc_error = []
+
+                # Apply scoring (custom or standard) via dispatcher
+                qso1.cc_confirmed, qso1.cc_error = apply_custom_scoring(
+                    callsign1, callsign2, rules, qso1, confirmed_pairs,
+                    band_nr, qso_points_normal, qso_points_special,
+                    special_callsign_list, distance)
                 break
             else:
                 qso1.cc_confirmed = False
@@ -1033,11 +1219,14 @@ def compare_qso(log1, qso1, log2, qso2):
     if qso1.qso_fields['rst_recv'] != qso2.qso_fields['rst_sent']:
         raise ValueError('Rst mismatch')
 
-    # compare serial number
-    if qso1.qso_fields['nr_sent'] != qso2.qso_fields['nr_recv']:
-        raise ValueError('Serial number mismatch (other ham)')
-    if qso1.qso_fields['nr_recv'] != qso2.qso_fields['nr_sent']:
-        raise ValueError('Serial number mismatch')
+    # compare serial number / exchange
+    # For DRACULA, exchanges can be non-numeric (county codes, "DRC", etc.)
+    # so we skip the exchange comparison for DRACULA contests
+    if not is_dracula_contest(qso1.rules):
+        if qso1.qso_fields['nr_sent'] != qso2.qso_fields['nr_recv']:
+            raise ValueError('Serial number mismatch (other ham)')
+        if qso1.qso_fields['nr_recv'] != qso2.qso_fields['nr_sent']:
+            raise ValueError('Serial number mismatch')
 
     # No Maidenhead locator for Cabrillo — distance is 1 km per requirement
     return 1
