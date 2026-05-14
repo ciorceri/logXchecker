@@ -558,15 +558,11 @@ class LogQso(object):
     """
     Keep a single QSO (in Cabrillo format).
 
-    Standard Cabrillo V2 QSO format (space/tab separated):
+    Standard Cabrillo V2/V3 QSO format (space/tab separated):
         QSO: <freq> <mode> <date> <time> <call_sent> <rst_sent> <exch_sent> <call_recv> <rst_recv> <exch_recv> [tx_id]
-
-    Standard Cabrillo V3 QSO format (semicolon separated):
-        QSO: <freq>;<mode>;<date>;<time>;<call_sent>;<rst_sent>;<exch_sent>;<call_recv>;<rst_recv>;<exch_recv>[;<tx_id>]
-        where trailing fields after the transmitter ID are ignored.
     """
 
-    # Standard Cabrillo QSO regex (11 groups — no non-standard county fields)
+    # Standard Cabrillo QSO regex (11 groups — standard V3 with single-token exchange fields)
     REGEX_CABRILLO_QSO = (
         r'^QSO:\s+'                           # QSO: marker
         r'(\d+(?:\.\d+)?)\s+'                 # 1  frequency (Hz or MHz)
@@ -581,6 +577,25 @@ class LogQso(object):
         r'(\S+)'                              # 10 exchange recv (serial, county, or contest code)
         r'(?:\s+(.*))?$'                      # 11 optional transmitter ID
     )
+
+    # 13-field Cabrillo regex — for logs where the exchange is split into
+    # "serial_number + county_code" as two separate tokens (e.g. YO20RRO contest).
+    # Groups 7 and 10 capture two tokens each (e.g. "001 BN").
+    REGEX_CABRILLO_QSO_13F = (
+        r'^QSO:\s+'                           # QSO: marker
+        r'(\d+(?:\.\d+)?)\s+'                 # 1  frequency (Hz or MHz)
+        r'(\S+)\s+'                           # 2  mode
+        r'(\d{4}-\d{2}-\d{2})\s+'             # 3  date YYYY-MM-DD
+        r'(\d{4})\s+'                         # 4  time HHMM
+        r'(\S+)\s+'                           # 5  station A callsign (our station)
+        r'(\S+)\s+'                           # 6  rst sent
+        r'(\S+\s+\S+)\s+'                     # 7  exchange sent (nr + county combined: "001 BN")
+        r'(\S+)\s+'                           # 8  station B callsign (other station)
+        r'(\S+)\s+'                           # 9  rst recv
+        r'(\S+\s+\S+)'                        # 10 exchange recv (nr + county combined: "005 IS")
+        r'(?:\s+(.*))?$'                      # 11 optional transmitter ID
+    )
+
 
 
     def __init__(self, qso_line=None, qso_line_number=None, rules=None):
@@ -631,10 +646,27 @@ class LogQso(object):
             self.valid = False
 
     def parse_qso_fields(self):
-        """Parse QSO fields from the matched regex groups."""
+        """Parse QSO fields from the matched regex groups.
+        
+        Uses token count to decide which regex to apply:
+          - 12+ data tokens after QSO: → 13-field format (serial + county combined as one exchange)
+          - otherwise → standard 11-field format
+        """
+        # Count data tokens (everything after QSO:)
+        tokens = self.qso_line.strip().split()
+        data_tokens = tokens[1:]  # skip 'QSO:'
+        if len(data_tokens) >= 12:
+            # 13-field format: exchange is split into "serial_number + county_code" tokens
+            m = re.match(self.REGEX_CABRILLO_QSO_13F, self.qso_line, re.IGNORECASE)
+            if m:
+                self._assign_fields_13f(m)
+                return
+        # Standard 11-field format
         m = re.match(self.REGEX_CABRILLO_QSO, self.qso_line, re.IGNORECASE)
         if m:
             self._assign_fields(m)
+
+
 
     def _assign_fields(self, m):
         """
@@ -678,18 +710,73 @@ class LogQso(object):
         self.qso_fields['nr_recv'] = exch_b
 
 
+    def _assign_fields_13f(self, m):
+        """
+        Cabrillo 13-field field assignment.
+
+        Same as _assign_fields but groups 7 and 10 contain two tokens
+        (serial_number + county_code) combined, e.g. "001 BN".
+
+        Regex captures:
+            group 1:  frequency
+            group 2:  mode
+            group 3:  date (YYYY-MM-DD)
+            group 4:  time (HHMM)
+            group 5:  station A callsign (our station)
+            group 6:  rst sent
+            group 7:  exchange sent (nr + county combined: "001 BN")
+            group 8:  station B callsign (the other station)
+            group 9:  rst recv
+            group 10: exchange recv (nr + county combined: "005 IS")
+            group 11: optional transmitter ID
+        """
+        freq = m.group(1)       # frequency
+        mode = m.group(2)       # mode string
+        date_raw = m.group(3)   # YYYY-MM-DD
+        hour = m.group(4)       # HHMM
+        call_a = m.group(5).upper()  # station A callsign
+        rst_a = m.group(6)      # contest rst (ex: 59, 599)
+        exch_a = m.group(7)     # contest exchange sent (nr + county combined: "001 BN")
+        call_b = m.group(8).upper()  # station B callsign
+        rst_b = m.group(9)      # contest rst (ex: 59, 599)
+        exch_b = m.group(10)    # contest exchange recv (nr + county combined: "005 IS")
+        t = m.group(11) or ''   # transmitter ID (optional)
+
+        # The "call" field in qso_fields is the OTHER station's callsign
+        self.qso_fields['call'] = call_b
+        # Convert YYYY-MM-DD to YYMMDD for cross-check compatibility
+        self.qso_fields['date'] = date_raw[2:4] + date_raw[5:7] + date_raw[8:10]
+        self.qso_fields['hour'] = hour
+        # Normalise mode
+        self.qso_fields['mode'] = normalize_cabrillo_mode(mode)
+        self.qso_fields['rst_sent'] = rst_a
+        self.qso_fields['nr_sent'] = exch_a
+        self.qso_fields['rst_recv'] = rst_b
+        self.qso_fields['nr_recv'] = exch_b
+
+
     @classmethod
     def regexp_qso_validator(cls, line):
-        """Validate the QSO line format against the standard Cabrillo regex."""
+        """Validate the QSO line format against the standard Cabrillo regex.
+        
+        Tries the standard 11-field regex first. If that doesn't match,
+        tries the 13-field regex (for logs where the exchange is split into
+        "serial_number + county_code" as separate tokens, e.g. YO20RRO contest).
+        """
         if not line:
             return 'QSO line is empty'
         if not line.upper().startswith('QSO:'):
             return 'QSO line does not start with QSO:'
-        # Must match the standard Cabrillo regex
+        # Try the standard 11-field regex first
         m = re.match(cls.REGEX_CABRILLO_QSO, line, re.IGNORECASE)
-        if not m:
-            return 'Incorrect QSO line format'
-        return None
+        if m:
+            return None
+        # Try the 13-field format
+        m = re.match(cls.REGEX_CABRILLO_QSO_13F, line, re.IGNORECASE)
+        if m:
+            return None
+        return 'Incorrect QSO line format'
+
 
     # ── Generic QSO validation ─────────────────────────────────────────
 
@@ -738,19 +825,27 @@ class LogQso(object):
                                 'Rst is invalid: {}'.format(self.qso_fields['rst_recv'])))
 
         # Validate NR (sent & recv) format
-        # Accept alphanumeric exchange values (1-6 chars).
-        # This covers: numeric serial numbers, county codes, "DRC", etc.
+        # Accept:
+        #   - Standard: single alphanumeric token (1-6 chars) e.g. "001", "RRO", "BN"
+        #   - Combined: "nr + county" format (7-13 chars with space) e.g. "001 BN", "599 RRO"
+        # This covers: numeric serial numbers, county codes, "DRC", combined "number+county", etc.
         re_exchange = r'^\w{1,6}$'
+        re_exchange_combined = r'^\w{1,6}\s+\w{1,6}$'
         result = re.match(re_exchange, self.qso_fields['nr_sent'])
+        if not result:
+            result = re.match(re_exchange_combined, self.qso_fields['nr_sent'])
         if not result:
             self.valid = False
             self.errors.append((self.line_nr, self.qso_line,
                                 'Sent exchange is invalid: {}'.format(self.qso_fields['nr_sent'])))
         result = re.match(re_exchange, self.qso_fields['nr_recv'])
         if not result:
+            result = re.match(re_exchange_combined, self.qso_fields['nr_recv'])
+        if not result:
             self.valid = False
             self.errors.append((self.line_nr, self.qso_line,
                                 'Received exchange is invalid: {}'.format(self.qso_fields['nr_recv'])))
+
 
 
     # ── Rules-based QSO validation ─────────────────────────────────────
@@ -933,16 +1028,19 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
                         else:
                             # Standard (RRO-style) multiplier processing
                             exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
-                            if not exchange_val:
+                            # Extract the county code from potentially combined "nr + county" format
+                            county_val = _extract_county_from_exchange(exchange_val)
+                            if not county_val:
                                 continue
-                            if special_exchange and exchange_val == special_exchange:
+                            if special_exchange and county_val == special_exchange:
                                 partner_call = qso.qso_fields.get('call', '').upper()
                                 if partner_call:
                                     band_unique_mult.add(('CAT_A', partner_call))
                             else:
-                                band_unique_mult.add(('COUNTY', exchange_val))
+                                band_unique_mult.add(('COUNTY', county_val))
                     log.multiplier_count = len(band_unique_mult)
                     log.final_score = log.qsos_points * log.multiplier_count if log.qsos_points else 0
+
             else:
                 # Global multipliers (across all bands)
                 unique_multipliers = set()
@@ -965,14 +1063,17 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
                                 unique_multipliers.add(('DXCC', dxcc_prefix))
                         else:
                             exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
-                            if not exchange_val:
+                            # Extract the county code from potentially combined "nr + county" format
+                            county_val = _extract_county_from_exchange(exchange_val)
+                            if not county_val:
                                 continue
-                            if special_exchange and exchange_val == special_exchange:
+                            if special_exchange and county_val == special_exchange:
                                 partner_call = qso.qso_fields.get('call', '').upper()
                                 if partner_call:
                                     unique_multipliers.add(('CAT_A', partner_call))
                             else:
-                                unique_multipliers.add(('COUNTY', exchange_val))
+                                unique_multipliers.add(('COUNTY', county_val))
+
                 for log in op_inst.logs:
                     log.multiplier_count = len(unique_multipliers)
                     log.final_score = log.qsos_points * log.multiplier_count if log.qsos_points else 0
@@ -1230,7 +1331,27 @@ def compare_qso(log1, qso1, log2, qso2):
     return 1
 
 
+def _extract_county_from_exchange(exchange_val):
+    """
+    Extract the county/exchange code from a potentially combined exchange value.
+    
+    For 13-field QSOs, the exchange contains "nr + county" (e.g. "001 BN").
+    For standard 11-field QSOs, the exchange is just the county code (e.g. "BN").
+    
+    Returns the county/exchange code part.
+    """
+    if not exchange_val:
+        return ''
+    parts = exchange_val.strip().upper().split()
+    if len(parts) >= 2:
+        # Combined format: "001 BN" -> return "BN"
+        return parts[-1]
+    # Single token: "BN" or "RRO" -> return as-is
+    return parts[0]
+
+
 def mark_older_logs(log_list):
+
     """Mark older log files (by timestamp) with ignore_this_log."""
     maxDate = 0
     maxDateLogId = None
