@@ -16,6 +16,7 @@ limitations under the License.
 
 import io
 import os
+from typing import Any, Dict, List, Optional
 from unittest import TestCase, mock
 from unittest.mock import mock_open, patch
 
@@ -26,7 +27,7 @@ import edi
 from edi import ERR_IO, ERR_HEADER, ERR_QSO
 
 
-valid_edi_log = \
+valid_edi_log: str = \
 """TName=Cupa Nasaud
 TDate=20130803;20130806
 PCall=YO5PJB
@@ -82,7 +83,7 @@ CODXC=YO8SSB;KN27OD;133
 130804;0642;YO6POK;6;59;014;59;030;;KN27JG;109;;;;
 130804;0657;YO8SSB;2;599;015;599;035;;KN27OD;133;;;;"""
 
-invalid_edi_log_PCall = """
+invalid_edi_log_PCall: str = """
 PCall=LZ1NY
 PWWLo=KN16SS
 PBand=144 MHz
@@ -93,18 +94,18 @@ PAdr1=Sesame Street, 13
 RName=John Doe
 """
 
-invalid_edi_log_PBand = """
+invalid_edi_log_PBand: str = """
 PCall=YO5PJB
 PWWLo=KN16SS
 PBand=200 MHz
 """
-invalid_edi_log_PSect = """
+invalid_edi_log_PSect: str = """
 PCall=YO5PJB
 PWWLo=KN16SS
 PBand=144 MHz
 PSect=extraterrestrial
 """
-invalid_edi_log_TDate = """
+invalid_edi_log_TDate: str = """
 PCall=YO5PJB
 PWWLo=KN16SS
 PBand=144 MHz
@@ -112,7 +113,7 @@ PSect=SOMB
 TDate=20250101;20250102
 """
 
-invalid_edi_log_RHBBS = """
+invalid_edi_log_RHBBS: str = """
 PCall=YO5PJB
 PWWLo=KN16SS
 PBand=144 MHz
@@ -121,7 +122,7 @@ TDate=20130803;20130806
 RHBBS=invalid email address
 """
 
-invalid_edi_log_RHBBS_2 = """
+invalid_edi_log_RHBBS_2: str = """
 PCall=YO5PJB
 PWWLo=KN16SS
 PBand=144 MHz
@@ -131,7 +132,7 @@ RHBBS=mail1@mail.com
 RHBBS=mail2@mail.com
 """
 
-invalid_edi_log_PAdr1 = """
+invalid_edi_log_PAdr1: str = """
 PCall=YO5PJB
 PWWLo=KN16SS
 PBand=144 MHz
@@ -141,7 +142,7 @@ RHBBS=name@email.com
 PAdr1=None 
 """
 
-invalid_edi_log_PAdr1_2 = """
+invalid_edi_log_PAdr1_2: str = """
 PCall=YO5PJB
 PWWLo=KN16SS
 PBand=144 MHz
@@ -153,7 +154,7 @@ PAdr1=Address1 again
 """
 
 
-invalid_edi_log_RName = """
+invalid_edi_log_RName: str = """
 PCall=YO5PJB
 PWWLo=KN16SS
 PBand=144 MHz
@@ -164,7 +165,7 @@ PAdr1=Sesame Street, 13
 RName=cucu
 """
 
-invalid_edi_log_RName_2 = """
+invalid_edi_log_RName_2: str = """
 PCall=YO5PJB
 PWWLo=KN16SS
 PBand=144 MHz
@@ -176,7 +177,7 @@ RName=John Doe
 RName=John Doe's brother
 """
 
-valid_edi_log_header = """
+valid_edi_log_header: str = """
 PCall=YO5PJB
 PWWLo=KN16SS
 PBand=144 MHz
@@ -187,13 +188,13 @@ PAdr1=Sesame Street, 13
 RName=John Doe
 """
 
-test_valid_qso_lines = [
+test_valid_qso_lines: List[str] = [
     '130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;',
     '160507;1531;YO7LBX/P;1;59;006;59;016;;KN14QW;76;;;;',
     '160507;1404;HA6W;1;59;001;59;005;;KN08FB;149;;N;N;',
 ]
 
-test_valid_qso_fields = [
+test_valid_qso_fields: List[Dict[str, str]] = [
     {
         'date': '130803',
         'hour': '1319',
@@ -247,7 +248,7 @@ test_valid_qso_fields = [
     },
 ]
 
-test_invalid_qso_lines = [
+test_invalid_qso_lines: List[tuple[str, str]] = [
     ('123456789012345678', 'Qso line is too short'),
     ('130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;', 'Incorrect Qso line format (incorrect number of fields).'),
     ('30803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', 'Qso field <date> has an invalid value (30803)'),
@@ -259,7 +260,7 @@ test_invalid_qso_lines = [
     ('130803;1319;YO5BTZ;6;59;001;59;00002;;KN16SS;1;;;;', 'Qso field <rst received nr> has an invalid value (00002)'),
 ]
 
-test_logQso_qsos = [
+test_logQso_qsos: List[Any] = [
     edi.Log.qsos_tuple(linenr=40, qso='130803;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=True,
                        errors=[]),
     edi.Log.qsos_tuple(linenr=41, qso='130803;1321;YO5PLP/P;6;59;002;59;007;;KN27HM;116;;;;', valid=True,
@@ -292,7 +293,7 @@ test_logQso_qsos = [
                        errors=[]),
 ]
 
-test_logQso_regexp_qso_validator = [
+test_logQso_regexp_qso_validator: List[Any] = [
     edi.Log.qsos_tuple(linenr=5, qso='130803;1319;YO5BTZ;6;59;001;59;001;;0016SS;1;;;;', valid=False,
                        errors=[(5, '130803;1319;YO5BTZ;6;59;001;59;001;;0016SS;1;;;;',
                                 'Qso field <wwl> has an invalid value (0016SS)')]),
@@ -304,7 +305,7 @@ test_logQso_regexp_qso_validator = [
                                 'Qso field <wwl> has an invalid value (KNAASS)')]),
 ]
 
-test_logQso_generic_qso_validator = [
+test_logQso_generic_qso_validator: List[Any] = [
     edi.Log.qsos_tuple(linenr=1, qso='999999;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
                        errors=[(1, '999999;1319;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;',
                                 'Qso date is invalid: unconverted data remains: 99')]),
@@ -357,7 +358,7 @@ test_logQso_generic_qso_validator = [
                        errors=[(7, '130803;1319;YO5BTZ;6;59;001;59;001;;KN27ZZ;1;;;;', 'Qso WWL is invalid: KN27ZZ')]),
 ]
 
-test_logQso_rules_based_qso_validator = [
+test_logQso_rules_based_qso_validator: List[Any] = [
     edi.Log.qsos_tuple(linenr=1, qso='130802;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;', valid=False,
                        errors=[(1, '130802;1200;YO5BTZ;6;59;001;59;001;;KN16SS;1;;;;',
                                 'Qso date is invalid: before contest starts (<130803)'),
@@ -407,10 +408,10 @@ test_logQso_rules_based_qso_validator = [
 
 
 class TestEdiLog(TestCase):
-    def test_init(self):
+    def test_init(self) -> None:
 
         # test with a log with no-lines
-        invalid_edi_log = ''
+        invalid_edi_log: str = ''
         mo = mock.mock_open(read_data=invalid_edi_log)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
@@ -570,7 +571,7 @@ class TestEdiLog(TestCase):
                                  "Errors should indicate missing TDate field")
 
         # test with invalid TDate
-        invalid_edi_log2 = 'TDate=20170101,20170102\n' + invalid_edi_log
+        invalid_edi_log2: str = 'TDate=20170101,20170102\n' + invalid_edi_log
         mo = mock.mock_open(read_data=invalid_edi_log2)
         with patch('builtins.open', mo, create=True):
             log = edi.Log('some_log_file.edi')
@@ -622,7 +623,7 @@ class TestEdiLog(TestCase):
                                  "Errors should indicate invalid QSO date")
 
     @mock.patch('os.path.isfile')
-    def test_init_with_rules(self, mock_isfile):
+    def test_init_with_rules(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         mo_rules = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo_rules, create=True):
@@ -784,7 +785,7 @@ class TestEdiLog(TestCase):
                                   'qso': []},
                                  "No errors should be present for valid header")
 
-    def test_read_file_content(self):
+    def test_read_file_content(self) -> None:
         # test 'read_file_content', the buildins.open is mocked
         mo = mock_open(read_data=valid_edi_log)
         with patch('builtins.open', mo, create=True):
@@ -800,38 +801,37 @@ class TestEdiLog(TestCase):
                              "Errors should indicate file not found")
 
     @mock.patch.object(edi.Log, 'read_file_content')
-    def test_get_field(self, mock_read_file_content):
+    def test_get_field(self, mock_read_file_content: mock.MagicMock) -> None:
         mock_read_file_content.return_value = valid_edi_log.split('\n')
         log = edi.Log('some_log_file.edi')
         self.assertTupleEqual((['YO5PJB'], 3), log.get_field('PCall'), "PCall field should return YO5PJB at line 3")
         self.assertTupleEqual((['YO5PJB'], 3), log.get_field('pcall'), "PCall field should be case insensitive")
 
     @mock.patch.object(edi.Log, 'read_file_content')
-    def test_get_qsos(self, mock_read_file_content):
+    def test_get_qsos(self, mock_read_file_content: mock.MagicMock) -> None:
         self.maxDiff = None
         mock_read_file_content.return_value = valid_edi_log.split('\n')
         mock_read_file_content.return_value.append('[END; SomeToolSignature]')
         log = edi.Log('some_log_file.edi')
         self.assertEqual(len(test_logQso_qsos), len(log.qsos), "Number of QSOs should match expected count")
         for qso1, qso2 in zip(test_logQso_qsos, log.qsos):
-            _ln1 = qso1.linenr
-            _qso1 = qso1.qso
-            _valid1 = qso1.valid
-            _error1 = qso1.errors
-            _ln2 = qso2.line_nr
-            _qso2 = qso2.qso_line
-            _valid2 = qso2.valid
-            _error2 = qso2.errors
+            _ln1: int = qso1.linenr
+            _qso1: str = qso1.qso
+            _valid1: bool = qso1.valid
+            _error1: List[Any] = qso1.errors
+            _ln2: int = qso2.line_nr
+            _qso2: str = qso2.qso_line
+            _valid2: bool = qso2.valid
+            _error2: List[Any] = qso2.errors
             self.assertEqual(_ln1, _ln2, f"QSO line numbers should match for QSO {_ln1}")
             self.assertEqual(_qso1, _qso2, f"QSO lines should match for line {_ln1}")
             self.assertEqual(_valid1, _valid2, f"QSO validity should match for line {_ln1}")
             self.assertEqual(_error1, _error2, f"QSO errors should match for line {_ln1}")
-        # self.assertEqual(test_logQso_qsos, log.qsos)
 
-    def test_validate_callsign(self):
-        positive_tests = ['yo5pjb', 'YO5PJB', 'YO5pjb', 'K4X', 'A22A', 'I20000X', '4X4AAA', '3DA0RS',
+    def test_validate_callsign(self) -> None:
+        positive_tests: List[str] = ['yo5pjb', 'YO5PJB', 'YO5pjb', 'K4X', 'A22A', 'I20000X', '4X4AAA', '3DA0RS',
                           'yo5pjb/p', 'yo5pjb/m', 'yo5pjb/am', 'yo5pjb/mm']
-        negative_tests = [None, '', 'yo%pjb', 'yoSpjb']
+        negative_tests: List[Optional[str]] = [None, '', 'yo%pjb', 'yoSpjb']
 
         for test in positive_tests:
             with self.subTest(callsign=test):
@@ -840,9 +840,9 @@ class TestEdiLog(TestCase):
             with self.subTest(callsign=test):
                 self.assertFalse(edi.Log.validate_callsign(test), f"Callsign {test} should be invalid")
 
-    def test_validate_email(self):
-        positive_tests = ['yo5pjb@mail.com']
-        negative_tests = [None, '', 'yo5pjb.mail.com', 'yo5pjb', '@mail.com']
+    def test_validate_email(self) -> None:
+        positive_tests: List[str] = ['yo5pjb@mail.com']
+        negative_tests: List[Optional[str]] = [None, '', 'yo5pjb.mail.com', 'yo5pjb', '@mail.com']
         for test in positive_tests:
             with self.subTest(email=test):
                 self.assertTrue(edi.Log.validate_email(test), f"Email {test} should be valid")
@@ -850,9 +850,9 @@ class TestEdiLog(TestCase):
             with self.subTest(email=test):
                 self.assertFalse(edi.Log.validate_email(test), f"Email {test} should be invalid")
 
-    def test_validate_address(self):
-        positive_tests = ['Sesame Street', 'SesameStreet,13', 'SesameStreetNo.13']
-        negative_tests = [None, '', 'short', 'SesameStreet']
+    def test_validate_address(self) -> None:
+        positive_tests: List[str] = ['Sesame Street', 'SesameStreet,13', 'SesameStreetNo.13']
+        negative_tests: List[Optional[str]] = [None, '', 'short', 'SesameStreet']
         for test in positive_tests:
             with self.subTest(address=test):
                 self.assertTrue(edi.Log.validate_address(test), f"Address {test} should be valid")
@@ -860,9 +860,9 @@ class TestEdiLog(TestCase):
             with self.subTest(address=test):
                 self.assertFalse(edi.Log.validate_address(test), f"Address {test} should be invalid")
 
-    def test_validate_qth_locator(self):
-        positive_tests = ['KN16SS', 'kn16ss', 'AA00AA', 'RR00XX']
-        negative_tests = [None, '', '0016SS', 'KNXXSS', 'KN1600', 'KN16SS00', '00KN16SS']
+    def test_validate_qth_locator(self) -> None:
+        positive_tests: List[str] = ['KN16SS', 'kn16ss', 'AA00AA', 'RR00XX']
+        negative_tests: List[Optional[str]] = [None, '', '0016SS', 'KNXXSS', 'KN1600', 'KN16SS00', '00KN16SS']
 
         for test in positive_tests:
             with self.subTest(locator=test):
@@ -871,11 +871,11 @@ class TestEdiLog(TestCase):
             with self.subTest(locator=test):
                 self.assertFalse(edi.Log.validate_qth_locator(test), f"QTH locator {test} should be invalid")
 
-    def test_get_band(self):
-        positive_tests_144 = ['144', '145', '144mhz', '145mhz']
-        negative_tests_144 = [None, '', ' 144', ' 145', '143', '146']
-        positive_tests_432 = ['430', '432', '435', '430mhz', '432mhz', '432.200', '435mhz']
-        negative_tests_432 = [None, '', '431', '433', '434']
+    def test_get_band(self) -> None:
+        positive_tests_144: List[str] = ['144', '145', '144mhz', '145mhz']
+        negative_tests_144: List[Optional[str]] = [None, '', ' 144', ' 145', '143', '146']
+        positive_tests_432: List[str] = ['430', '432', '435', '430mhz', '432mhz', '432.200', '435mhz']
+        negative_tests_432: List[Optional[str]] = [None, '', '431', '433', '434']
 
         for test in positive_tests_144:
             with self.subTest(band_input=test):
@@ -891,10 +891,10 @@ class TestEdiLog(TestCase):
             with self.subTest(band_input=test):
                 self.assertIsNone(edi.Log.get_band(test), f"Band input {test} should not map to any band")
 
-    def test_validate_band(self):
-        positive_tests = ['144', '145', '144mhz', '145mhz', '430', '432', '435', '430mhz', '432mhz', '432.2',
+    def test_validate_band(self) -> None:
+        positive_tests: List[str] = ['144', '145', '144mhz', '145mhz', '430', '432', '435', '430mhz', '432mhz', '432.2',
                           '435hz', '1296', '1296mhz', '1.2g', '1.3g']
-        negative_tests = [None, '', '143', '146', '431', '433', '1200']
+        negative_tests: List[Optional[str]] = [None, '', '143', '146', '431', '433', '1200']
         for test in positive_tests:
             with self.subTest(band=test):
                 self.assertTrue(edi.Log.validate_band(test), f"Band {test} should be valid")
@@ -903,10 +903,10 @@ class TestEdiLog(TestCase):
                 self.assertFalse(edi.Log.validate_band(test), f"Band {test} should be invalid")
 
     @mock.patch('os.path.isfile')
-    def test_rules_based_validate_band(self, mock_isfile):
+    def test_rules_based_validate_band(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
-        positive_tests = ['144', '145', '144mhz', '145mhz', '430', '432', '430mhz', '432mhz', '432.2']
-        negative_tests = [None, '', '143', '146', '431', '433', '435']
+        positive_tests: List[str] = ['144', '145', '144mhz', '145mhz', '430', '432', '430mhz', '432mhz', '432.2']
+        negative_tests: List[Optional[str]] = [None, '', '143', '146', '431', '433', '435']
 
         mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
@@ -919,13 +919,13 @@ class TestEdiLog(TestCase):
                 self.assertFalse(edi.Log.rules_based_validate_band(test, _rules), f"Band {test} should be invalid according to rules")
         self.assertRaisesRegex(ValueError, 'No contest rules provided !', edi.Log.rules_based_validate_band, positive_tests[0], None)
 
-    def test_validate_category(self):
-        positive_tests = {
+    def test_validate_category(self) -> None:
+        positive_tests: Dict[str, List[str]] = {
             'single': ['so', 'sosb', 'somb', 'single', 'single op', 'single-op'],
             'multi': ['mo', 'mosb', 'momb', 'multi', 'multi op', 'multi-op'],
             'checklog': ['check', 'check-log', 'checklog', 'CHECklog']
         }
-        negative_tests = [None, '', 'operator', 'band']
+        negative_tests: List[Optional[str]] = [None, '', 'operator', 'band']
         for _category, test_list in positive_tests.items():
             for test in test_list:
                 with self.subTest(category_input=test, expected_category=_category):
@@ -935,13 +935,13 @@ class TestEdiLog(TestCase):
                 self.assertTupleEqual(edi.Log.validate_category(test), (False, None), f"Category input {test} should be invalid")
 
     @mock.patch('os.path.isfile')
-    def test_rules_based_validate_category(self, mock_isfile):
+    def test_rules_based_validate_category(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
-        positive_tests = {
+        positive_tests: Dict[str, List[str]] = {
             'Single Operator 144': ['so', 'sosb', 'somb', 'single', 'single op', 'single-op', 'single-operator', 'single operator'],
             'Multi Operator': ['mo', 'mosb', 'momb', 'multi', 'multi op', 'multi-op', 'multi-operator' 'multi operator'],
         }
-        negative_tests = [None, '', 'operator', 'band']
+        negative_tests: List[Optional[str]] = [None, '', 'operator', 'band']
         mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
             _rules = rules.Rules('some_rule_file.rules')
@@ -954,8 +954,8 @@ class TestEdiLog(TestCase):
                 self.assertTupleEqual(edi.Log.rules_based_validate_category(test, _rules), (False, None), f"Category input {test} should be invalid with rules")
         self.assertRaisesRegex(ValueError, 'No contest rules provided !', edi.Log.rules_based_validate_category, 'none', None)
 
-    def test_get_qsos_parsing_between_markers(self):
-        mock_data = [
+    def test_get_qsos_parsing_between_markers(self) -> None:
+        mock_data: List[str] = [
             'PCall=YO5PJB\n',
             'PWWLo=KN16SS\n',
             'PBand=144 MHz\n',
@@ -973,11 +973,11 @@ class TestEdiLog(TestCase):
         self.assertTrue(log.valid_header)
         self.assertTrue(log.valid_qsos)
 
-    def test_validate_date_invalid_calendar_date(self):
+    def test_validate_date_invalid_calendar_date(self) -> None:
         self.assertFalse(edi.Log.validate_date('20240230;20240231'))
 
-    def test_rules_based_validate_date_no_rules(self):
-        mock_data = [
+    def test_rules_based_validate_date_no_rules(self) -> None:
+        mock_data: List[str] = [
             'PCall=YO5PJB\n',
             'PWWLo=KN16SS\n',
             'PBand=144 MHz\n',
@@ -993,7 +993,7 @@ class TestEdiLog(TestCase):
 
 
 class TestEdiLogQso(TestCase):
-    def test_init(self):
+    def test_init(self) -> None:
         for (linenr, qso, valid, error) in test_logQso_qsos:
             lq = edi.LogQso(qso, linenr)
             self.assertEqual(lq.line_nr, linenr)
@@ -1001,14 +1001,14 @@ class TestEdiLogQso(TestCase):
             self.assertEqual(lq.valid, valid)
             self.assertEqual(lq.errors, error)
 
-    def test_qso_parser(self):
-        lqlist = []
+    def test_qso_parser(self) -> None:
+        lqlist: List[Dict[str, str]] = []
         for qso in test_valid_qso_lines:
             lq = edi.LogQso(qso, 1).qso_fields
             lqlist.append(lq.copy())
         self.assertEqual(lqlist, test_valid_qso_fields)
 
-    def test_valid_qso_line(self):
+    def test_valid_qso_line(self) -> None:
         for line in test_valid_qso_lines:
             self.assertIsNone(edi.LogQso.regexp_qso_validator(line))
 
@@ -1016,7 +1016,7 @@ class TestEdiLogQso(TestCase):
             ret = edi.LogQso.regexp_qso_validator(line)
             self.assertEqual(message, ret)
 
-    def test_regexp_qso_validator(self):
+    def test_regexp_qso_validator(self) -> None:
         for (linenr, qso, valid, errors) in test_logQso_regexp_qso_validator:
             lq = edi.LogQso(qso, linenr)
             self.assertEqual(lq.line_nr, linenr)
@@ -1024,7 +1024,7 @@ class TestEdiLogQso(TestCase):
             self.assertEqual(lq.valid, valid)
             self.assertEqual(lq.errors, errors)
 
-    def test_generic_qso_validator(self):
+    def test_generic_qso_validator(self) -> None:
         for (linenr, qso, valid, errors) in test_logQso_generic_qso_validator:
             lq = edi.LogQso(qso, linenr)
             self.assertEqual(lq.line_nr, linenr)
@@ -1033,7 +1033,7 @@ class TestEdiLogQso(TestCase):
             self.assertEqual(lq.errors, errors)
 
     @mock.patch('os.path.isfile')
-    def test_rules_based_qso_validator(self, mock_isfile):
+    def test_rules_based_qso_validator(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
@@ -1049,12 +1049,12 @@ class TestEdiLogQso(TestCase):
 
 
 class TestEdiOperator(TestCase):
-    def test_init(self):
+    def test_init(self) -> None:
         op = edi.Operator('yo5pjb')
         self.assertEqual(op.callsign, 'yo5pjb')
         self.assertEqual(op.logs, [])
 
-    def test_add_log(self):
+    def test_add_log(self) -> None:
         op = edi.Operator('yo5pjb')
         mo = mock.mock_open(read_data=valid_edi_log)
         with patch('builtins.open', mo, create=True):
@@ -1065,7 +1065,7 @@ class TestEdiOperator(TestCase):
             self.assertIsInstance(op.logs[0], edi.Log)
             self.assertIsInstance(op.logs[1], edi.Log)
 
-    def test_add_log_instance(self):
+    def test_add_log_instance(self) -> None:
         op = edi.Operator('yo5pjb')
         log = edi.Log('some_log_file.edi')
 
@@ -1073,7 +1073,7 @@ class TestEdiOperator(TestCase):
         op.add_log_instance(log)
         self.assertEqual(op.logs, [log])
 
-    def test_logs_by_band_regexp(self):
+    def test_logs_by_band_regexp(self) -> None:
         op = edi.Operator('yo5pjb')
         log1 = edi.Log('log1.edi')
         log1.band = '144 Mhz'
@@ -1096,27 +1096,27 @@ class TestEdiOperator(TestCase):
 
 
 class TestEdiHelperFunctions(TestCase):
-    def test_dict_to_json(self):
-        input = {'1': '2',
+    def test_dict_to_json(self) -> None:
+        input: Dict[str, str] = {'1': '2',
                  'Hello': 'World!'}
-        output = '{"1": "2", "Hello": "World!"}'
+        output: str = '{"1": "2", "Hello": "World!"}'
         self.assertEqual(edi.dict_to_json(input), output)
 
-    def test_dict_to_xml(self):
-        input = {'1': '2',
+    def test_dict_to_xml(self) -> None:
+        input: Dict[str, str] = {'1': '2',
                  'Hello': 'World!'}
-        output = b'<?xml version="1.0" encoding="UTF-8" ?><root><n1 type="str">2</n1><Hello type="str">World!</Hello></root>'
+        output: bytes = b'<?xml version="1.0" encoding="UTF-8" ?><root><n1 type="str">2</n1><Hello type="str">World!</Hello></root>'
         self.assertEqual(edi.dict_to_xml(input), output)
 
-    def test_qth_distance(self):
-        distance = [('KN16SS', 'KN16SS', 1),
+    def test_qth_distance(self) -> None:
+        distance: List[tuple[str, str, int]] = [('KN16SS', 'KN16SS', 1),
                     ('KN16SS', 'KN16SQ', 9),
                     ('KN16SS', 'KN17SS', 111)]
         for qth1, qth2, km in distance:
             self.assertEqual(edi.qth_distance(qth1, qth2), km)
 
     @patch('os.path.isfile')
-    def test_compare_qso(self, mock_isfile):
+    def test_compare_qso(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         mo_rules = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo_rules, create=True):
@@ -1128,7 +1128,7 @@ class TestEdiHelperFunctions(TestCase):
         _log.valid_header = True
         _log.valid_qsos = True
 
-        qso_list = [
+        qso_list: List[edi.LogQso] = [
             # base qso (0)
             edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16AA;1;;;;', 1, _rules),
             # qso's with wrong date (1-6)
@@ -1173,7 +1173,7 @@ class TestEdiHelperFunctions(TestCase):
             edi.LogQso('130803;1200;YO5AAA;6;59;0001;59;001;;KN16aa;1;;;;', 1, _rules),
         ]
 
-        qso_test = (
+        qso_test: List[tuple[edi.LogQso, edi.LogQso, Any, Any, str]] = (
             # test different date
             (qso_list[0], qso_list[1], None, ValueError, 'Other ham qso is invalid'),
             (qso_list[0], qso_list[2], None, ValueError, 'Other ham qso is invalid'),
@@ -1259,13 +1259,13 @@ class TestEdiHelperFunctions(TestCase):
             if ex:
                 self.assertRaisesRegex(ex, '^'+ex_msg+'$', edi.compare_qso, _log, q1, _log, q2)
 
-    def test_crosscheck_logs_filter_no_rules(self):
+    def test_crosscheck_logs_filter_no_rules(self) -> None:
         with patch('builtins.print') as mock_print:
             result = edi.crosscheck_logs_filter(edi.Log, rules=None, logs_folder='logs')
         self.assertEqual({}, result)
         mock_print.assert_called_once_with('No rules were provided')
 
-    def test_crosscheck_logs_filter_logs_folder_not_dir(self):
+    def test_crosscheck_logs_filter_logs_folder_not_dir(self) -> None:
         mo_rules = mock.mock_open(read_data=VALID_RULES_BASIC)
         with patch('builtins.open', mo_rules, create=True), patch('os.path.isfile', return_value=True):
             _rules = rules.Rules('some_rule_file.rules')
@@ -1276,16 +1276,16 @@ class TestEdiHelperFunctions(TestCase):
         self.assertEqual({}, result)
         mock_print.assert_called_once_with('Cannot open logs folder : logs')
 
-    def test_crosscheck_logs_filter_checklogs_folder_not_dir(self):
+    def test_crosscheck_logs_filter_checklogs_folder_not_dir(self) -> None:
         mo_rules = mock.mock_open(read_data=VALID_RULES_BASIC)
         with patch('builtins.open', mo_rules, create=True), patch('os.path.isfile', return_value=True):
             _rules = rules.Rules('some_rule_file.rules')
 
-        file_contents = {
+        file_contents: Dict[str, str] = {
             os.path.join('logs', 'log1.edi'): valid_edi_log
         }
 
-        def fake_open(path, mode='r', *args, **kwargs):
+        def fake_open(path: str, mode: str = 'r', *args: Any, **kwargs: Any) -> io.StringIO:
             return io.StringIO(file_contents[path])
 
         with patch('builtins.print') as mock_print, \
@@ -1297,12 +1297,12 @@ class TestEdiHelperFunctions(TestCase):
         self.assertEqual({}, result)
         mock_print.assert_called_once_with('Cannot open checklogs folder : checklogs')
 
-    def test_crosscheck_logs_filter_happy_path(self):
+    def test_crosscheck_logs_filter_happy_path(self) -> None:
         mo_rules = mock.mock_open(read_data=VALID_RULES_BASIC)
         with patch('builtins.open', mo_rules, create=True), patch('os.path.isfile', return_value=True):
             _rules = rules.Rules('some_rule_file.rules')
 
-        log1_content = '''PCall=YO5AAA
+        log1_content: str = '''PCall=YO5AAA
 PWWLo=KN16SS
 PBand=144 MHz
 PSect=SOMB
@@ -1310,7 +1310,7 @@ TDate=20130803;20130806
 [QSORecords;1]
 130803;1200;YO5BBB;6;59;001;59;001;;KN16SS;1;;;;
 '''
-        log2_content = '''PCall=YO5BBB
+        log2_content: str = '''PCall=YO5BBB
 PWWLo=KN16SS
 PBand=144 MHz
 PSect=SOMB
@@ -1323,7 +1323,7 @@ TDate=20130803;20130806
             os.path.join('logs', 'log2.edi'): log2_content,
         }
 
-        def fake_open(path, mode='r', *args, **kwargs):
+        def fake_open(path: str, mode: str = 'r', *args: Any, **kwargs: Any) -> io.StringIO:
             return io.StringIO(file_contents[path])
 
         with patch('os.path.isdir', return_value=True), \
@@ -1335,20 +1335,22 @@ TDate=20130803;20130806
         self.assertEqual(1, operator_instances['YO5AAA'].logs[0].qsos_points)
         self.assertEqual(1, operator_instances['YO5AAA'].logs[0].qsos_confirmed)
 
-    def test_delta_ord_and_conv_maidenhead_to_latlong(self):
+    def test_delta_ord_and_conv_maidenhead_to_latlong(self) -> None:
         self.assertEqual(5, edi.delta_ord('5'))
         self.assertEqual(0, edi.delta_ord('A'))
         self.assertEqual(25, edi.delta_ord('Z'))
         self.assertEqual(-1, edi.delta_ord('!'))
 
+        longitude: float
+        latitude: float
         longitude, latitude = edi.conv_maidenhead_to_latlong('KN16SS')
         self.assertAlmostEqual(23.5, longitude, places=6)
         self.assertAlmostEqual(46.75, latitude, places=6)
 
-    def test_qth_distance_nontrivial(self):
+    def test_qth_distance_nontrivial(self) -> None:
         self.assertEqual(111, edi.qth_distance('KN16SS', 'KN17SS'))
 
-    def test_mark_older_logs(self):
+    def test_mark_older_logs(self) -> None:
         log1 = mock.Mock(path='log1.edi')
         log2 = mock.Mock(path='log2.edi')
         log1.ignore_this_log = False
@@ -1360,7 +1362,7 @@ TDate=20130803;20130806
         self.assertTrue(log1.ignore_this_log)
         self.assertFalse(log2.ignore_this_log)
 
-    def test_compare_qso_raises_first_qso_error(self):
+    def test_compare_qso_raises_first_qso_error(self) -> None:
         qso1 = edi.LogQso('999999;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;', 1)
         qso2 = edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16SS;1;;;;', 2)
         log1 = mock.Mock(callsign='YO5AAA', maidenhead_locator='KN16SS')
@@ -1370,7 +1372,7 @@ TDate=20130803;20130806
                                'Qso date is invalid: unconverted data remains: 99',
                                edi.compare_qso, log1, qso1, log2, qso2)
 
-    def test_compare_qso_raises_other_ham_invalid_error(self):
+    def test_compare_qso_raises_other_ham_invalid_error(self) -> None:
         qso1 = edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16SS;1;;;;', 1)
         qso2 = edi.LogQso('999999;0657;YO8SSB;6;59;015;59;035;;KN27OD;133;;;;', 2)
         log1 = mock.Mock(callsign='YO5AAA', maidenhead_locator='KN16SS')
@@ -1380,7 +1382,7 @@ TDate=20130803;20130806
                                'Other ham qso is invalid',
                                edi.compare_qso, log1, qso1, log2, qso2)
 
-    def test_compare_qso_callsign_mismatch(self):
+    def test_compare_qso_callsign_mismatch(self) -> None:
         qso1 = edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16SS;1;;;;', 1)
         qso2 = edi.LogQso('130803;1200;YO5BBB;6;59;001;59;001;;KN16SS;1;;;;', 2)
         log1 = mock.Mock(callsign='YO5AAA', maidenhead_locator='KN16SS')
@@ -1390,7 +1392,7 @@ TDate=20130803;20130806
                                'Callsign mismatch',
                                edi.compare_qso, log1, qso1, log2, qso2)
 
-    def test_compare_qso_date_format_invalid(self):
+    def test_compare_qso_date_format_invalid(self) -> None:
         qso1 = edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16SS;1;;;;', 1)
         qso1.qso_fields['date'] = 'ABCDEF'
         qso1.valid = True
@@ -1402,7 +1404,7 @@ TDate=20130803;20130806
                                'Date format is invalid : ABCDEF',
                                edi.compare_qso, log1, qso1, log2, qso2)
 
-    def test_compare_qso_hour_format_invalid(self):
+    def test_compare_qso_hour_format_invalid(self) -> None:
         qso1 = edi.LogQso('130803;1200;YO5AAA;6;59;001;59;001;;KN16SS;1;;;;', 1)
         qso1.qso_fields['hour'] = '12A0'
         qso1.valid = True
@@ -1415,7 +1417,7 @@ TDate=20130803;20130806
                                edi.compare_qso, log1, qso1, log2, qso2)
 
     @mock.patch('os.path.isfile')
-    def test_crosscheck_logs(self, mck_isfile):
+    def test_crosscheck_logs(self, mck_isfile: mock.MagicMock) -> None:
         """
         A test with hardcoded logs.
         It's hard to follow and understand this test and
@@ -1423,7 +1425,7 @@ TDate=20130803;20130806
         and in case something is changing this test should catch it
         """
         mck_isfile.return_value = True
-        expected_result = ['True-[]-1',  # yo5aaa -> yo5bbb
+        expected_result: List[str] = ['True-[]-1',  # yo5aaa -> yo5bbb
                            'True-[]-1',  # yo5aaa -> yo5ccc
                            'True-[]-1',  # yo5bbb -> yo5aaa
                            'False-No qso found on YO5CCC log-None',                    # yo5bbb -> yo5ccc (yo5ccc : no qso with yo5bbb)
@@ -1439,7 +1441,7 @@ TDate=20130803;20130806
         with patch('builtins.open', mo_rules, create=True):
             _rules = rules.Rules('some_rule_file.rules')
 
-        log1_content = \
+        log1_content: str = \
 """TName=Cupa Nasaud
 TDate=20130803;20130806
 PCall=YO5aaa
@@ -1456,7 +1458,7 @@ PBand=144 MHz
             op1.add_log_by_path('some_log_file.edi', rules=_rules)
             self.assertEqual(len(op1.logs), 1)
 
-        log2_content = \
+        log2_content: str = \
 """TName=Cupa Nasaud
 TDate=20130803;20130806
 PCall=YO5BBB
@@ -1476,7 +1478,7 @@ PBand=144 MHz
             op2.add_log_by_path('some_log_file.edi', rules=_rules)
             self.assertEqual(len(op2.logs), 1)
 
-        log3_content = \
+        log3_content: str = \
 """TName=Cupa Nasaud
 TDate=20130803;20130806
 PCall=yo5ccc
@@ -1496,7 +1498,7 @@ PBand=144 MHz
 
         op4 = edi.Operator('YO5DDD')  # op without logs
 
-        log5_content = \
+        log5_content: str = \
 """TName=Cupa Nasaud
 TDate=20130803;20130806
 PCall=YO5FFF
@@ -1512,7 +1514,7 @@ PBand=432 MHz
             op5.add_log_by_path('some_log_file.edi', rules=_rules)
             self.assertEqual(len(op5.logs), 1)
 
-        op_inst = {
+        op_inst: Dict[str, edi.Operator] = {
             'YO5AAA': op1,
             'YO5BBB': op2,
             'YO5CCC': op3,
@@ -1522,8 +1524,7 @@ PBand=432 MHz
 
         edi.crosscheck_logs(op_inst, _rules, 1)
 
-        result = []
-        print("NIMIC")
+        result: List[str] = []
         for op, op_inst in op_inst.items():
             for log in op_inst.logs:
                 for qso in log.qsos:
@@ -1532,20 +1533,20 @@ PBand=432 MHz
 
 
     @mock.patch('os.path.isfile')
-    def test_crosscheck_logs_custom_1(self, mck_isfile):
+    def test_crosscheck_logs_custom_1(self, mck_isfile: mock.MagicMock) -> None:
         """
         A test based on logs from CN 2022, when a bug in cross-check was found.
         The problem was with a duplicate form the 1st operator
         """
         mck_isfile.return_value = True
-        expected_result = [
+        expected_result: List[str] = [
             'False-No qso found on YO4FYQ log-None',
             'True-[]-599',
             'True-[]-599',
             'True-[]-599',
             'True-[]-599']
 
-        custom_rules = \
+        custom_rules: str = \
 r"""
 [contest]
 name=CN2022
@@ -1584,7 +1585,7 @@ bands=band1
         with patch('builtins.open', mo_rules, create=True):
             _rules = rules.Rules('some_rule_file.rules')
 
-        log1_content = \
+        log1_content: str = \
 """TName=Campionatul Național ȋn Unde Ultrascurte VHF (144 MHz)
 TDate=20220820;20220820
 PCall=YO2GL
@@ -1602,7 +1603,7 @@ PBand=144 MHz
             op1.add_log_by_path('some_log_file.edi', rules=_rules)
             self.assertEqual(len(op1.logs), 1)
 
-        log2_content = \
+        log2_content: str = \
 """TName=CNVHF2022
 TDate=20220820;20220820
 PCall=YO4FYQ
@@ -1620,14 +1621,14 @@ PBand=144 MHz
             op2.add_log_by_path('some_log_file.edi', rules=_rules)
             self.assertEqual(len(op2.logs), 1)
 
-        op_inst = {
+        op_inst: Dict[str, edi.Operator] = {
             'YO2GL': op1,
             'YO4FYQ': op2
         }
 
         edi.crosscheck_logs(op_inst, _rules, 1)
 
-        result = []
+        result: List[str] = []
         for op, op_inst in op_inst.items():
             for log in op_inst.logs:
                 for qso in log.qsos:

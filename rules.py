@@ -20,6 +20,9 @@ Concrete sub-classes (RulesVhf, RulesHf) add format-specific mode handling.
 import configparser
 import os
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from configparser import ConfigParser
 
 
 class Rules(object):
@@ -30,11 +33,11 @@ class Rules(object):
     Sub-classes may override contest_qso_modes to change parsing behaviour.
     """
 
-    path = None
-    config = None
-    valid = False
+    path: Optional[str] = None
+    config: Optional[ConfigParser] = None
+    valid: bool = False
 
-    def __init__(self, path):
+    def __init__(self, path: str) -> None:
         if not os.path.isfile(path):
             raise FileNotFoundError("The rules file " + str(path) + " was not found")
         self.path = path
@@ -44,13 +47,13 @@ class Rules(object):
         self.validate_rules()
 
     @staticmethod
-    def read_config_file_content(path):
-        content = None
+    def read_config_file_content(path: str) -> str:
+        content: Optional[str] = None
         with open(path, 'r') as _file:
             content = _file.read()
         return content
 
-    def validate_rules(self):
+    def validate_rules(self) -> None:
         # -- validate [contest] section fields --
         try:
             _ = self.contest_bands_nr
@@ -97,7 +100,7 @@ class Rules(object):
 
         # validate dates & times
         try:
-            msg = 'contest begin date'
+            msg: str = 'contest begin date'
             datetime.strptime(self.contest_begin_date, '%Y%m%d')
             msg = 'contest end date'
             datetime.strptime(self.contest_end_date, '%Y%m%d')
@@ -135,29 +138,29 @@ class Rules(object):
     # ── Shared properties ──────────────────────────────────────────────
 
     @property
-    def contest_begin_date(self):
+    def contest_begin_date(self) -> str:
         return self.config['contest']['begindate']
 
     @property
-    def contest_end_date(self):
+    def contest_end_date(self) -> str:
         return self.config['contest']['enddate']
 
     @property
-    def contest_begin_hour(self):
+    def contest_begin_hour(self) -> str:
         return self.config['contest']['beginhour']
 
     @property
-    def contest_end_hour(self):
+    def contest_end_hour(self) -> str:
         return self.config['contest']['endhour']
 
     @property
-    def contest_qso_modes(self):
+    def contest_qso_modes(self) -> List[int]:
         """
         Default implementation: parse modes as integers (VHF/EDI mode codes).
         Sub-classes may override to e.g. parse string-based modes (HF/Cabrillo).
         """
         try:
-            modes = [int(mode) for mode in self.config['contest']['modes'].split(',')]
+            modes: List[int] = [int(mode) for mode in self.config['contest']['modes'].split(',')]
             return modes
         except KeyError:
             raise KeyError('Rules are missing field \'modes\' in [contest] section')
@@ -165,7 +168,7 @@ class Rules(object):
             raise ValueError('The rules have invalid \'modes\' value in [contest] section')
 
     @property
-    def contest_bands_nr(self):
+    def contest_bands_nr(self) -> int:
         try:
             return int(self.config['contest']['bands'])
         except KeyError:
@@ -173,11 +176,11 @@ class Rules(object):
         except ValueError:
             raise ValueError('The rules have invalid \'bands\' value in [contest] section')
 
-    def contest_band(self, number):
-        return self.config['band'+str(number)]
+    def contest_band(self, number: int) -> Dict[str, str]:
+        return dict(self.config['band' + str(number)])
 
     @property
-    def contest_periods_nr(self):
+    def contest_periods_nr(self) -> int:
         try:
             return int(self.config['contest']['periods'])
         except KeyError:
@@ -185,14 +188,14 @@ class Rules(object):
         except ValueError:
             raise ValueError('The rules have invalid \'periods\' value in [contest] section')
 
-    def contest_period(self, number):
-        return self.config['period'+str(number)]
+    def contest_period(self, number: int) -> Dict[str, str]:
+        return dict(self.config['period' + str(number)])
 
-    def contest_period_bands(self, number):
+    def contest_period_bands(self, number: int) -> List[str]:
         return [band for band in self.contest_period(number)['bands'].split(',')]
 
     @property
-    def contest_categories_nr(self):
+    def contest_categories_nr(self) -> int:
         try:
             return int(self.config['contest']['categories'])
         except KeyError:
@@ -200,20 +203,20 @@ class Rules(object):
         except ValueError:
             raise ValueError('Rules have invalid \'categories\' value in [contest] section')
 
-    def contest_category(self, number):
-        return self.config['category'+str(number)]
+    def contest_category(self, number: int) -> Dict[str, str]:
+        return dict(self.config['category' + str(number)])
 
-    def contest_category_bands(self, number):
+    def contest_category_bands(self, number: int) -> List[str]:
         return [band for band in self.contest_category(number)['bands'].split(',')]
 
     @property
-    def contest_log_format(self):
+    def contest_log_format(self) -> str:
         return self.config['log']['format'].upper()
 
     @property
-    def contest_extra_fields(self):
-        extra_fields_to_check = ['callregexp']
-        extra_list = []
+    def contest_extra_fields(self) -> List[str]:
+        extra_fields_to_check: List[str] = ['callregexp']
+        extra_list: List[str] = []
         try:
             assert self.config['extra']
         except (KeyError, AssertionError):
@@ -228,7 +231,7 @@ class Rules(object):
         extra_list.extend([x for x in self.config['extra'] if self.config['extra'][x].upper() == 'YES'])
         return extra_list
 
-    def contest_extra_field_value(self, field):
+    def contest_extra_field_value(self, field: str) -> Optional[str]:
         if field in self.contest_extra_fields:
             return self.config['extra'][field]
         return None
@@ -236,7 +239,7 @@ class Rules(object):
     # ── Scoring properties ──────────────────────────────────────────────
 
     @property
-    def contest_qso_points(self):
+    def contest_qso_points(self) -> int:
         """
         Points awarded for a regular QSO (default 1).
         Set in [scoring] section as qso_points.
@@ -247,7 +250,7 @@ class Rules(object):
             return 1
 
     @property
-    def contest_special_qso_points(self):
+    def contest_special_qso_points(self) -> int:
         """
         Points awarded for a QSO with the special station (default 0).
         Set in [scoring] section as special_qso_points.
@@ -258,14 +261,14 @@ class Rules(object):
             return 0
 
     @property
-    def contest_special_callsign(self):
+    def contest_special_callsign(self) -> List[str]:
         """
         Callsigns list of the special station that awards bonus points.
         Set in [scoring] section as special_callsign.
         Returns [] if not configured.
         """
         try:
-            sp_callsigns = str(self.config['scoring']['special_callsign']).upper()
+            sp_callsigns: str = str(self.config['scoring']['special_callsign']).upper()
             return [s.strip() for s in sp_callsigns.split(',')]
         except (KeyError, ValueError):
             return []
@@ -273,7 +276,7 @@ class Rules(object):
     # ── DRACULA Custom Scoring Flag ─────────────────────────────────────
 
     @property
-    def contest_custom_scoring(self):
+    def contest_custom_scoring(self) -> Optional[str]:
         """
         Returns the custom scoring identifier (e.g. 'DRACULA') if set,
         or None if not configured.
@@ -287,7 +290,7 @@ class Rules(object):
     # ── Multiplier properties ──────────────────────────────────────────
 
     @property
-    def contest_multiplier_enabled(self):
+    def contest_multiplier_enabled(self) -> bool:
         """
         Whether multiplier-based scoring is active (default False).
         Set in [scoring] section as multiplier_enabled.
@@ -299,7 +302,7 @@ class Rules(object):
             return False
 
     @property
-    def contest_multiplier_per_band(self):
+    def contest_multiplier_per_band(self) -> bool:
         """
         Whether multipliers are counted per band (default False).
         Set in [scoring] section as multiplier_per_band.
@@ -311,7 +314,7 @@ class Rules(object):
             return False
 
     @property
-    def contest_multiplier_exchange_field(self):
+    def contest_multiplier_exchange_field(self) -> str:
         """
         Name of the QSO field to use for multiplier counting (default 'nr_recv').
         Set in [scoring] section as multiplier_exchange_field.
@@ -322,7 +325,7 @@ class Rules(object):
             return 'nr_recv'
 
     @property
-    def contest_multiplier_special_exchange(self):
+    def contest_multiplier_special_exchange(self) -> Optional[str]:
         """
         Exchange value that identifies a special (Category A) station
         whose callsign is used as a multiplier instead of the exchange value.
@@ -337,7 +340,7 @@ class Rules(object):
     # ── DRACULA-specific scoring properties ────────────────────────────
 
     @property
-    def contest_non_yo_to_special_points(self):
+    def contest_non_yo_to_special_points(self) -> int:
         """
         Points for non-YO working a special DRACULA station (default 10).
         """
@@ -347,7 +350,7 @@ class Rules(object):
             return 10
 
     @property
-    def contest_non_yo_to_yo_points(self):
+    def contest_non_yo_to_yo_points(self) -> int:
         """
         Points for non-YO working a YO station (default 5).
         """
@@ -357,7 +360,7 @@ class Rules(object):
             return 5
 
     @property
-    def contest_non_yo_dxcc_points(self):
+    def contest_non_yo_dxcc_points(self) -> int:
         """
         Points for non-YO working a different DXCC entity (default 2).
         """
@@ -367,7 +370,7 @@ class Rules(object):
             return 2
 
     @property
-    def contest_non_yo_same_country_points(self):
+    def contest_non_yo_same_country_points(self) -> int:
         """
         Points for non-YO working same country (default 1).
         """
@@ -377,7 +380,7 @@ class Rules(object):
             return 1
 
     @property
-    def contest_yo_to_special_points(self):
+    def contest_yo_to_special_points(self) -> int:
         """
         Points for YO working a special DRACULA station (default 10).
         """
@@ -387,7 +390,7 @@ class Rules(object):
             return 10
 
     @property
-    def contest_yo_to_nonyo_points(self):
+    def contest_yo_to_nonyo_points(self) -> int:
         """
         Points for YO working a non-YO station (default 5).
         """
@@ -397,7 +400,7 @@ class Rules(object):
             return 5
 
     @property
-    def contest_dracula_county_list(self):
+    def contest_dracula_county_list(self) -> Dict[str, List[str]]:
         """
         Mapping of YO2..YO9 county abbreviations per district,
         used for DRACULA multiplier counting.
@@ -405,10 +408,10 @@ class Rules(object):
         """
         try:
             # ConfigParser stores multi-line as a single string with \\n\\r
-            raw = self.config['scoring'].get('dracula_county_list', '')
+            raw: str = self.config['scoring'].get('dracula_county_list', '')
             if not raw:
                 return {}
-            result = {}
+            result: Dict[str, List[str]] = {}
             for line in raw.replace('\r', '').split('\n'):
                 line = line.strip()
                 if ':' not in line:
@@ -418,5 +421,3 @@ class Rules(object):
             return result
         except Exception:
             return {}
-
-

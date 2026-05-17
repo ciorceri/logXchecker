@@ -17,6 +17,7 @@ VHF/UHF/SHF contest rules (EDI log format).
 Modes are represented as integers:
     0=None  1=SSB  2=CW  3=SSB+CW  4=CW+SSB  5=AM  6=FM  7=RTTY  8=SSTV  9=ATV
 """
+from typing import List
 from rules import Rules
 
 
@@ -27,9 +28,9 @@ class RulesVhf(Rules):
     """
 
     @property
-    def contest_qso_modes(self):
+    def contest_qso_modes(self) -> List[int]:
         try:
-            modes = [int(mode) for mode in self.config['contest']['modes'].split(',')]
+            modes: List[int] = [int(mode) for mode in self.config['contest']['modes'].split(',')]
             return modes
         except KeyError:
             raise KeyError('Rules are missing field \'modes\' in [contest] section')

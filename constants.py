@@ -17,20 +17,22 @@ Shared constants used across logXchecker and format modules.
 Importing this module has no side effects and does not require any
 optional format module to be installed.
 """
-INFO_MLC = 'multi_logs_folder'
-INFO_CC = 'cross_check_folder'
-INFO_LOG = 'log'
-INFO_LOGS = 'logs'
-INFO_BANDS = 'band'
-INFO_OPERATORS = 'operators'
-ERR_IO = 'io'
-ERR_HEADER = 'header'
-ERR_QSO = 'qso'
+from typing import Dict
+
+INFO_MLC: str = 'multi_logs_folder'
+INFO_CC: str = 'cross_check_folder'
+INFO_LOG: str = 'log'
+INFO_LOGS: str = 'logs'
+INFO_BANDS: str = 'band'
+INFO_OPERATORS: str = 'operators'
+ERR_IO: str = 'io'
+ERR_HEADER: str = 'header'
+ERR_QSO: str = 'qso'
 
 # Map user-facing format names to Python module names.
 # Each value is a fully qualified dotted module path that
 # will be lazy-imported on demand.
-FORMAT_MODULE_MAP = {
+FORMAT_MODULE_MAP: Dict[str, str] = {
     'EDI': 'formats.edi',
     'ADIF': 'adif',
     'CABRILLO': 'formats.cabrillo',

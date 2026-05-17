@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import List, Tuple
 from unittest import TestCase
 from unittest import mock
 from unittest.mock import patch
 
 import rules
 
-VALID_CONTEST_SECTION = r"""
+VALID_CONTEST_SECTION: str = r"""
 [contest]
 name=Cupa Nasaud
 begindate=20130803
@@ -32,23 +33,23 @@ periods=2
 categories=4
 modes=1,2,6
 """
-VALID_LOG_SECTION = r"""
+VALID_LOG_SECTION: str = r"""
 [log]
 format=edi
 """
-VALID_BAND1_SECTION = r"""
+VALID_BAND1_SECTION: str = r"""
 [band1]
 band=144
 regexp=144|145|2m
 multiplier=1
 """
-VALID_BAND2_SECTION = r"""
+VALID_BAND2_SECTION: str = r"""
 [band2]
 band=432
 regexp=430|432|70cm
 multiplier=2
 """
-VALID_PERIOD1_SECTION = r"""
+VALID_PERIOD1_SECTION: str = r"""
 [period1]
 begindate=20130803
 enddate=20130803
@@ -56,7 +57,7 @@ beginhour=1200
 endhour=1759
 bands=band1,band2
 """
-VALID_PERIOD2_SECTION = r"""
+VALID_PERIOD2_SECTION: str = r"""
 [period2]
 begindate=20130804
 enddate=20130806
@@ -64,31 +65,31 @@ beginhour=0600
 endhour=1159
 bands=band1,band2
 """
-VALID_CATEGORY1_SECTION = r"""
+VALID_CATEGORY1_SECTION: str = r"""
 [category1]
 name=Single Operator 144
 regexp=so|single
 bands=band1
 """
-VALID_CATEGORY2_SECTION = r"""
+VALID_CATEGORY2_SECTION: str = r"""
 [category2]
 name=Single Operator 432
 regexp=so|single
 bands=band2
 """
-VALID_CATEGORY3_SECTION = r"""
+VALID_CATEGORY3_SECTION: str = r"""
 [category3]
 name=Single Operator Multi Band
 regexp=somb
 bands=band1,band2
 """
-VALID_CATEGORY4_SECTION = """
+VALID_CATEGORY4_SECTION: str = """
 [category4]
 name=Multi Operator
 regexp=mo|multi
 bands=band1,band2
 """
-VALID_EXTRA_FIELD = """
+VALID_EXTRA_FIELD: str = """
 [extra]
 name=yes
 email=yes
@@ -96,7 +97,7 @@ address=yes
 callregexp=yo|yp|yq|yr
 """
 
-VALID_RULES = VALID_CONTEST_SECTION + \
+VALID_RULES: str = VALID_CONTEST_SECTION + \
               VALID_LOG_SECTION + \
               VALID_BAND1_SECTION + \
               VALID_BAND2_SECTION + \
@@ -108,7 +109,7 @@ VALID_RULES = VALID_CONTEST_SECTION + \
               VALID_CATEGORY4_SECTION + \
               VALID_EXTRA_FIELD
 
-VALID_RULES_BASIC = VALID_CONTEST_SECTION + \
+VALID_RULES_BASIC: str = VALID_CONTEST_SECTION + \
                     VALID_LOG_SECTION + \
                     VALID_BAND1_SECTION + \
                     VALID_BAND2_SECTION + \
@@ -119,10 +120,10 @@ VALID_RULES_BASIC = VALID_CONTEST_SECTION + \
                     VALID_CATEGORY3_SECTION + \
                     VALID_CATEGORY4_SECTION
 
-VALID_RULES_SECTIONS = ['contest', 'log', 'band1', 'band2', 'period1', 'period2', 'category1', 'category2',
+VALID_RULES_SECTIONS: List[str] = ['contest', 'log', 'band1', 'band2', 'period1', 'period2', 'category1', 'category2',
                         'category3', 'category4', 'extra']
 
-MISSING_CONTEST_SECTION_FIELDS = [
+MISSING_CONTEST_SECTION_FIELDS: List[str] = [
     """
 [contest]
 """,
@@ -152,7 +153,7 @@ modes=1
 """
 ]
 
-INVALID_MODES_VALUE = [
+INVALID_MODES_VALUE: List[str] = [
     """
 [contest]
 bands=1
@@ -169,7 +170,7 @@ modes=X
 """
 ]
 
-INVALID_BANDS_VALUE = [
+INVALID_BANDS_VALUE: List[str] = [
     """
 [contest]
 bands=
@@ -180,7 +181,7 @@ bands=X
 """
 ]
 
-MISSING_BAND_SECTION = [
+MISSING_BAND_SECTION: List[Tuple] = [
     ("""
 [contest]
 bands=0
@@ -201,7 +202,7 @@ modes=1
      'Rules file has invalid settings for band')
 ]
 
-INVALID_PERIODS_VALUE = [
+INVALID_PERIODS_VALUE: List[str] = [
     """
 [contest]
 bands=1
@@ -216,7 +217,7 @@ categories=1
 """
 ]
 
-MISSING_PERIOD_SECTION = [
+MISSING_PERIOD_SECTION: List[Tuple] = [
     ("""
 [contest]
 bands=1
@@ -238,7 +239,7 @@ modes=1
      KeyError,
      'Rules file has invalid settings for period')
 ]
-INVALID_PERIOD1_SECTION_BD = r"""
+INVALID_PERIOD1_SECTION_BD: str = r"""
 [period1]
 begindate=20130899
 enddate=20130803
@@ -246,7 +247,7 @@ beginhour=1200
 endhour=1759
 bands=band1,band2
 """
-INVALID_PERIOD1_SECTION_ED = r"""
+INVALID_PERIOD1_SECTION_ED: str = r"""
 [period1]
 begindate=20130803
 enddate=20130899
@@ -254,7 +255,7 @@ beginhour=1200
 endhour=1759
 bands=band1,band2
 """
-INVALID_PERIOD1_SECTION_BH = r"""
+INVALID_PERIOD1_SECTION_BH: str = r"""
 [period1]
 begindate=20130803
 enddate=20130803
@@ -262,7 +263,7 @@ beginhour=9900
 endhour=1759
 bands=band1,band2
 """
-INVALID_PERIOD1_SECTION_EH = r"""
+INVALID_PERIOD1_SECTION_EH: str = r"""
 [period1]
 begindate=20130803
 enddate=20130803
@@ -270,7 +271,7 @@ beginhour=1200
 endhour=1799
 bands=band1,band2
 """
-INVALID_PERIOD_RULES = [
+INVALID_PERIOD_RULES: List[Tuple] = [
     ("""
 [contest]
 bands=1
@@ -321,7 +322,7 @@ modes=1
      'endhour'),
 ]
 
-INVALID_RULES_CATEGORIES_SYNTAX = [
+INVALID_RULES_CATEGORIES_SYNTAX: List[Tuple] = [
     ("""
 [contest]
 bands=1
@@ -366,7 +367,7 @@ modes=1
      'Rules file has missing settings for category'),
 ]
 
-VALID_MINIMAL_CONTEST_SECTION = """
+VALID_MINIMAL_CONTEST_SECTION: str = """
 [contest]
 name=Cupa Nasaud
 begindate=20130803
@@ -379,7 +380,7 @@ categories=1
 modes=1
 """
 
-MISSING_BAND_SECTION_IN_PERIOD = [
+MISSING_BAND_SECTION_IN_PERIOD: List[str] = [
     VALID_MINIMAL_CONTEST_SECTION +
     VALID_BAND1_SECTION +
     VALID_CATEGORY1_SECTION +
@@ -393,7 +394,7 @@ bands=band10
 """
 ]
 
-MISSING_BAND_SECTION_IN_CATEGORY = [
+MISSING_BAND_SECTION_IN_CATEGORY: List[str] = [
     VALID_MINIMAL_CONTEST_SECTION +
     VALID_BAND1_SECTION +
     VALID_PERIOD1_SECTION +
@@ -409,7 +410,7 @@ bands=band10
 class TestRules(TestCase):
 
     @mock.patch('os.path.isfile')
-    def test_init(self, mock_isfile):
+    def test_init(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
@@ -481,13 +482,13 @@ class TestRules(TestCase):
         self.assertEqual(_rules.contest_extra_fields, ['callregexp', 'name', 'email', 'address'],
                          "Extra field names should be parsed correctly")
 
-    def test_init_fail(self):
+    def test_init_fail(self) -> None:
         # test 'file not found'
         with self.assertRaises(FileNotFoundError):
             rules.Rules('some_missing_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_read_config_file_content(self, mock_isfile):
+    def test_read_config_file_content(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
@@ -496,7 +497,7 @@ class TestRules(TestCase):
                              "read_config_file_content() should return the exact rules text")
 
     @mock.patch('os.path.isfile')
-    def test_missing_contest_section_fields(self, mock_isfile):
+    def test_missing_contest_section_fields(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         for rule_band in MISSING_CONTEST_SECTION_FIELDS:
             mo = mock.mock_open(read_data=rule_band)
@@ -506,7 +507,7 @@ class TestRules(TestCase):
                                            rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_invalid_modes_value(self, mock_isfile):
+    def test_invalid_modes_value(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         for mode_value in INVALID_MODES_VALUE:
             mo = mock.mock_open(read_data=mode_value)
@@ -516,7 +517,7 @@ class TestRules(TestCase):
                                            rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_invalid_bands_value(self, mock_isfile):
+    def test_invalid_bands_value(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         for rule_band in INVALID_BANDS_VALUE:
             mo = mock.mock_open(read_data=rule_band)
@@ -526,7 +527,7 @@ class TestRules(TestCase):
                                            rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_missing_band_section(self, mock_isfile):
+    def test_missing_band_section(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         for rule_band, exit_code, error_msg in MISSING_BAND_SECTION:
             mo = mock.mock_open(read_data=rule_band)
@@ -535,7 +536,7 @@ class TestRules(TestCase):
                     self.assertRaisesRegex(ValueError, error_msg, rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_periods_value(self, mock_isfile):
+    def test_periods_value(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         for rule_period in INVALID_PERIODS_VALUE:
             mo = mock.mock_open(read_data=rule_period)
@@ -545,7 +546,7 @@ class TestRules(TestCase):
                                            rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_invalid_period_values(self, mock_isfile):
+    def test_invalid_period_values(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         # for rule_period, error_raise, error_msg in INVALID_PERIOD_RULES:
         # TODO : I have to fix this test ! 0 works, 1-3 to fix
@@ -556,7 +557,7 @@ class TestRules(TestCase):
                                    rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_missing_period_section(self, mock_isfile):
+    def test_missing_period_section(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         for rule_period, exit_code, error_raise, error_msg in MISSING_PERIOD_SECTION:
             mo = mock.mock_open(read_data=rule_period)
@@ -565,7 +566,7 @@ class TestRules(TestCase):
                     self.assertRaisesRegex(error_raise, error_msg, rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_rules_category_syntax(self, mock_isfile):
+    def test_rules_category_syntax(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         for rule_period, error_raise, error_msg in INVALID_RULES_CATEGORIES_SYNTAX:
             mo = mock.mock_open(read_data=rule_period)
@@ -575,7 +576,7 @@ class TestRules(TestCase):
                                            rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_missing_band_section_in_period(self, mock_isfile):
+    def test_missing_band_section_in_period(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         for rule_period in MISSING_BAND_SECTION_IN_PERIOD:
             mo = mock.mock_open(read_data=rule_period)
@@ -585,7 +586,7 @@ class TestRules(TestCase):
                                            rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_missing_band_section_in_category(self, mock_isfile):
+    def test_missing_band_section_in_category(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         for rule_period in MISSING_BAND_SECTION_IN_CATEGORY:
             mo = mock.mock_open(read_data=rule_period)
@@ -595,7 +596,7 @@ class TestRules(TestCase):
                                            rules.Rules, 'some_rule_file.rules')
 
     @mock.patch('os.path.isfile')
-    def test_contest_log_format(self, mock_isfile):
+    def test_contest_log_format(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         mo = mock.mock_open(read_data=VALID_RULES)
         with patch('builtins.open', mo, create=True):
@@ -604,9 +605,9 @@ class TestRules(TestCase):
                              "Contest log format should be parsed as EDI")
 
     @mock.patch('os.path.isfile')
-    def test_contest_extra_fields(self, mock_isfile):
+    def test_contest_extra_fields(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
-        modif_rules = VALID_RULES
+        modif_rules: str = VALID_RULES
 
         mo = mock.mock_open(read_data=modif_rules)
         with patch('builtins.open', mo, create=True):
@@ -615,7 +616,7 @@ class TestRules(TestCase):
                              "Extra fields should be present when [extra] section exists")
 
         # remove [extra] section from rules
-        extra_rules_list = VALID_EXTRA_FIELD.split()
+        extra_rules_list: List[str] = VALID_EXTRA_FIELD.split()
         for extra in extra_rules_list:
             modif_rules = modif_rules.replace(extra, '')
 

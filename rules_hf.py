@@ -16,6 +16,7 @@ limitations under the License.
 HF contest rules (Cabrillo log format).
 Modes are represented as uppercase strings: CW, SSB, DIGI, FM, AM, RTTY, etc.
 """
+from typing import List
 from rules import Rules
 
 
@@ -26,9 +27,9 @@ class RulesHf(Rules):
     """
 
     @property
-    def contest_qso_modes(self):
+    def contest_qso_modes(self) -> List[str]:
         try:
-            modes = [mode.strip().upper() for mode in self.config['contest']['modes'].split(',')]
+            modes: List[str] = [mode.strip().upper() for mode in self.config['contest']['modes'].split(',')]
             return modes
         except KeyError:
             raise KeyError('Rules are missing field \'modes\' in [contest] section')

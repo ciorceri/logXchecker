@@ -16,15 +16,20 @@ limitations under the License.
 Output formatters for logXchecker results.
 """
 
+from typing import Any, Dict, List, Optional, Union
+
 from constants import (
     INFO_LOG, INFO_MLC, INFO_LOGS, INFO_CC, INFO_OPERATORS, INFO_BANDS,
     ERR_IO, ERR_HEADER, ERR_QSO,
 )
 
+# Type alias for the nested error tuples used in the output dict
+ErrorEntry = tuple[Optional[int], str, Optional[str]]
 
-def print_log_human_friendly(output):
+
+def print_log_human_friendly(output: Dict[str, Any]) -> None:
     """Will print human friendly info for a log"""
-    has_errors = False
+    has_errors: bool = False
     print('Checking log : {}'.format(output[INFO_LOG]))
     if output[ERR_IO]:
         print('Input/Output : {}'.format(output[ERR_IO]))
@@ -44,7 +49,7 @@ def print_log_human_friendly(output):
         print('No error found')
 
 
-def print_human_friendly_output(output, verbose=False):
+def print_human_friendly_output(output: Dict[str, Any], verbose: bool = False) -> None:
     """Will print a human-friendly output for easy read"""
     # single log
     if output.get(INFO_LOG, False):
@@ -66,8 +71,8 @@ def print_human_friendly_output(output, verbose=False):
                 if _details.get('checklog', False) is True:
                     print('   [checklog] band={} , valid={}'.format(_band, _details['valid']))
                 else:
-                    multipliers = _details.get('multipliers')
-                    final_score = _details.get('final_score')
+                    multipliers: Optional[int] = _details.get('multipliers')
+                    final_score: Optional[int] = _details.get('final_score')
                     if multipliers is not None and final_score is not None:
                         print('   band={} , valid={} , category={} , points={} , qsos_confirmed={} , multipliers={} , final_score={}'.format(
                             _band, _details['valid'], _details['category'],
@@ -86,7 +91,7 @@ def print_human_friendly_output(output, verbose=False):
             print('--------')
 
 
-def print_csv_output(output):
+def print_csv_output(output: Dict[str, Any]) -> None:
     """Will print a CSV-formatted output"""
     # cross check
     if output.get(INFO_CC, False):

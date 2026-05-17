@@ -17,6 +17,7 @@ Unit tests for output/formatters.py
 """
 
 import io
+from typing import Any, Dict, List
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -34,9 +35,9 @@ from output.formatters import (
 class TestPrintLogHumanFriendly(TestCase):
     """Tests for print_log_human_friendly(output)."""
 
-    def test_no_errors(self):
+    def test_no_errors(self) -> None:
         """Empty errors dict prints 'Checking log' + 'No error found'."""
-        output = {
+        output: Dict[str, Any] = {
             INFO_LOG: 'test.log',
             ERR_IO: '',
             ERR_HEADER: [],
@@ -44,11 +45,11 @@ class TestPrintLogHumanFriendly(TestCase):
         }
         with patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
             print_log_human_friendly(output)
-        result = mock_stdout.getvalue()
+        result: str = mock_stdout.getvalue()
         self.assertIn('Checking log : test.log', result)
         self.assertIn('No error found', result)
 
-    def test_io_error(self):
+    def test_io_error(self) -> None:
         """An I/O error message is printed."""
         output = {
             INFO_LOG: 'test.log',
@@ -62,7 +63,7 @@ class TestPrintLogHumanFriendly(TestCase):
         self.assertIn('Input/Output : Permission denied', result)
         self.assertNotIn('No error found', result)
 
-    def test_header_errors(self):
+    def test_header_errors(self) -> None:
         """Multiple header errors are each printed."""
         output = {
             INFO_LOG: 'test.log',
@@ -81,7 +82,7 @@ class TestPrintLogHumanFriendly(TestCase):
         self.assertIn('Line 3 : Invalid band', result)
         self.assertNotIn('No error found', result)
 
-    def test_qso_errors(self):
+    def test_qso_errors(self) -> None:
         """Multiple QSO errors are each printed with the qso line and detail."""
         output = {
             INFO_LOG: 'test.log',
@@ -100,7 +101,7 @@ class TestPrintLogHumanFriendly(TestCase):
         self.assertIn('Line 8 : 220000;... <- Invalid mode', result)
         self.assertNotIn('No error found', result)
 
-    def test_all_errors(self):
+    def test_all_errors(self) -> None:
         """All error types are printed together."""
         output = {
             INFO_LOG: 'test.log',
@@ -118,7 +119,7 @@ class TestPrintLogHumanFriendly(TestCase):
         self.assertIn('Line 5 : 210000;... <- Callsign invalid', result)
         self.assertNotIn('No error found', result)
 
-    def test_empty_header_errors_list(self):
+    def test_empty_header_errors_list(self) -> None:
         """ERR_HEADER set to empty list does not print header section."""
         output = {
             INFO_LOG: 'test.log',
@@ -131,7 +132,7 @@ class TestPrintLogHumanFriendly(TestCase):
         result = mock_stdout.getvalue()
         self.assertNotIn('Header errors :', result)
 
-    def test_empty_qso_errors_list(self):
+    def test_empty_qso_errors_list(self) -> None:
         """ERR_QSO set to empty list does not print QSO section."""
         output = {
             INFO_LOG: 'test.log',
@@ -148,7 +149,7 @@ class TestPrintLogHumanFriendly(TestCase):
 class TestPrintHumanFriendlyOutput(TestCase):
     """Tests for print_human_friendly_output(output, verbose=False)."""
 
-    def test_single_log_mode(self):
+    def test_single_log_mode(self) -> None:
         """When INFO_LOG is present, delegates to print_log_human_friendly."""
         output = {
             INFO_LOG: 'single.log',
@@ -162,7 +163,7 @@ class TestPrintHumanFriendlyOutput(TestCase):
         self.assertIn('Checking log : single.log', result)
         self.assertIn('Input/Output : File not found', result)
 
-    def test_multi_log_mode(self):
+    def test_multi_log_mode(self) -> None:
         """When INFO_MLC is present with logs, prints folder header and each log."""
         output = {
             INFO_MLC: '/logs/folder',
@@ -182,7 +183,7 @@ class TestPrintHumanFriendlyOutput(TestCase):
         self.assertIn('bad header', result)
         self.assertIn('--------', result)
 
-    def test_multi_log_empty_list(self):
+    def test_multi_log_empty_list(self) -> None:
         """When INFO_MLC set but logs list is empty, only folder header shown."""
         output = {
             INFO_MLC: '/logs/folder',
@@ -195,7 +196,7 @@ class TestPrintHumanFriendlyOutput(TestCase):
         self.assertIn('#########################', result)
         self.assertNotIn('Checking log :', result)
 
-    def test_cross_check_mode(self):
+    def test_cross_check_mode(self) -> None:
         """Cross-check output prints operators and band details."""
         output = {
             INFO_CC: '/cc/folder',
@@ -221,7 +222,7 @@ class TestPrintHumanFriendlyOutput(TestCase):
         self.assertIn('Callsign : YO5PJB', result)
         self.assertIn('band=2m , valid=True , category=SINGLE-OP , points=150 , qsos_confirmed=10', result)
 
-    def test_cross_check_verbose_with_qso_errors(self):
+    def test_cross_check_verbose_with_qso_errors(self) -> None:
         """When verbose=True and qso_errors exist, they are printed."""
         output = {
             INFO_CC: '/cc/folder',
@@ -245,7 +246,7 @@ class TestPrintHumanFriendlyOutput(TestCase):
         result = mock_stdout.getvalue()
         self.assertIn('   - Line 1 : bad call', result)
 
-    def test_cross_check_checklog(self):
+    def test_cross_check_checklog(self) -> None:
         """Checklog entries show '[checklog]' instead of points details."""
         output = {
             INFO_CC: '/cc/folder',
@@ -266,9 +267,9 @@ class TestPrintHumanFriendlyOutput(TestCase):
         self.assertIn('[checklog] band=2m , valid=True', result)
         self.assertNotIn('category', result)
 
-    def test_empty_output(self):
+    def test_empty_output(self) -> None:
         """Empty output dict prints nothing."""
-        output = {}
+        output: Dict[str, Any] = {}
         with patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
             print_human_friendly_output(output)
         result = mock_stdout.getvalue()
@@ -278,7 +279,7 @@ class TestPrintHumanFriendlyOutput(TestCase):
 class TestPrintCsvOutput(TestCase):
     """Tests for print_csv_output(output)."""
 
-    def test_cross_check_single_operator(self):
+    def test_cross_check_single_operator(self) -> None:
         """Single operator produces header + one data row."""
         output = {
             INFO_CC: '/cc/folder',
@@ -299,11 +300,11 @@ class TestPrintCsvOutput(TestCase):
         with patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
             print_csv_output(output)
         result = mock_stdout.getvalue()
-        lines = result.strip().split('\n')
+        lines: List[str] = result.strip().split('\n')
         self.assertEqual(lines[0], 'Callsign, ValidLog, Band, Category, ConfirmedQso, Points')
         self.assertIn('YO5PJB, True, 2m, SINGLE-OP, 5, 100', lines[1])
 
-    def test_cross_check_multiple_operators_and_bands(self):
+    def test_cross_check_multiple_operators_and_bands(self) -> None:
         """Multiple operators and bands produce multiple data rows."""
         output = {
             INFO_CC: '/cc/folder',
@@ -348,7 +349,7 @@ class TestPrintCsvOutput(TestCase):
         self.assertIn('YO5PJB, False, 70cm, SINGLE-OP, 0, 0', lines[2])
         self.assertIn('YO5ABC, True, 2m, MULTI-OP, 10, 200', lines[3])
 
-    def test_cross_check_checklog_excluded(self):
+    def test_cross_check_checklog_excluded(self) -> None:
         """Operators with checklog=True are excluded from CSV."""
         output = {
             INFO_CC: '/cc/folder',
@@ -373,7 +374,7 @@ class TestPrintCsvOutput(TestCase):
         self.assertEqual(len(lines), 1, 'Only the header should be printed')
         self.assertEqual(lines[0], 'Callsign, ValidLog, Band, Category, ConfirmedQso, Points')
 
-    def test_cross_check_empty_operators(self):
+    def test_cross_check_empty_operators(self) -> None:
         """INFO_CC set but no operators prints header only."""
         output = {
             INFO_CC: '/cc/folder',
@@ -386,7 +387,7 @@ class TestPrintCsvOutput(TestCase):
         self.assertEqual(len(lines), 1)
         self.assertEqual(lines[0], 'Callsign, ValidLog, Band, Category, ConfirmedQso, Points')
 
-    def test_non_crosscheck_raises_not_implemented(self):
+    def test_non_crosscheck_raises_not_implemented(self) -> None:
         """Without INFO_CC, print_csv_output raises NotImplementedError."""
         output = {
             INFO_LOG: 'test.log',

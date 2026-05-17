@@ -13,11 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
 import argparse
 import importlib
 import os
 import sys
+from typing import Any, Dict, List, Optional, Type
 
 import version
 
@@ -30,21 +30,22 @@ from constants import (
 
 # Import output formatters from the output package.
 from output import print_human_friendly_output, print_log_human_friendly, print_csv_output
+from rules import Rules
 
 # SORT_OUTPUT = False  # TODO : sort the results output
 
 
 # Map log format to the corresponding rules class.
 # Each value is a dotted path to a class, e.g. 'rules_vhf.RulesVhf'.
-FORMAT_RULES_MAP = {
+FORMAT_RULES_MAP: Dict[str, str] = {
     'EDI': 'rules_vhf.RulesVhf',
     'CABRILLO': 'rules_hf.RulesHf',
 }
 
 
-def _get_rules_class(log_format):
+def _get_rules_class(log_format: str) -> Type[Rules]:
     """Return the appropriate Rules sub-class for the given log format."""
-    cls_path = FORMAT_RULES_MAP.get(log_format)
+    cls_path: Optional[str] = FORMAT_RULES_MAP.get(log_format)
     if not cls_path:
         # fallback: use the base Rules class
         import rules as _rules
@@ -60,13 +61,13 @@ class ArgumentParser(object):
     """
 
     @staticmethod
-    def check_format_value(arg):
+    def check_format_value(arg: str) -> str:
         """
         :param arg: specifies log file format (edi, adif, cbr)
         :return: arg
         :raise: ArgumentTypeError
         """
-        valid_formats = tuple(FORMAT_MODULE_MAP.keys())
+        valid_formats: tuple = tuple(FORMAT_MODULE_MAP.keys())
         if arg.upper() in valid_formats:
             return arg.upper()
         raise argparse.ArgumentTypeError(
@@ -74,18 +75,18 @@ class ArgumentParser(object):
         )
 
     @staticmethod
-    def check_output_value(arg):
+    def check_output_value(arg: str) -> str:
         """
         :param arg: specifies the output format (json, xml, csv)
         :return: arg
         :raise: ArgumentTypeError
         """
-        valid_output = ('HUMAN-FRIENDLY', 'JSON', 'XML', 'CSV')
+        valid_output: tuple = ('HUMAN-FRIENDLY', 'JSON', 'XML', 'CSV')
         if arg.upper() in valid_output:
             return arg
         raise argparse.ArgumentTypeError('Output "{}" is an invalid value. Use: {}'.format(arg, ','.join(valid_output)))
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.parser = argparse.ArgumentParser(description='log cross checker')
         group1 = self.parser.add_mutually_exclusive_group(required=True)
         group1.add_argument('-f', '--format', type=self.check_format_value,
@@ -100,11 +101,11 @@ class ArgumentParser(object):
                                  help='Output format: human-friendly, json, xml, csv (default: human-friendly)')
         self.parser.add_argument('-v', '--verbose', action='store_true', help='More details for cross-check')
 
-    def parse(self, args):
+    def parse(self, args: List[str]) -> argparse.Namespace:
         return self.parser.parse_args(args)
 
 
-def load_log_format_module(module_name):
+def load_log_format_module(module_name: str) -> Any:
     """
     Lazy-load a log format module by name.
     :param module_name: Python module name (e.g., 'formats.edi', 'adif', 'cabrillo')
@@ -114,7 +115,7 @@ def load_log_format_module(module_name):
     return importlib.import_module(module_name)
 
 
-def _get_log_format_module(log_format):
+def _get_log_format_module(log_format: str) -> Any:
     """
     Resolve a user-facing format name ('EDI', 'ADIF', etc.) to the matching
     Python module that can parse and validate that log format.
@@ -124,7 +125,7 @@ def _get_log_format_module(log_format):
     :raises ValueError: if the format is not yet supported
     :raises ImportError: if the format module is not installed
     """
-    module_name = FORMAT_MODULE_MAP.get(log_format)
+    module_name: Optional[str] = FORMAT_MODULE_MAP.get(log_format)
     if not module_name:
         raise ValueError('Selected log type is unsupported: {}'.format(log_format))
     try:
@@ -136,19 +137,21 @@ def _get_log_format_module(log_format):
         )
 
 
-def main():
-    args = ArgumentParser().parse(sys.argv[1:])
+def main() -> None:
+    args: argparse.Namespace = ArgumentParser().parse(sys.argv[1:])
     if args.output.upper() == 'HUMAN-FRIENDLY':
         print('{} - v{}'.format(version.__project__, version.__version__))
 
-    rules = None
+    rules: Optional[Rules] = None
+    log_format: str = ''
+
     if args.rules:
         # Detect the log format from the INI file first, then load the
         # appropriate rules class (VHF or HF).
         # We read the INI file quickly to get the [log] format field.
         try:
             with open(args.rules, 'r') as f:
-                ini_content = f.read()
+                ini_content: str = f.read()
         except IOError:
             print('Cannot open rules file: {}'.format(args.rules))
             sys.exit(1)
@@ -162,7 +165,7 @@ def main():
         except (KeyError, configparser.Error):
             print('Rules file does not have a [log] section with a format field')
             sys.exit(1)
-        RulesClass = _get_rules_class(log_format)
+        RulesClass: Type[Rules] = _get_rules_class(log_format)
         rules = RulesClass(args.rules)
     elif args.format:
         log_format = args.format
@@ -179,7 +182,7 @@ def main():
 
     log = lfmodule.Log
 
-    output = {}
+    output: Dict[str, Any] = {}
 
     # validate one log
     if args.singlelogcheck:
@@ -196,9 +199,9 @@ def main():
         if not os.path.isdir(args.multilogcheck):
             print('Cannot open logs folder : {}'.format(args.multilogcheck))
             sys.exit(1)
-        logs_output = []
+        logs_output: List[Dict[str, Any]] = []
         for filename in os.listdir(args.multilogcheck):
-            log_output = {}
+            log_output: Dict[str, Any] = {}
             _log = log(os.path.join(args.multilogcheck, filename), rules=rules)
             log_output[INFO_LOG] = filename
             log_output.update(_log.errors)
@@ -223,11 +226,11 @@ def main():
             sys.exit(1)
         output[INFO_CC] = args.crosscheck
         output[INFO_OPERATORS] = {}
-        op_instance = lfmodule.crosscheck_logs_filter(
+        op_instance: Dict[str, Any] = lfmodule.crosscheck_logs_filter(
             log, rules=rules, logs_folder=args.crosscheck, checklogs_folder=args.checklogs
         )
         for _call, _instance in op_instance.items():
-            op_output = {}
+            op_output: Dict[str, Any] = {}
             op_output[INFO_BANDS] = {}
             for _log in _instance.logs:
                 op_output[INFO_BANDS][_log.band] = {
@@ -241,8 +244,8 @@ def main():
                     'final_score': getattr(_log, 'final_score', None),
                 }
                 if args.verbose is True:
-                    _cc_errors = []
-                    _cc_valid = []
+                    _cc_errors: List[str] = []
+                    _cc_valid: List[str] = []
                     for qso in _log.qsos:
                         if qso.cc_confirmed is False:
                             _cc_errors.append('{} : {}'.format(qso.qso_line, qso.cc_error))

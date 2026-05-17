@@ -1,2 +1,2 @@
-__project__ = "logXchecker"
-__version__ = "2.0"
+__project__: str = "logXchecker"
+__version__: str = "2.0"

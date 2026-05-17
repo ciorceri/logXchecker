@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import List, Tuple
 from unittest import TestCase
 from logXchecker import ArgumentParser
 
 
 class TestParser(TestCase):
-    testcase_with_error_checks = (('', 2), ('hello', 2), ('-h', 2), ('--help', 2),
+    testcase_with_error_checks: Tuple[Tuple, ...] = (('', 2), ('hello', 2), ('-h', 2), ('--help', 2),
                                   (['-h'], 0), (['--help'], 0),
                                   (['-f=edi'], 2), (['-fedi'], 2), (['-f', 'edi'], 2),
                                   (['-f=adif'], 2), (['-fadif'], 2), (['-f', 'adif'], 2),
@@ -37,7 +38,7 @@ class TestParser(TestCase):
                                   (['-f=edi', '--multilogcheck=xxx'], 0),
                                   (['-f=edi', '-slc', '-mlc'], 2),
                                   )
-    testcase_with_success = (
+    testcase_with_success: Tuple[Tuple, ...] = (
                              (['-f=edi', '-slc=xxx.edi'], 'EDI', 'xxx.edi', False),
                              (['-fedi', '-slc=xxx.edi'], 'EDI', 'xxx.edi', False),
                              (['-f=edi', '-slc=xxx.edi'], 'EDI', 'xxx.edi', False),
@@ -46,10 +47,10 @@ class TestParser(TestCase):
                              (['-f=edi', '--multilogcheck=xxx.edi'], 'EDI', False, 'xxx.edi'),
                              )
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.p = ArgumentParser()
 
-    def test_parse(self):
+    def test_parse(self) -> None:
         for (arg, exitCode) in self.testcase_with_error_checks:
             try:
                 parsed = self.p.parse(arg)
