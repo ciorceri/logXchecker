@@ -881,19 +881,25 @@ def crosscheck_band(operator_instances, rules, band_nr):
                 qso1.cc_error = 'No valid log from {}'.format(callsign2)
                 continue
 
-            # search for a matching QSO in partner's log
-            matched_distance = _search_matching_qso(
-                callsign1, log1, qso1, log2, inside_period_nr1
-            )
+            # search for a matching QSO in partner's log (try candidates until one passes comparison)
+            qso2 = None
+            distance = None
+            for _qso2_candidate in _find_qso_candidates(log2, callsign1, inside_period_nr1):
+                _distance = _compare_qso_pair(log1, qso1, log2, _qso2_candidate)
+                if _distance is not None:
+                    qso2 = _qso2_candidate
+                    distance = _distance
+                    break
 
-            if matched_distance is None:
+            if qso2 is None:
                 qso1.cc_confirmed = False
                 qso1.cc_error = 'No qso found on {} log'.format(callsign2)
                 continue
 
             # confirm the QSO
-            _had_qso_with.append('{}-period{}'.format(callsign2, inside_period_nr1))
-            qso1.points = matched_distance * int(rules.contest_band(band_nr)['multiplier'])
+            _, partner_period_nr = qso2.qso_inside_period()
+            _had_qso_with.append('{}-period{}'.format(callsign2, partner_period_nr))
+            qso1.points = distance * int(rules.contest_band(band_nr)['multiplier'])
             qso1.cc_confirmed = True
             qso1.cc_error = []
 
@@ -944,38 +950,36 @@ def _is_duplicate_qso(callsign, period_nr, had_qso_with):
     return '{}-period{}'.format(callsign, period_nr) in had_qso_with
 
 
-def _search_matching_qso(callsign1, log1, qso1, log2, inside_period_nr1):
-    """
-    Search partner's log for a QSO matching qso1.
+def _find_qso_candidates(log2, expected_callsign, inside_period_nr1):
+    """Yield candidate QSOs from partner's log that match callsign and period.
 
-    Compares the partner's QSOs against qso1 by:
-    - matching the calling station's callsign
-    - matching the contest period
-    - calling compare_qso() for detailed comparison
-
-    :return: distance (int) if match found, None otherwise
+    This is a generator, allowing the caller to try each candidate
+    through full comparison (e.g. compare_qso) and fall through to
+    the next candidate if comparison fails.
     """
     for qso2 in log2.qsos:
         if qso2.valid is False:
             continue
-
-        if qso2.qso_fields['call'].upper() != callsign1:
+        if qso2.qso_fields['call'].upper() != expected_callsign:
             continue
-
         _, inside_period_nr2 = qso2.qso_inside_period()
         if inside_period_nr1 != inside_period_nr2:
             continue
+        yield qso2
 
-        try:
-            distance = compare_qso(log1, qso1, log2, qso2)
-        except ValueError as e:
-            qso1.cc_confirmed = False
-            qso1.cc_error = e
-            continue
 
-        return distance
+def _compare_qso_pair(log1, qso1, log2, qso2):
+    """Compare two QSOs and return distance if they match, None otherwise.
 
-    return None
+    Sets qso1.cc_confirmed to False and qso1.cc_error on mismatch.
+    """
+    try:
+        distance = compare_qso(log1, qso1, log2, qso2)
+    except ValueError as e:
+        qso1.cc_confirmed = False
+        qso1.cc_error = e
+        return None
+    return distance
 
 
 def compare_qso(log1, qso1, log2, qso2):
