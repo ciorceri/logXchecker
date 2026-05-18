@@ -1077,24 +1077,24 @@ class TestCabrilloHelperFunctions(TestCase):
         self.assertTrue(log1.ignore_this_log)
         self.assertFalse(log2.ignore_this_log)
 
-    def test_crosscheck_logs_filter_no_rules(self) -> None:
+    def test_run_crosscheck_no_rules(self) -> None:
         with patch('builtins.print') as mock_print:
-            result = cabrillo.crosscheck_logs_filter(cabrillo.Log, rules=None, logs_folder='logs')
+            result = cabrillo.run_crosscheck(cabrillo.Log, rules=None, logs_folder='logs')
         self.assertEqual({}, result)
         mock_print.assert_called_once_with('No rules were provided')
 
-    def test_crosscheck_logs_filter_logs_folder_not_dir(self) -> None:
+    def test_run_crosscheck_logs_folder_not_dir(self) -> None:
         mo_rules = mock.mock_open(read_data=CABRILLO_CROSSCHECK_RULES)
         with patch('builtins.open', mo_rules, create=True), patch('os.path.isfile', return_value=True):
             _rules = rules_hf.RulesHf('some_rule_file.rules')
 
         with patch('builtins.print') as mock_print, patch('os.path.isdir', return_value=False):
-            result = cabrillo.crosscheck_logs_filter(cabrillo.Log, rules=_rules, logs_folder='logs')
+            result = cabrillo.run_crosscheck(cabrillo.Log, rules=_rules, logs_folder='logs')
 
         self.assertEqual({}, result)
         mock_print.assert_called_once_with('Cannot open logs folder : logs')
 
-    def test_crosscheck_logs_filter_checklogs_folder_not_dir(self) -> None:
+    def test_run_crosscheck_checklogs_folder_not_dir(self) -> None:
         mo_rules = mock.mock_open(read_data=CABRILLO_CROSSCHECK_RULES)
         with patch('builtins.open', mo_rules, create=True), patch('os.path.isfile', return_value=True):
             _rules = rules_hf.RulesHf('some_rule_file.rules')
@@ -1120,14 +1120,14 @@ QSO: 14000 CW 2026-10-31 1200 YO5AAA          599 001 YO5BBB          599 002
              patch('os.path.isdir', side_effect=lambda path: path == 'logs'), \
              patch('os.listdir', return_value=['log1.log']), \
              patch('builtins.open', fake_open, create=True):
-            result = cabrillo.crosscheck_logs_filter(cabrillo.Log, rules=_rules,
-                                                      logs_folder='logs', checklogs_folder='checklogs')
+            result = cabrillo.run_crosscheck(cabrillo.Log, rules=_rules,
+                                              logs_folder='logs', checklogs_folder='checklogs')
 
         self.assertEqual({}, result)
         mock_print.assert_called_once_with('Cannot open checklogs folder : checklogs')
 
-    def test_crosscheck_logs_filter_happy_path(self) -> None:
-        """Test crosscheck logs filter with two matching logs (no custom scoring)."""
+    def test_run_crosscheck_happy_path(self) -> None:
+        """Test run_crosscheck with two matching logs (no custom scoring)."""
         mo_rules = mock.mock_open(read_data=CABRILLO_CROSSCHECK_RULES)
         with patch('builtins.open', mo_rules, create=True), patch('os.path.isfile', return_value=True):
             _rules = rules_hf.RulesHf('some_rule_file.rules')
@@ -1162,7 +1162,7 @@ QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 002 YO5AAA          599 001
              patch('os.listdir', return_value=['log1.log', 'log2.log']), \
              patch('os.path.getmtime', side_effect=[100.0, 200.0]), \
              patch('builtins.open', fake_open, create=True):
-            operator_instances = cabrillo.crosscheck_logs_filter(cabrillo.Log, _rules, logs_folder='logs')
+            operator_instances = cabrillo.run_crosscheck(cabrillo.Log, _rules, logs_folder='logs')
 
         self.assertSetEqual(set(operator_instances.keys()), {'YO5AAA', 'YO5BBB'})
         # Since this is "standard" scoring (no DRACULA custom scoring),
@@ -1328,7 +1328,7 @@ QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 002 YO5AAA          599 001
                 self.assertEqual(cabrillo._extract_county_from_exchange(input_val), expected)
 
     @mock.patch('os.path.isfile')
-    def test_crosscheck_logs(self, mock_isfile: mock.MagicMock) -> None:
+    def test_crosscheck_band(self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         mo_rules = mock.mock_open(read_data=DRACULA_RULES)
         with patch('builtins.open', mo_rules, create=True):
@@ -1378,7 +1378,7 @@ QSO:  7150 PH 2026-10-31 1532 YO3APJ          59  BU  YO2ARM          59  AR
 
         confirmed_pairs: set = set()
         # Use band_nr=2 (40m/7MHz) since QSOs are on 7150/7100 kHz
-        cabrillo.crosscheck_logs(op_inst, _rules, 2, confirmed_pairs)
+        cabrillo.crosscheck_band(op_inst, _rules, 2, confirmed_pairs)
 
         # Check YO2ARM's QSO to YO3APJ is confirmed and has points
         yo2arm_log = op1.logs[0]

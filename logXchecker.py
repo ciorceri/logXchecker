@@ -226,7 +226,7 @@ def main() -> None:
             sys.exit(1)
         output[INFO_CC] = args.crosscheck
         output[INFO_OPERATORS] = {}
-        op_instance: Dict[str, Any] = lfmodule.crosscheck_logs_filter(
+        op_instance: Dict[str, Any] = lfmodule.run_crosscheck(
             log, rules=rules, logs_folder=args.crosscheck, checklogs_folder=args.checklogs
         )
         for _call, _instance in op_instance.items():

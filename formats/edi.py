@@ -728,7 +728,7 @@ class LogQso(object):
         return False, None
 
 
-def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_folder=None):
+def run_crosscheck(log_class, rules=None, logs_folder=None, checklogs_folder=None):
 
     if not rules:
         print('No rules were provided')

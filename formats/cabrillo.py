@@ -68,8 +68,6 @@ def _load_dxcc_database() -> Dict[str, Dict[str, str]]:
     with open(country_dat_path, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip()
-            if not line or line.startswith('Country:'):
-                continue  # skip header and empty lines
             if not line.endswith(';'):
                 continue
 
@@ -1126,17 +1124,58 @@ class LogQso(object):
 
 # ── Cross-check functions ──────────────────────────────────────────────
 
-def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_folder=None):
+def run_crosscheck(log_class, rules=None, logs_folder=None, checklogs_folder=None):
+    """Orchestrate the full cross-check pipeline.
+
+    :param log_class: the Log class (e.g. cabrillo.Log)
+    :param rules: Rules instance
+    :param logs_folder: path to folder containing competitor logs
+    :param checklogs_folder: optional path to folder containing check logs
+    :return: dict of operator callsign -> Operator instance
+    """
     if not rules:
         print('No rules were provided')
         return {}
-    logs_instances = []
     if not logs_folder:
         print('Logs folder was not provided')
         return {}
-    if logs_folder and not os.path.isdir(logs_folder):
-        print('Cannot open logs folder : {}'.format(logs_folder))
+
+    # 1. Load log files from both folders
+    logs_instances = _load_log_files(log_class, rules, logs_folder, checklogs_folder)
+    if logs_instances is None:
         return {}
+
+    # 2. Group by operator callsign
+    operator_instances = _group_logs_by_operator(logs_instances)
+
+    # 3. Mark older duplicate logs per band
+    _mark_older_duplicates(operator_instances, rules)
+
+    # 4. Run per-band cross-check
+    confirmed_pairs = set()
+    for band in range(1, rules.contest_bands_nr + 1):
+        crosscheck_band(operator_instances, rules, band, confirmed_pairs)
+
+    # 5. Aggregate QSO points per log
+    _aggregate_qso_points(operator_instances)
+
+    # 6. Compute multipliers (if enabled)
+    if rules.contest_multiplier_enabled:
+        _compute_multipliers(operator_instances, rules)
+
+    return operator_instances
+
+
+def _load_log_files(log_class, rules, logs_folder, checklogs_folder):
+    """Load and validate all log files from the given folders.
+
+    Returns a list of Log instances, or None on error.
+    """
+    if not os.path.isdir(logs_folder):
+        print('Cannot open logs folder : {}'.format(logs_folder))
+        return None
+
+    logs_instances = []
     for filename in os.listdir(logs_folder):
         logs_instances.append(log_class(os.path.join(logs_folder, filename), rules=rules))
 
@@ -1146,9 +1185,13 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
                 logs_instances.append(log_class(os.path.join(checklogs_folder, filename), rules=rules, checklog=True))
         else:
             print('Cannot open checklogs folder : {}'.format(checklogs_folder))
-            return {}
+            return None
 
-    # create instances for all hams and add logs with valid header
+    return logs_instances
+
+
+def _group_logs_by_operator(logs_instances):
+    """Group Log instances by operator callsign into Operator objects."""
     operator_instances = {}
     for log in logs_instances:
         if not log.valid_header:
@@ -1158,20 +1201,19 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
         if not operator_instances.get(callsign, None):
             operator_instances[callsign] = Operator(callsign)
         operator_instances[callsign].add_log_instance(log)
-    
-    # if we find multiple logs for a ham on a band
-    # we set Log.ignore_this_log for older files
+    return operator_instances
+
+
+def _mark_older_duplicates(operator_instances, rules):
+    """For multiple logs per operator on the same band, mark older ones as ignored."""
     for band in range(1, rules.contest_bands_nr + 1):
         for _, _ham in operator_instances.items():
             _logs = _ham.logs_by_band_regexp(rules.contest_band(band)['regexp'])
             mark_older_logs(_logs)
 
-    # do the corss-check over filtered logs
-    confirmed_pairs = set()
-    for band in range(1, rules.contest_bands_nr + 1):
-        crosscheck_logs(operator_instances, rules, band, confirmed_pairs)
 
-    # calculate points in every logs
+def _aggregate_qso_points(operator_instances):
+    """Sum up points and confirmed QSO counts for each log."""
     for op, op_inst in operator_instances.items():
         for log in op_inst.logs:
             points = 0
@@ -1183,95 +1225,84 @@ def crosscheck_logs_filter(log_class, rules=None, logs_folder=None, checklogs_fo
             log.qsos_points = points
             log.qsos_confirmed = confirmed
 
-    # ── Multiplier processing -> [rules][scoring]multiplier_enabled=true ────────────────
-    if rules.contest_multiplier_enabled:
-        exchange_field = rules.contest_multiplier_exchange_field
-        special_exchange = rules.contest_multiplier_special_exchange
-        is_dracula = is_dracula_contest(rules)
-        per_band_mult = rules.contest_multiplier_per_band
 
-        for op, op_inst in operator_instances.items():
-            if per_band_mult:
-                # Per-band multipliers: each band has its own multiplier set
-                for log in op_inst.logs:
-                    band_unique_mult = set()
-                    for qso in log.qsos:
-                        if not qso.cc_confirmed or not (qso.points and qso.points > 0):
-                            continue
-                        if is_dracula:
-                            # DRACULA: multipliers are DXCC entities + YO counties + DRC
-                            partner_call = qso.qso_fields.get('call', '').upper()
-                            exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
-                            if not partner_call:
-                                continue
-                            if is_dracula_special(partner_call, rules):
-                                # DRC multiplier (special station callsign)
-                                band_unique_mult.add(('DRC', partner_call))
-                            elif is_yo_callsign(partner_call):
-                                # YO station: use their exchange value (county) as multiplier
-                                if exchange_val:
-                                    band_unique_mult.add(('YO_COUNTY', exchange_val))
-                            else:
-                                # Non-YO station: DXCC entity (use DXCC database lookup)
-                                dxcc_info = lookup_callsign(partner_call)
-                                dxcc_key = dxcc_info['main_prefix'] if dxcc_info else partner_call[:2]
-                                band_unique_mult.add(('DXCC', dxcc_key))
-                        else:
-                            # Standard (RRO-style) multiplier processing
-                            exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
-                            # Extract the county code from potentially combined "nr + county" format
-                            county_val = _extract_county_from_exchange(exchange_val)
-                            if not county_val:
-                                continue
-                            if special_exchange and county_val == special_exchange:
-                                partner_call = qso.qso_fields.get('call', '').upper()
-                                if partner_call:
-                                    band_unique_mult.add(('CAT_A', partner_call))
-                            else:
-                                band_unique_mult.add(('COUNTY', county_val))
-                    log.multiplier_count = len(band_unique_mult)
-                    log.final_score = log.qsos_points * log.multiplier_count if log.qsos_points else 0
+def _compute_multipliers(operator_instances, rules):
+    """Post-process multipliers for each operator's logs.
 
-            else:
-                # Global multipliers (across all bands)
-                unique_multipliers = set()
-                for log in op_inst.logs:
-                    for qso in log.qsos:
-                        if not qso.cc_confirmed or not (qso.points and qso.points > 0):
-                            continue
-                        if is_dracula:
-                            partner_call = qso.qso_fields.get('call', '').upper()
-                            exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
-                            if not partner_call:
-                                continue
-                            if is_dracula_special(partner_call, rules):
-                                unique_multipliers.add(('DRC', partner_call))
-                            elif is_yo_callsign(partner_call):
-                                if exchange_val:
-                                    unique_multipliers.add(('YO_COUNTY', exchange_val))
-                            else:
-                                # Non-YO station: DXCC entity (use DXCC database lookup)
-                                dxcc_info = lookup_callsign(partner_call)
-                                dxcc_key = dxcc_info['main_prefix'] if dxcc_info else partner_call[:2]
-                                unique_multipliers.add(('DXCC', dxcc_key))
-                        else:
-                            exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
-                            # Extract the county code from potentially combined "nr + county" format
-                            county_val = _extract_county_from_exchange(exchange_val)
-                            if not county_val:
-                                continue
-                            if special_exchange and county_val == special_exchange:
-                                partner_call = qso.qso_fields.get('call', '').upper()
-                                if partner_call:
-                                    unique_multipliers.add(('CAT_A', partner_call))
-                            else:
-                                unique_multipliers.add(('COUNTY', county_val))
+    Supports both per-band and global multiplier modes,
+    as well as DRACULA and standard (RRO-style) multiplier logic.
+    """
+    exchange_field = rules.contest_multiplier_exchange_field
+    special_exchange = rules.contest_multiplier_special_exchange
+    per_band_mult = rules.contest_multiplier_per_band
 
-                for log in op_inst.logs:
-                    log.multiplier_count = len(unique_multipliers)
-                    log.final_score = log.qsos_points * log.multiplier_count if log.qsos_points else 0
+    for op, op_inst in operator_instances.items():
+        if per_band_mult:
+            for log in op_inst.logs:
+                band_unique_mult = set()
+                for qso in log.qsos:
+                    if not qso.cc_confirmed or not (qso.points and qso.points > 0):
+                        continue
+                    mult_entry = _compute_multiplier_for_qso(qso, rules, exchange_field, special_exchange)
+                    if mult_entry:
+                        band_unique_mult.add(mult_entry)
+                log.multiplier_count = len(band_unique_mult)
+                log.final_score = log.qsos_points * log.multiplier_count if log.qsos_points else 0
+        else:
+            unique_multipliers = set()
+            for log in op_inst.logs:
+                for qso in log.qsos:
+                    if not qso.cc_confirmed or not (qso.points and qso.points > 0):
+                        continue
+                    mult_entry = _compute_multiplier_for_qso(qso, rules, exchange_field, special_exchange)
+                    if mult_entry:
+                        unique_multipliers.add(mult_entry)
+            for log in op_inst.logs:
+                log.multiplier_count = len(unique_multipliers)
+                log.final_score = log.qsos_points * log.multiplier_count if log.qsos_points else 0
 
-    return operator_instances
+
+def _compute_multiplier_for_qso(qso, rules, exchange_field, special_exchange):
+    """Determine the multiplier type and key for a single confirmed QSO.
+
+    Returns a tuple (type, key) suitable for adding to a multiplier set,
+    or None if the QSO does not contribute a multiplier.
+
+    For DRACULA:
+        - Special station (DRC) -> ('DRC', callsign)
+        - YO station -> ('YO_COUNTY', exchange_value)
+        - Non-YO station -> ('DXCC', main_prefix)
+    For standard (RRO-style):
+        - Category A station -> ('CAT_A', callsign)
+        - Other -> ('COUNTY', county_code)
+    """
+    is_dracula = is_dracula_contest(rules)
+    partner_call = qso.qso_fields.get('call', '').upper()
+
+    if is_dracula:
+        if not partner_call:
+            return None
+        if is_dracula_special(partner_call, rules):
+            return ('DRC', partner_call)
+        elif is_yo_callsign(partner_call):
+            exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
+            if exchange_val:
+                return ('YO_COUNTY', exchange_val)
+            return None
+        else:
+            dxcc_info = lookup_callsign(partner_call)
+            dxcc_key = dxcc_info['main_prefix'] if dxcc_info else partner_call[:2]
+            return ('DXCC', dxcc_key)
+    else:
+        exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
+        county_val = _extract_county_from_exchange(exchange_val)
+        if not county_val:
+            return None
+        if special_exchange and county_val == special_exchange:
+            if partner_call:
+                return ('CAT_A', partner_call)
+            return None
+        return ('COUNTY', county_val)
 
 
 # ── Custom scoring dispatcher ─────────────────────────────────────────
@@ -1355,32 +1386,22 @@ def _standard_scoring(callsign1, callsign2, rules, qso1, confirmed_pairs,
     return True, []
 
 
-def crosscheck_logs(operator_instances, rules, band_nr, confirmed_pairs):
+def crosscheck_band(operator_instances, rules, band_nr, confirmed_pairs):
     """Cross-check QSOs between operators on a given band."""
     special_callsign_list = rules.contest_special_callsign
     qso_points_normal = rules.contest_qso_points
     qso_points_special = rules.contest_special_qso_points
+
     for callsign1, ham1 in operator_instances.items():
         _had_qso_with = []
-        _logs1 = ham1.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
-        if not _logs1:
-            continue
-
-        for log1 in _logs1:
-            if all((log1.use_as_checklog is False,
-                    log1.ignore_this_log is False,
-                    log1.valid_header is True)):
-                break
-        else:
+        log1 = _find_active_log(ham1, rules, band_nr)
+        if log1 is None:
             continue
 
         for qso1 in log1.qsos:
             if qso1.valid is False:
                 qso1.cc_confirmed = False
-                if len(qso1.errors) >= 1:
-                    qso1.cc_error = qso1.errors[0][2]
-                else:
-                    qso1.cc_error = 'Qso is not valid'
+                qso1.cc_error = qso1.errors[0][2] if len(qso1.errors) >= 1 else 'Qso is not valid'
                 continue
 
             if qso1.cc_confirmed is True:
@@ -1400,54 +1421,79 @@ def crosscheck_logs(operator_instances, rules, band_nr, confirmed_pairs):
                 qso1.cc_error = 'No log from {}'.format(callsign2)
                 continue
 
-            _logs2 = ham2.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
-            if not _logs2:
+            log2 = _find_active_log(ham2, rules, band_nr)
+            if log2 is None:
                 qso1.cc_confirmed = False
-                qso1.cc_error = 'No log for this band from {}'.format(callsign2)
+                qso1.cc_error = 'No valid log for this band from {}'.format(callsign2)
                 continue
 
-            for log2 in _logs2:
-                if all((log2.ignore_this_log is False,
-                        log2.valid_header is True)):
-                    break
-            else:
-                qso1.cc_confirmed = False
-                qso1.cc_error = 'No valid log from {}'.format(callsign2)
-                continue
-
-            for qso2 in log2.qsos:
-                if qso2.valid is False:
-                    continue
-
-                _callsign2 = qso2.qso_fields['call'].upper()
-                if callsign1 != _callsign2:
-                    continue
-
-                _, inside_period_nr2 = qso2.qso_inside_period()
-                if inside_period_nr1 != inside_period_nr2:
-                    continue
-
-                distance = None
-                try:
-                    distance = compare_qso(log1, qso1, log2, qso2)
-                except ValueError as e:
-                    qso1.cc_confirmed = False
-                    qso1.cc_error = e
-
-                if distance is None:
-                    continue
-
-                _had_qso_with.append('{}-period{}'.format(callsign2, inside_period_nr2))
-
-                # Apply scoring (custom or standard) via dispatcher
-                qso1.cc_confirmed, qso1.cc_error = apply_custom_scoring(
-                    callsign1, callsign2, rules, qso1, confirmed_pairs,
-                    band_nr, qso_points_normal, qso_points_special,
-                    special_callsign_list, distance)
-                break
-            else:
+            qso2 = _find_matching_qso(qso1, log2, callsign1, inside_period_nr1)
+            if qso2 is None:
                 qso1.cc_confirmed = False
                 qso1.cc_error = 'No qso found on {} log'.format(callsign2)
+                continue
+
+            # Determine period number from partner's QSO for dedup
+            _, partner_period_nr = qso2.qso_inside_period()
+
+            distance = _compare_qso_pair(log1, qso1, log2, qso2)
+            if distance is None:
+                continue
+
+            _had_qso_with.append('{}-period{}'.format(callsign2, partner_period_nr))
+
+            # Apply scoring (custom or standard) via dispatcher
+            qso1.cc_confirmed, qso1.cc_error = apply_custom_scoring(
+                callsign1, callsign2, rules, qso1, confirmed_pairs,
+                band_nr, qso_points_normal, qso_points_special,
+                special_callsign_list, distance)
+
+
+def _find_active_log(ham, rules, band_nr):
+    """Find the first valid, non-ignored log for an operator on a given band.
+
+    Returns a Log instance, or None if no suitable log is found.
+    """
+    _logs = ham.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
+    if not _logs:
+        return None
+    for log in _logs:
+        if all((log.use_as_checklog is False,
+                log.ignore_this_log is False,
+                log.valid_header is True)):
+            return log
+    return None
+
+
+def _find_matching_qso(qso1, log2, expected_callsign, inside_period_nr1):
+    """Search the partner's log for a QSO matching qso1.
+
+    Returns the matching LogQso instance, or None if no match is found.
+    """
+    for qso2 in log2.qsos:
+        if qso2.valid is False:
+            continue
+        if qso2.qso_fields['call'].upper() != expected_callsign:
+            continue
+        _, inside_period_nr2 = qso2.qso_inside_period()
+        if inside_period_nr1 != inside_period_nr2:
+            continue
+        return qso2
+    return None
+
+
+def _compare_qso_pair(log1, qso1, log2, qso2):
+    """Compare two QSOs and return distance if they match, None otherwise.
+
+    Sets qso1.cc_confirmed to False and qso1.cc_error on mismatch.
+    """
+    try:
+        distance = compare_qso(log1, qso1, log2, qso2)
+    except ValueError as e:
+        qso1.cc_confirmed = False
+        qso1.cc_error = e
+        return None
+    return distance
 
 
 def compare_qso(log1, qso1, log2, qso2):

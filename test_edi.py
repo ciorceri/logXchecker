@@ -1261,7 +1261,7 @@ class TestEdiHelperFunctions(TestCase):
 
     def test_crosscheck_logs_filter_no_rules(self) -> None:
         with patch('builtins.print') as mock_print:
-            result = edi.crosscheck_logs_filter(edi.Log, rules=None, logs_folder='logs')
+            result = edi.run_crosscheck(edi.Log, rules=None, logs_folder='logs')
         self.assertEqual({}, result)
         mock_print.assert_called_once_with('No rules were provided')
 
@@ -1271,12 +1271,12 @@ class TestEdiHelperFunctions(TestCase):
             _rules = rules.Rules('some_rule_file.rules')
 
         with patch('builtins.print') as mock_print, patch('os.path.isdir', return_value=False):
-            result = edi.crosscheck_logs_filter(edi.Log, rules=_rules, logs_folder='logs')
+            result = edi.run_crosscheck(edi.Log, rules=_rules, logs_folder='logs')
 
         self.assertEqual({}, result)
         mock_print.assert_called_once_with('Cannot open logs folder : logs')
 
-    def test_crosscheck_logs_filter_checklogs_folder_not_dir(self) -> None:
+    def test_run_crosscheck_checklogs_folder_not_dir(self) -> None:
         mo_rules = mock.mock_open(read_data=VALID_RULES_BASIC)
         with patch('builtins.open', mo_rules, create=True), patch('os.path.isfile', return_value=True):
             _rules = rules.Rules('some_rule_file.rules')
@@ -1292,7 +1292,7 @@ class TestEdiHelperFunctions(TestCase):
              patch('os.path.isdir', side_effect=lambda path: path == 'logs'), \
              patch('os.listdir', return_value=['log1.edi']), \
              patch('builtins.open', fake_open, create=True):
-            result = edi.crosscheck_logs_filter(edi.Log, rules=_rules, logs_folder='logs', checklogs_folder='checklogs')
+            result = edi.run_crosscheck(edi.Log, rules=_rules, logs_folder='logs', checklogs_folder='checklogs')
 
         self.assertEqual({}, result)
         mock_print.assert_called_once_with('Cannot open checklogs folder : checklogs')
@@ -1330,7 +1330,7 @@ TDate=20130803;20130806
              patch('os.listdir', return_value=['log1.edi', 'log2.edi']), \
              patch('os.path.getmtime', side_effect=[100.0, 200.0]), \
              patch('builtins.open', fake_open, create=True):
-            operator_instances = edi.crosscheck_logs_filter(edi.Log, _rules, logs_folder='logs')
+            operator_instances = edi.run_crosscheck(edi.Log, _rules, logs_folder='logs')
         self.assertSetEqual(set(operator_instances.keys()), {'YO5AAA', 'YO5BBB'})
         self.assertEqual(1, operator_instances['YO5AAA'].logs[0].qsos_points)
         self.assertEqual(1, operator_instances['YO5AAA'].logs[0].qsos_confirmed)
