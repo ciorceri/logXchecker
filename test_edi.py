@@ -1259,13 +1259,13 @@ class TestEdiHelperFunctions(TestCase):
             if ex:
                 self.assertRaisesRegex(ex, '^'+ex_msg+'$', edi.compare_qso, _log, q1, _log, q2)
 
-    def test_crosscheck_logs_filter_no_rules(self) -> None:
+    def test_run_crosscheck_no_rules(self) -> None:
         with patch('builtins.print') as mock_print:
             result = edi.run_crosscheck(edi.Log, rules=None, logs_folder='logs')
         self.assertEqual({}, result)
         mock_print.assert_called_once_with('No rules were provided')
 
-    def test_crosscheck_logs_filter_logs_folder_not_dir(self) -> None:
+    def test_run_crosscheck_logs_folder_not_dir(self) -> None:
         mo_rules = mock.mock_open(read_data=VALID_RULES_BASIC)
         with patch('builtins.open', mo_rules, create=True), patch('os.path.isfile', return_value=True):
             _rules = rules.Rules('some_rule_file.rules')
@@ -1297,7 +1297,7 @@ class TestEdiHelperFunctions(TestCase):
         self.assertEqual({}, result)
         mock_print.assert_called_once_with('Cannot open checklogs folder : checklogs')
 
-    def test_crosscheck_logs_filter_happy_path(self) -> None:
+    def test_run_crosscheck_happy_path(self) -> None:
         mo_rules = mock.mock_open(read_data=VALID_RULES_BASIC)
         with patch('builtins.open', mo_rules, create=True), patch('os.path.isfile', return_value=True):
             _rules = rules.Rules('some_rule_file.rules')
@@ -1417,11 +1417,11 @@ TDate=20130803;20130806
                                edi.compare_qso, log1, qso1, log2, qso2)
 
     @mock.patch('os.path.isfile')
-    def test_crosscheck_logs(self, mck_isfile: mock.MagicMock) -> None:
+    def test_crosscheck_band(self, mck_isfile: mock.MagicMock) -> None:
         """
         A test with hardcoded logs.
         It's hard to follow and understand this test and
-        I assume that I've covered most of the important cases from 'crosscheck_logs'
+        I assume that I've covered most of the important cases from 'crosscheck_band'
         and in case something is changing this test should catch it
         """
         mck_isfile.return_value = True
@@ -1522,7 +1522,7 @@ PBand=432 MHz
             'YO5FFF': op5,
         }
 
-        edi.crosscheck_logs(op_inst, _rules, 1)
+        edi.crosscheck_band(op_inst, _rules, 1)
 
         result: List[str] = []
         for op, op_inst in op_inst.items():
@@ -1533,7 +1533,7 @@ PBand=432 MHz
 
 
     @mock.patch('os.path.isfile')
-    def test_crosscheck_logs_custom_1(self, mck_isfile: mock.MagicMock) -> None:
+    def test_crosscheck_band_custom_1(self, mck_isfile: mock.MagicMock) -> None:
         """
         A test based on logs from CN 2022, when a bug in cross-check was found.
         The problem was with a duplicate form the 1st operator
@@ -1626,7 +1626,7 @@ PBand=144 MHz
             'YO4FYQ': op2
         }
 
-        edi.crosscheck_logs(op_inst, _rules, 1)
+        edi.crosscheck_band(op_inst, _rules, 1)
 
         result: List[str] = []
         for op, op_inst in op_inst.items():

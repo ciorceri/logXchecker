@@ -728,19 +728,20 @@ class LogQso(object):
         return False, None
 
 
-def run_crosscheck(log_class, rules=None, logs_folder=None, checklogs_folder=None):
 
-    if not rules:
-        print('No rules were provided')
-        return {}
-    # create instances for all logs
-    logs_instances = []
+def _load_log_files(log_class, rules, logs_folder, checklogs_folder):
+    """Load and validate all log files from the given folders.
+
+    Returns a list of Log instances, or None on error.
+    """
     if not logs_folder:
         print('Logs folder was not provided')
-        return {}
-    if logs_folder and not os.path.isdir(logs_folder):
+        return None
+    if not os.path.isdir(logs_folder):
         print('Cannot open logs folder : {}'.format(logs_folder))
-        return {}
+        return None
+
+    logs_instances = []
     for filename in os.listdir(logs_folder):
         logs_instances.append(log_class(os.path.join(logs_folder, filename), rules=rules))
 
@@ -750,9 +751,13 @@ def run_crosscheck(log_class, rules=None, logs_folder=None, checklogs_folder=Non
                 logs_instances.append(log_class(os.path.join(checklogs_folder, filename), rules=rules, checklog=True))
         else:
             print('Cannot open checklogs folder : {}'.format(checklogs_folder))
-            return {}
+            return None
 
-    # create instances for all hams and add logs with valid header
+    return logs_instances
+
+
+def _group_logs_by_operator(logs_instances):
+    """Group Log instances by operator callsign into Operator objects."""
     operator_instances = {}
     for log in logs_instances:
         if not log.valid_header:
@@ -762,19 +767,19 @@ def run_crosscheck(log_class, rules=None, logs_folder=None, checklogs_folder=Non
         if not operator_instances.get(callsign, None):
             operator_instances[callsign] = Operator(callsign)
         operator_instances[callsign].add_log_instance(log)
+    return operator_instances
 
-    # if we find multiple logs for a ham on a band
-    # we set Log.ignore_this_log for older files
-    for band in range(1, rules.contest_bands_nr+1):
+
+def _mark_older_duplicates(operator_instances, rules):
+    """For multiple logs per operator on the same band, mark older ones as ignored."""
+    for band in range(1, rules.contest_bands_nr + 1):
         for _, _ham in operator_instances.items():
             _logs = _ham.logs_by_band_regexp(rules.contest_band(band)['regexp'])
             mark_older_logs(_logs)
 
-    # do the corss-check over filtered logs
-    for band in range(1, rules.contest_bands_nr+1):
-        crosscheck_logs(operator_instances, rules, band)
 
-    # calculate points in every logs
+def _aggregate_qso_points(operator_instances):
+    """Sum up points and confirmed QSO counts for each log."""
     for op, op_inst in operator_instances.items():
         for log in op_inst.logs:
             points = 0
@@ -786,109 +791,191 @@ def run_crosscheck(log_class, rules=None, logs_folder=None, checklogs_folder=Non
             log.qsos_points = points
             log.qsos_confirmed = confirmed
 
+
+def run_crosscheck(log_class, rules=None, logs_folder=None, checklogs_folder=None):
+    """Orchestrate the full cross-check pipeline.
+
+    :param log_class: the Log class (e.g. edi.Log)
+    :param rules: Rules instance
+    :param logs_folder: path to folder containing competitor logs
+    :param checklogs_folder: optional path to folder containing check logs
+    :return: dict of operator callsign -> Operator instance
+    """
+    if not rules:
+        print('No rules were provided')
+        return {}
+
+    # 1. Load log files from both folders
+    logs_instances = _load_log_files(log_class, rules, logs_folder, checklogs_folder)
+    if logs_instances is None:
+        return {}
+
+    # 2. Group by operator callsign
+    operator_instances = _group_logs_by_operator(logs_instances)
+
+    # 3. Mark older duplicate logs per band
+    _mark_older_duplicates(operator_instances, rules)
+
+    # 4. Run per-band cross-check
+    for band in range(1, rules.contest_bands_nr + 1):
+        crosscheck_band(operator_instances, rules, band)
+
+    # 5. Aggregate QSO points per log
+    _aggregate_qso_points(operator_instances)
+
     return operator_instances
 
 
-def crosscheck_logs(operator_instances, rules, band_nr):
+def crosscheck_band(operator_instances, rules, band_nr):
     """
+    Cross-check QSOs for all operators on a specific band.
+
+    For each operator's active log on the band, compare each valid QSO
+    against the partner operator's log to confirm matches.
+
     :param operator_instances: dictionary {key=callsign, value=Operator(callsign)}
+    :param rules: Rules instance
     :param band_nr: number of contest band
     """
     for callsign1, ham1 in operator_instances.items():
-        # set a list for this ham with already made contacts
-        _had_qso_with = []
-        # get logs for band
-        _logs1 = ham1.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
-        if not _logs1:
-            continue
+        _had_qso_with = []  # track already-confirmed contacts per period
 
-        # use 1st log that : is not checklog , is not to ignore & has valid header
-        for log1 in _logs1:
-            if all((log1.use_as_checklog is False,
-                    log1.ignore_this_log is False,
-                    log1.valid_header is True)):
-                break
-        else:
+        log1 = _find_active_log(ham1, rules, band_nr, exclude_checklog=True)
+        if log1 is None:
             continue
 
         for qso1 in log1.qsos:
             if qso1.valid is False:
-                qso1.cc_confirmed = False
-                if len(qso1.errors) >= 1:
-                    qso1.cc_error = qso1.errors[0][2]
-                else:
-                    qso1.cc_error = 'Qso is not valid'
+                _mark_qso_invalid(qso1, 'Qso is not valid' if not qso1.errors else qso1.errors[0][2])
                 continue
 
             if qso1.cc_confirmed is True:
-                # code should never reach here
                 continue
 
             callsign2 = qso1.qso_fields['call'].upper()
 
-            # validate that this qso isn't an duplicate for current period
+            # check for duplicate QSO within same period
             _, inside_period_nr1 = qso1.qso_inside_period()
-            if '{}-period{}'.format(callsign2, inside_period_nr1) in _had_qso_with:
+            if _is_duplicate_qso(callsign2, inside_period_nr1, _had_qso_with):
                 qso1.cc_confirmed = False
                 qso1.cc_error = 'Qso already confirmed'
                 continue
 
-            # check if we have some logs from 2nd ham
+            # find partner operator and their active log on this band
             ham2 = operator_instances.get(callsign2, None)
             if not ham2:
                 qso1.cc_confirmed = False
                 qso1.cc_error = 'No log from {}'.format(callsign2)
                 continue
 
-            # check if we have proper band logs from 2nd ham
-            _logs2 = ham2.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
-            if not _logs2:
+            # check if partner has logs on this band
+            if not _has_band_logs(ham2, rules, band_nr):
                 qso1.cc_confirmed = False
                 qso1.cc_error = 'No log for this band from {}'.format(callsign2)
                 continue
 
-            # use 1st log that : is not to ignore & has valid header
-            for log2 in _logs2:
-                if all((log2.ignore_this_log is False,
-                        log2.valid_header is True)):
-                    break
-            else:
+            # check if partner has a valid active log for this band
+            log2 = _find_active_log(ham2, rules, band_nr, exclude_checklog=False)
+            if log2 is None:
                 qso1.cc_confirmed = False
                 qso1.cc_error = 'No valid log from {}'.format(callsign2)
                 continue
 
-            # get 2nd ham qsos and compare them with 1st ham qso
-            for qso2 in log2.qsos:
-                if qso2.valid is False:
-                    continue
+            # search for a matching QSO in partner's log
+            matched_distance = _search_matching_qso(
+                callsign1, log1, qso1, log2, inside_period_nr1
+            )
 
-                _callsign2 = qso2.qso_fields['call'].upper()
-                if callsign1 != _callsign2:
-                    continue
-
-                _, inside_period_nr2 = qso2.qso_inside_period()
-                if inside_period_nr1 != inside_period_nr2:
-                    continue
-
-                distance = None
-                try:
-                    distance = compare_qso(log1, qso1, log2, qso2)
-                except ValueError as e:
-                    qso1.cc_confirmed = False
-                    qso1.cc_error = e
-
-                if distance is None:
-                    continue
-
-                # add this qso in _had_qso_with list
-                _had_qso_with.append('{}-period{}'.format(callsign2, inside_period_nr2))
-                qso1.points = distance * int(rules.contest_band(band_nr)['multiplier'])
-                qso1.cc_confirmed = True
-                qso1.cc_error = []
-                break
-            else:
+            if matched_distance is None:
                 qso1.cc_confirmed = False
                 qso1.cc_error = 'No qso found on {} log'.format(callsign2)
+                continue
+
+            # confirm the QSO
+            _had_qso_with.append('{}-period{}'.format(callsign2, inside_period_nr1))
+            qso1.points = matched_distance * int(rules.contest_band(band_nr)['multiplier'])
+            qso1.cc_confirmed = True
+            qso1.cc_error = []
+
+
+def _find_active_log(ham, rules, band_nr, exclude_checklog=False):
+    """
+    Find the first valid, non-ignored log for an operator on a band.
+
+    :param ham: Operator instance
+    :param rules: Rules instance
+    :param band_nr: band number
+    :param exclude_checklog: if True, also skip logs marked as checklog
+    :return: Log instance or None
+    """
+    logs = ham.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
+    if not logs:
+        return None
+
+    for log in logs:
+        conditions = [log.ignore_this_log is False, log.valid_header is True]
+        if exclude_checklog:
+            conditions.append(log.use_as_checklog is False)
+        if all(conditions):
+            return log
+    return None
+
+
+def _has_band_logs(ham, rules, band_nr):
+    """
+    Check if an operator has any logs (valid header or not) on the specified band.
+    :return: True if at least one log exists on this band
+    """
+    logs = ham.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
+    return len(logs) > 0
+
+
+def _mark_qso_invalid(qso, error_message):
+    """Mark a QSO as not confirmed with the given error message."""
+    qso.cc_confirmed = False
+    qso.cc_error = error_message
+
+
+def _is_duplicate_qso(callsign, period_nr, had_qso_with):
+    """
+    Check if a QSO with the given callsign has already been confirmed
+    within the same period.
+    """
+    return '{}-period{}'.format(callsign, period_nr) in had_qso_with
+
+
+def _search_matching_qso(callsign1, log1, qso1, log2, inside_period_nr1):
+    """
+    Search partner's log for a QSO matching qso1.
+
+    Compares the partner's QSOs against qso1 by:
+    - matching the calling station's callsign
+    - matching the contest period
+    - calling compare_qso() for detailed comparison
+
+    :return: distance (int) if match found, None otherwise
+    """
+    for qso2 in log2.qsos:
+        if qso2.valid is False:
+            continue
+
+        if qso2.qso_fields['call'].upper() != callsign1:
+            continue
+
+        _, inside_period_nr2 = qso2.qso_inside_period()
+        if inside_period_nr1 != inside_period_nr2:
+            continue
+
+        try:
+            distance = compare_qso(log1, qso1, log2, qso2)
+        except ValueError as e:
+            qso1.cc_confirmed = False
+            qso1.cc_error = e
+            continue
+
+        return distance
+
+    return None
 
 
 def compare_qso(log1, qso1, log2, qso2):
