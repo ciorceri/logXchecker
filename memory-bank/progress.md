@@ -59,8 +59,11 @@
 
 ### Tests
 - Existing tests cover EDI format primarily
-- No unit tests for Cabrillo format specifically
-- No tests for the new scoring system
+- `test_cabrillo.py` added with 46 tests covering all Cabrillo format classes and functions:
+  - `TestCabrilloLog` (11 tests): header validation (missing fields, invalid values, empty logs), QSO parsing, field getter stub, rules-based validation
+  - `TestCabrilloLogQso` (7 tests): QSO init, parser for 11f and 13f formats, regex/generic/rules-based validators, valid QSO line checks
+  - `TestCabrilloOperator` (4 tests): init, add_log, add_log_instance, logs_by_band_regexp
+  - `TestCabrilloHelperFunctions` (24 tests): callsign/county detection, DRACULA scoring, QSO comparison (mismatch/error/valid), crosscheck_logs, crosscheck_logs_filter, dict_to_json/xml, qth_distance, normalize_cabrillo_mode, mark_older_logs, extract_county_from_exchange, apply_custom_scoring
 - `test_formatters.py` added with 19 tests covering all output formatter functions
 
 ## Current Status

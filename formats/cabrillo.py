@@ -447,7 +447,7 @@ class Log(object):
     def validate_callsign(callsign):
         if not callsign:
             return False
-        regex_pcall = r'^\s*(\w+[0-9]+\w+/?\w*)\s*$'
+        regex_pcall = r'^\s*(\w+\/{1})?(\w+[0-9]+)\w+(\/?)\w*\s*$'
         res = re.match(regex_pcall, callsign)
         return True if res else False
 
@@ -492,7 +492,7 @@ class Log(object):
         # For Cabrillo, accept standard CATEGORY-OPERATOR values
         regexp_categories = {
             # TODO : I need to check what's the standard set of categories for Cabrillo logs, for now I just use the VHF ones as example
-            'single': ['.*SINGLE.*', '.*SO.*', '.*CHECKLOG.*'],
+            'single': ['.*SINGLE.*', '.*SO.*'],
             'multi': ['.*MULTI.*', '.*MO.*', '.*MULTI-OP.*'],
             'checklog': ['check', 'checklog', 'check-log'],
         }
@@ -1143,7 +1143,7 @@ def _standard_scoring(callsign1, callsign2, rules, qso1, confirmed_pairs,
                       band_nr, qso_points_normal, qso_points_special,
                       special_callsign_list, distance):
     """
-    Standard (RRO-style) contest scoring logic.
+    Standard contest scoring logic.
 
     Rules:
       - QSO with a special callsign (e.g. YR20RRO) = special points (10)
