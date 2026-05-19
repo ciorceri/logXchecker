@@ -67,6 +67,11 @@ def print_human_friendly_output(output: Dict[str, Any], verbose: bool = False) -
         print('#########################')
         for _call, _values in output[INFO_OPERATORS].items():
             print('Callsign : {}'.format(_call))
+            country = _values.get('country', None)
+            continent = _values.get('continent', None)
+            itu = _values.get('itu', None)
+            cq = _values.get('cq', None)
+            print('  Country : {} | Continent : {} | ITU : {} | CQ : {}'.format(country, continent, itu, cq))
             for _band, _details in _values['band'].items():
                 if _details.get('checklog', False) is True:
                     print('  [checklog] band={} , valid={}'.format(_band, _details['valid']))
@@ -97,12 +102,17 @@ def print_csv_output(output: Dict[str, Any]) -> None:
     """Will print a CSV-formatted output"""
     # cross check
     if output.get(INFO_CC, False):
-        print('Callsign, ValidLog, Band, Category, ConfirmedQso, Points')
+        print('Callsign, Country, Continent, ITU, CQ, ValidLog, Band, Category, ConfirmedQso, Points')
         for _call, _values in output[INFO_OPERATORS].items():
+            country = _values.get('country', '')
+            continent = _values.get('continent', '')
+            itu = _values.get('itu', '')
+            cq = _values.get('cq', '')
             for _band, _details in _values['band'].items():
                 if not _details.get('checklog', False) is True:
-                    print('{}, {}, {}, {}, {}, {}'.format(
-                        _call, _details['valid'], _band,
+                    print('{}, {}, {}, {}, {}, {}, {}, {}, {}, {}'.format(
+                        _call, country, continent, itu, cq,
+                        _details['valid'], _band,
                         _details['category'], _details['qsos_confirmed'], _details['points']
                     ))
     else:

@@ -32,6 +32,9 @@ from constants import (
 from output import print_human_friendly_output, print_log_human_friendly, print_csv_output
 from rules import Rules
 
+# Import DXCC lookup (callsign → country/continent/ITU/CQ zone info)
+from formats.cabrillo import lookup_callsign
+
 # SORT_OUTPUT = False  # TODO : sort the results output
 
 
@@ -232,6 +235,14 @@ def main() -> None:
         for _call, _instance in op_instance.items():
             op_output: Dict[str, Any] = {}
             op_output[INFO_BANDS] = {}
+            # Add DXCC entity info (country, continent, ITU zone, CQ zone) for this operator
+            dxcc_info = lookup_callsign(_call)
+            if dxcc_info:
+                op_output['country'] = dxcc_info.get('country')
+                op_output['continent'] = dxcc_info.get('continent')
+                op_output['itu'] = dxcc_info.get('itu')
+                op_output['cq'] = dxcc_info.get('cq')
+
             for _log in _instance.logs:
                 op_output[INFO_BANDS][_log.band] = {
                     'path': _log.path,

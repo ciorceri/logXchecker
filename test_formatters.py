@@ -303,8 +303,8 @@ class TestPrintCsvOutput(TestCase):
             print_csv_output(output)
         result = mock_stdout.getvalue()
         lines: List[str] = result.strip().split('\n')
-        self.assertEqual(lines[0], 'Callsign, ValidLog, Band, Category, ConfirmedQso, Points')
-        self.assertIn('YO5PJB, True, 2m, SINGLE-OP, 5, 100', lines[1])
+        self.assertEqual(lines[0], 'Callsign, Country, Continent, ITU, CQ, ValidLog, Band, Category, ConfirmedQso, Points')
+        self.assertIn('YO5PJB, , , , , True, 2m, SINGLE-OP, 5, 100', lines[1])
 
     def test_cross_check_multiple_operators_and_bands(self) -> None:
         """Multiple operators and bands produce multiple data rows."""
@@ -346,10 +346,10 @@ class TestPrintCsvOutput(TestCase):
             print_csv_output(output)
         result = mock_stdout.getvalue()
         lines = result.strip().split('\n')
-        self.assertEqual(lines[0], 'Callsign, ValidLog, Band, Category, ConfirmedQso, Points')
-        self.assertIn('YO5PJB, True, 2m, SINGLE-OP, 5, 100', lines[1])
-        self.assertIn('YO5PJB, False, 70cm, SINGLE-OP, 0, 0', lines[2])
-        self.assertIn('YO5ABC, True, 2m, MULTI-OP, 10, 200', lines[3])
+        self.assertEqual(lines[0], 'Callsign, Country, Continent, ITU, CQ, ValidLog, Band, Category, ConfirmedQso, Points')
+        self.assertIn('YO5PJB, , , , , True, 2m, SINGLE-OP, 5, 100', lines[1])
+        self.assertIn('YO5PJB, , , , , False, 70cm, SINGLE-OP, 0, 0', lines[2])
+        self.assertIn('YO5ABC, , , , , True, 2m, MULTI-OP, 10, 200', lines[3])
 
     def test_cross_check_checklog_excluded(self) -> None:
         """Operators with checklog=True are excluded from CSV."""
@@ -374,7 +374,7 @@ class TestPrintCsvOutput(TestCase):
         result = mock_stdout.getvalue()
         lines = result.strip().split('\n')
         self.assertEqual(len(lines), 1, 'Only the header should be printed')
-        self.assertEqual(lines[0], 'Callsign, ValidLog, Band, Category, ConfirmedQso, Points')
+        self.assertEqual(lines[0], 'Callsign, Country, Continent, ITU, CQ, ValidLog, Band, Category, ConfirmedQso, Points')
 
     def test_cross_check_empty_operators(self) -> None:
         """INFO_CC set but no operators prints header only."""
@@ -387,7 +387,8 @@ class TestPrintCsvOutput(TestCase):
         result = mock_stdout.getvalue()
         lines = result.strip().split('\n')
         self.assertEqual(len(lines), 1)
-        self.assertEqual(lines[0], 'Callsign, ValidLog, Band, Category, ConfirmedQso, Points')
+        self.assertEqual(lines[0], 'Callsign, Country, Continent, ITU, CQ, ValidLog, Band, Category, ConfirmedQso, Points')
+
 
     def test_non_crosscheck_raises_not_implemented(self) -> None:
         """Without INFO_CC, print_csv_output raises NotImplementedError."""
