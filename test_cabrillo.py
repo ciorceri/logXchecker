@@ -16,7 +16,9 @@ limitations under the License.
 
 import io
 import os
+import re
 from typing import Any, Dict, List, Optional, Tuple
+
 from unittest import TestCase, mock
 from unittest.mock import mock_open, patch
 
@@ -1065,6 +1067,134 @@ class TestCabrilloHelperFunctions(TestCase):
                                'Callsign mismatch',
                                cabrillo.compare_qso, log1, qso1, log2, qso2)
 
+    def test_compare_qso_rst_mismatch_reverse_direction(self) -> None:
+        """Test RST mismatch in the recv->sent direction.
+
+        qso1.rst_recv (59) should match qso2.rst_sent (599), but doesn't.
+        The rst_sent->rst_recv check passes fine (599 == 599).
+        """
+        qso1 = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 YO5AAA          599 CJ  YO5BBB          59  001', 1)
+        qso2 = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 CJ  YO5AAA          599 001', 2)
+        log1 = mock.Mock(callsign='YO5AAA')
+        log2 = mock.Mock(callsign='YO5BBB')
+        self.assertRaisesRegex(ValueError, 'Rst mismatch',
+                               cabrillo.compare_qso, log1, qso1, log2, qso2)
+
+    @mock.patch('os.path.isfile')
+    def test_compare_qso_exchange_mismatch_non_dracula(self, mock_isfile: mock.MagicMock) -> None:
+        """Test exchange/serial mismatch (sent->recv direction) for non-DRACULA contests.
+
+        Exercises the first exchange check:
+            qso1.nr_sent should match qso2.nr_recv
+        qso1.nr_sent (001) != qso2.nr_recv (003) → 'Serial number mismatch (other ham)'.
+        Uses CABRILLO_CROSSCHECK_RULES which has no custom_scoring set.
+        """
+        mock_isfile.return_value = True
+        mo_rules = mock.mock_open(read_data=CABRILLO_CROSSCHECK_RULES)
+        with patch('builtins.open', mo_rules, create=True):
+            _rules = rules_hf.RulesHf('some_rule_file.rules')
+
+        # qso1.nr_sent=001, qso2.nr_recv=003 → mismatch (first check fires)
+        qso1 = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 YO5AAA          599 001 YO5BBB          599 002', 1, _rules)
+        qso2 = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 999 YO5AAA          599 003', 2, _rules)
+        log1 = mock.Mock(callsign='YO5AAA')
+        log2 = mock.Mock(callsign='YO5BBB')
+        self.assertRaisesRegex(ValueError, re.escape('Serial number mismatch (other ham)'),
+                               cabrillo.compare_qso, log1, qso1, log2, qso2)
+
+
+    @mock.patch('os.path.isfile')
+    def test_compare_qso_exchange_mismatch_reverse_non_dracula(self, mock_isfile: mock.MagicMock) -> None:
+        """Test exchange/serial mismatch (recv->sent direction) for non-DRACULA contests.
+
+        Exercises the second exchange check:
+            qso1.nr_recv should match qso2.nr_sent
+        qso1.nr_recv (002) != qso2.nr_sent (999) → 'Serial number mismatch'.
+
+        The first check (nr_sent vs nr_recv) must pass: both are 001.
+        Uses CABRILLO_CROSSCHECK_RULES which has no custom_scoring set.
+        """
+        mock_isfile.return_value = True
+        mo_rules = mock.mock_open(read_data=CABRILLO_CROSSCHECK_RULES)
+        with patch('builtins.open', mo_rules, create=True):
+            _rules = rules_hf.RulesHf('some_rule_file.rules')
+
+        # qso1.nr_sent=001 == qso2.nr_recv=001 → first check PASSES
+        # qso1.nr_recv=002 != qso2.nr_sent=999 → second check FAILS → 'Serial number mismatch'
+        qso2_wrong_sent = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 999 YO5AAA          599 001', 2, _rules)
+        qso1 = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 YO5AAA          599 001 YO5BBB          599 002', 1, _rules)
+        log1 = mock.Mock(callsign='YO5AAA')
+        log2 = mock.Mock(callsign='YO5BBB')
+        self.assertRaisesRegex(ValueError, 'Serial number mismatch$',
+                               cabrillo.compare_qso, log1, qso1, log2, qso2_wrong_sent)
+
+
+    @mock.patch('os.path.isfile')
+    def test_compare_qso_dracula_skips_exchange(self, mock_isfile: mock.MagicMock) -> None:
+        """Test that DRACULA contest does NOT compare exchange/serial values.
+
+        Exchange values differ between qso1 and qso2, but compare_qso
+        should still return 1 (valid match) because DRACULA skips
+        the exchange comparison.
+        """
+        mock_isfile.return_value = True
+        mo_rules = mock.mock_open(read_data=DRACULA_RULES)
+        with patch('builtins.open', mo_rules, create=True):
+            _rules = rules_hf.RulesHf('some_rule_file.rules')
+
+        # Different exchange values, but should still match for DRACULA
+        qso1 = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 YO5AAA          599 CJ  YO5BBB          599 001', 1, _rules)
+        qso2 = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 999 YO5AAA          599 XXX', 2, _rules)
+        log1 = mock.Mock(callsign='YO5AAA')
+        log2 = mock.Mock(callsign='YO5BBB')
+        # Should not raise ValueError - compare_qso should return 1
+        result = cabrillo.compare_qso(log1, qso1, log2, qso2)
+        self.assertEqual(result, 1)
+
+    def test_compare_qso_invalid_date_format(self) -> None:
+        """Test that an unparseable date in qso_fields raises ValueError.
+
+        This exercises the defensive REGEX_DATE regex check inside
+        compare_qso (even though the generic validator would normally
+        catch invalid dates before compare_qso runs).
+        """
+        qso1 = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 YO5AAA          599 CJ  YO5BBB          599 001', 1)
+        qso2 = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 CJ  YO5AAA          599 001', 2)
+        # Manually corrupt the date to something the regex won't match
+        qso2.qso_fields['date'] = 'abc123'
+        log1 = mock.Mock(callsign='YO5AAA')
+        log2 = mock.Mock(callsign='YO5BBB')
+        self.assertRaisesRegex(ValueError, 'Date format is invalid',
+                               cabrillo.compare_qso, log1, qso1, log2, qso2)
+
+    def test_compare_qso_invalid_hour_format(self) -> None:
+        """Test that an unparseable hour in qso_fields raises ValueError.
+
+        This exercises the defensive REGEX_HOUR regex check inside
+        compare_qso (even though the generic validator would normally
+        catch invalid hours before compare_qso runs).
+        """
+        qso1 = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 YO5AAA          599 CJ  YO5BBB          599 001', 1)
+        qso2 = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 CJ  YO5AAA          599 001', 2)
+        # Manually corrupt the hour to something the regex won't match
+        qso2.qso_fields['hour'] = 'abc'
+        log1 = mock.Mock(callsign='YO5AAA')
+        log2 = mock.Mock(callsign='YO5BBB')
+        self.assertRaisesRegex(ValueError, 'Hour format is invalid',
+                               cabrillo.compare_qso, log1, qso1, log2, qso2)
+
     def test_mark_older_logs(self) -> None:
         log1 = mock.Mock(path='log1.log')
         log2 = mock.Mock(path='log2.log')
@@ -1345,6 +1475,7 @@ CATEGORY-MODE: SSB
 CREATED-BY: logXchecker test generator
 
 QSO:  7150 PH 2026-10-31 1532 YO2ARM          59  AR  YO3APJ          59  BU
+QSO:  7150 PH 2026-10-31 1540 YO2ARM          59  AR  YO5TP           59  CJ
 QSO:  7100 PH 2026-10-31 1543 YO2ARM          59  AR  EV5GHI          59  255
 """
         # YO3APJ log with reciprocal QSO to YO2ARM
@@ -1359,6 +1490,18 @@ CREATED-BY: logXchecker test generator
 
 QSO:  7150 PH 2026-10-31 1532 YO3APJ          59  BU  YO2ARM          59  AR
 """
+        # YO5TP log with reciprocal QSO to YO2ARM
+        log3_content: str = \
+"""START-OF-LOG: 3.0
+CONTEST: DRACULA
+CALLSIGN: YO5TP
+CATEGORY-OPERATOR: B1
+CATEGORY-BAND: ALL
+CATEGORY-MODE: SSB
+CREATED-BY: logXchecker test generator
+
+QSO:  7150 PH 2026-10-31 1540 YO5TP           59  CJ  YO2ARM          59  AR
+"""
         op1 = cabrillo.Operator('YO2ARM')
         mo = mock.mock_open(read_data=log1_content)
         with patch('builtins.open', mo, create=True):
@@ -1371,9 +1514,16 @@ QSO:  7150 PH 2026-10-31 1532 YO3APJ          59  BU  YO2ARM          59  AR
             op2.add_log_by_path('some_log_file.log', rules=_rules)
             self.assertEqual(len(op2.logs), 1)
 
+        op3 = cabrillo.Operator('YO5TP')
+        mo = mock.mock_open(read_data=log3_content)
+        with patch('builtins.open', mo, create=True):
+            op3.add_log_by_path('some_log_file.log', rules=_rules)
+            self.assertEqual(len(op3.logs), 1)
+    
         op_inst: Dict[str, cabrillo.Operator] = {
             'YO2ARM': op1,
             'YO3APJ': op2,
+            'YO5TP': op3,
         }
 
         confirmed_pairs: set = set()
@@ -1389,6 +1539,8 @@ QSO:  7150 PH 2026-10-31 1532 YO3APJ          59  BU  YO2ARM          59  AR
                 qso_to_yo3apj = qso
             elif qso.qso_fields['call'] == 'EV5GHI':
                 qso_to_ev5ghi = qso
+            elif qso.qso_fields['call'] == 'YO5TP':
+                qso_to_yo5tp = qso
 
         self.assertIsNotNone(qso_to_yo3apj, "Should find QSO to YO3APJ")
         self.assertTrue(qso_to_yo3apj.cc_confirmed,
@@ -1401,6 +1553,11 @@ QSO:  7150 PH 2026-10-31 1532 YO3APJ          59  BU  YO2ARM          59  AR
         self.assertIsNotNone(qso_to_ev5ghi, "Should find QSO to EV5GHI")
         self.assertFalse(qso_to_ev5ghi.cc_confirmed,
                          "QSO to EV5GHI should not be confirmed (no log)")
+
+        # YO5TP has a log, so that QSO should be confirmed
+        self.assertIsNotNone(qso_to_yo5tp, "Should find QSO to YO5TP")
+        self.assertTrue(qso_to_yo5tp.cc_confirmed,
+                        "QSO to YO5TP should be confirmed")
 
     def test_apply_custom_scoring(self) -> None:
         """Test the custom scoring dispatcher."""

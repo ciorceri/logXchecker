@@ -1453,10 +1453,24 @@ def _find_active_log(ham, rules, band_nr):
     """Find the first valid, non-ignored log for an operator on a given band.
 
     Returns a Log instance, or None if no suitable log is found.
+
+    For Cabrillo HF logs, a single log covers ALL bands (CATEGORY-BAND: ALL).
+    If no band-specific log is found, fall back to searching for a log with
+    CATEGORY-BAND set to "ALL" (case-insensitive).
     """
     _logs = ham.logs_by_band_regexp(rules.contest_band(band_nr)['regexp'])
     if not _logs:
+        # For Cabrillo HF logs: a single log may cover all bands (CATEGORY-BAND: ALL).
+        # Fall back to finding a log with band set to "ALL".
+        for log in ham.logs:
+            if all((log.use_as_checklog is False,
+                    log.ignore_this_log is False,
+                    log.valid_header is True,
+                    log.band and log.band.upper() == 'ALL')):
+                return log
         return None
+    # If multiple logs match the band regex, return the first valid, non-ignored one.
+    # TODO : hope this will not bite us in the future if we have multiple versions of the same log 
     for log in _logs:
         if all((log.use_as_checklog is False,
                 log.ignore_this_log is False,
