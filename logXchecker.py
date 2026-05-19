@@ -250,7 +250,7 @@ def main() -> None:
                         if qso.cc_confirmed is False:
                             _cc_errors.append('{} : {}'.format(qso.qso_line, qso.cc_error))
                         else:
-                            _cc_valid.append('{} : {} : {}'.format(qso.qso_line, qso.points, qso.cc_confirmed))
+                            _cc_valid.append('{} : {} : {}'.format(qso.qso_line, qso.points, 'Confirmed' if qso.cc_confirmed else 'Not confirmed'))
                     op_output[INFO_BANDS][_log.band]['qso_errors'] = _cc_errors
                     op_output[INFO_BANDS][_log.band]['qso_valid'] = _cc_valid
 

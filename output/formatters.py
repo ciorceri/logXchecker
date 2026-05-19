@@ -69,25 +69,27 @@ def print_human_friendly_output(output: Dict[str, Any], verbose: bool = False) -
             print('Callsign : {}'.format(_call))
             for _band, _details in _values['band'].items():
                 if _details.get('checklog', False) is True:
-                    print('   [checklog] band={} , valid={}'.format(_band, _details['valid']))
+                    print('  [checklog] band={} , valid={}'.format(_band, _details['valid']))
                 else:
                     multipliers: Optional[int] = _details.get('multipliers')
                     final_score: Optional[int] = _details.get('final_score')
                     if multipliers is not None and final_score is not None:
-                        print('   band={} , valid={} , category={} , points={} , qsos_confirmed={} , multipliers={} , final_score={}'.format(
+                        print('  band={} , valid={} , category={} , points={} , qsos_confirmed={} , multipliers={} , final_score={}'.format(
                             _band, _details['valid'], _details['category'],
                             _details['points'], _details['qsos_confirmed'],
                             multipliers, final_score
                         ))
                     else:
-                        print('   band={} , valid={} , category={} , points={} , qsos_confirmed={}'.format(
+                        print('  band={} , valid={} , category={} , points={} , qsos_confirmed={}'.format(
                             _band, _details['valid'], _details['category'],
                             _details['points'], _details['qsos_confirmed']
                         ))
                 if not verbose:
                     continue
                 for err in _details['qso_errors']:
-                    print('   - {}'.format(err))
+                    print('  - ERROR {}'.format(err))
+                for val in _details['qso_valid']:
+                    print('  - VALID {}'.format(val))
             print('--------')
 
 

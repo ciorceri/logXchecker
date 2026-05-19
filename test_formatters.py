@@ -236,6 +236,7 @@ class TestPrintHumanFriendlyOutput(TestCase):
                             'points': 50,
                             'qsos_confirmed': 3,
                             'qso_errors': ['Line 1 : bad call'],
+                            'qso_valid': ['Line 2 : good qso'],
                         },
                     },
                 },
@@ -244,7 +245,8 @@ class TestPrintHumanFriendlyOutput(TestCase):
         with patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
             print_human_friendly_output(output, verbose=True)
         result = mock_stdout.getvalue()
-        self.assertIn('   - Line 1 : bad call', result)
+        self.assertIn('  - ERROR Line 1 : bad call', result)
+        self.assertIn('  - VALID Line 2 : good qso', result)
 
     def test_cross_check_checklog(self) -> None:
         """Checklog entries show '[checklog]' instead of points details."""
