@@ -164,6 +164,7 @@ test_valid_qso_lines_13f: List[str] = [
 
 test_valid_qso_fields_11f: List[Dict[str, Any]] = [
     {
+        'freq': '14000',
         'date': '261031',
         'hour': '1200',
         'call': 'YO5BTZ',
@@ -180,6 +181,7 @@ test_valid_qso_fields_11f: List[Dict[str, Any]] = [
         'duplicate_qso': None,
     },
     {
+        'freq': '7200',
         'date': '261031',
         'hour': '1210',
         'call': 'YO5PLP',
@@ -1135,30 +1137,6 @@ class TestCabrilloHelperFunctions(TestCase):
                                cabrillo.compare_qso, log1, qso1, log2, qso2_wrong_sent)
 
 
-    @mock.patch('os.path.isfile')
-    def test_compare_qso_dracula_skips_exchange(self, mock_isfile: mock.MagicMock) -> None:
-        """Test that DRACULA contest does NOT compare exchange/serial values.
-
-        Exchange values differ between qso1 and qso2, but compare_qso
-        should still return 1 (valid match) because DRACULA skips
-        the exchange comparison.
-        """
-        mock_isfile.return_value = True
-        mo_rules = mock.mock_open(read_data=DRACULA_RULES)
-        with patch('builtins.open', mo_rules, create=True):
-            _rules = rules_hf.RulesHf('some_rule_file.rules')
-
-        # Different exchange values, but should still match for DRACULA
-        qso1 = cabrillo.LogQso(
-            'QSO: 14000 CW 2026-10-31 1200 YO5AAA          599 CJ  YO5BBB          599 001', 1, _rules)
-        qso2 = cabrillo.LogQso(
-            'QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 999 YO5AAA          599 XXX', 2, _rules)
-        log1 = mock.Mock(callsign='YO5AAA')
-        log2 = mock.Mock(callsign='YO5BBB')
-        # Should not raise ValueError - compare_qso should return 1
-        result = cabrillo.compare_qso(log1, qso1, log2, qso2)
-        self.assertEqual(result, 1)
-
     def test_compare_qso_invalid_date_format(self) -> None:
         """Test that an unparseable date in qso_fields raises ValueError.
 
@@ -1332,22 +1310,22 @@ QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 002 YO5AAA          599 001
 
         # qso2 is from YO5BBB's perspective, calling YO5AAA
         base_qso_reciprocal: cabrillo.LogQso = cabrillo.LogQso(
-            'QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 CJ  YO5AAA          599 001',
+            'QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 001  YO5AAA          599 CJ',
             2, _rules)
 
         # QSO with wrong time (>5min diff) from YO5BBB's perspective
         qso_wrong_time: cabrillo.LogQso = cabrillo.LogQso(
-            'QSO: 14000 CW 2026-10-31 1206 YO5BBB          599 CJ  YO5AAA          599 001',
+            'QSO: 14000 CW 2026-10-31 1206 YO5BBB          599 001  YO5AAA          599 CJ',
             2, _rules)
 
         # QSO with correct time (<5min diff) from YO5BBB's perspective
         qso_correct_time: cabrillo.LogQso = cabrillo.LogQso(
-            'QSO: 14000 CW 2026-10-31 1201 YO5BBB          599 CJ  YO5AAA          599 001',
+            'QSO: 14000 CW 2026-10-31 1201 YO5BBB          599 001  YO5AAA          599 CJ',
             2, _rules)
 
         # QSO with wrong mode from YO5BBB's perspective
         qso_wrong_mode: cabrillo.LogQso = cabrillo.LogQso(
-            'QSO: 14000 SSB 2026-10-31 1200 YO5BBB          59  CJ  YO5AAA          59  001',
+            'QSO: 14000 SSB 2026-10-31 1200 YO5BBB          599 001  YO5AAA          599 CJ',
             2, _rules)
 
         # QSO with wrong rst from YO5BBB's perspective
@@ -1357,7 +1335,7 @@ QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 002 YO5AAA          599 001
 
         # QSO with different called callsign from YO5BBB's perspective
         qso_diff_call: cabrillo.LogQso = cabrillo.LogQso(
-            'QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 CJ  YO5CCC          599 001',
+            'QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 001  YO5CCC          599 CJ',
             2, _rules)
 
         qso_test: List[Tuple[

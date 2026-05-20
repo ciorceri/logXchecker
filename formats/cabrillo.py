@@ -797,7 +797,8 @@ class LogQso(object):
         self.cc_error = []
         self.points = None
 
-        self.qso_fields = {'date': None,
+        self.qso_fields = {'freq': None,
+                           'date': None,
                            'hour': None,
                            'call': None,
                            'mode': None,
@@ -885,6 +886,7 @@ class LogQso(object):
         exch_b = m.group(10)    # contest exchange recv (serial number, county code, etc.)
         t = m.group(11) or ''   # transmitter ID (optional)
 
+        self.qso_fields['freq'] = freq
         # The "call" field in qso_fields is the OTHER station's callsign
         self.qso_fields['call'] = call_b
         # Convert YYYY-MM-DD to YYMMDD for cross-check compatibility
@@ -930,6 +932,7 @@ class LogQso(object):
         exch_b = m.group(10)    # contest exchange recv (nr + county combined: "005 IS")
         t = m.group(11) or ''   # transmitter ID (optional)
 
+        self.qso_fields['freq'] = freq
         # The "call" field in qso_fields is the OTHER station's callsign
         self.qso_fields['call'] = call_b
         # Convert YYYY-MM-DD to YYMMDD for cross-check compatibility
@@ -1748,13 +1751,10 @@ def compare_qso(log1, qso1, log2, qso2):
         raise ValueError('Rst mismatch')
 
     # compare serial number / exchange
-    # For DRACULA, exchanges can be non-numeric (county codes, "DRC", etc.)
-    # so we skip the exchange comparison for DRACULA contests
-    if not is_dracula_contest(qso1.rules):
-        if qso1.qso_fields['nr_sent'] != qso2.qso_fields['nr_recv']:
-            raise ValueError('Serial number mismatch (other ham)')
-        if qso1.qso_fields['nr_recv'] != qso2.qso_fields['nr_sent']:
-            raise ValueError('Serial number mismatch')
+    if qso1.qso_fields['nr_sent'] != qso2.qso_fields['nr_recv']:
+        raise ValueError('Serial number mismatch (other ham)')
+    if qso1.qso_fields['nr_recv'] != qso2.qso_fields['nr_sent']:
+        raise ValueError('Serial number mismatch')
 
     # No Maidenhead locator for Cabrillo — distance is 1 km per requirement
     return 1
