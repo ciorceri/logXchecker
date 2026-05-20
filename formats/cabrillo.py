@@ -1156,6 +1156,9 @@ def run_crosscheck(log_class, rules=None, logs_folder=None, checklogs_folder=Non
     for band in range(1, rules.contest_bands_nr + 1):
         crosscheck_band(operator_instances, rules, band, confirmed_pairs)
 
+    # 4b. Apply 10-minute rule for multi-operator stations
+    _apply_10_minute_rule(operator_instances, rules)
+
     # 5. Aggregate QSO points per log
     _aggregate_qso_points(operator_instances)
 
@@ -1224,6 +1227,181 @@ def _aggregate_qso_points(operator_instances):
                     confirmed += 1
             log.qsos_points = points
             log.qsos_confirmed = confirmed
+
+
+# ── 10-minute rule for multi-operator stations ─────────────────────────
+
+def _get_band_from_frequency(freq_str, rules):
+    """Determine which contest band (band number) a frequency belongs to.
+
+    The frequency string is the first field after QSO: in the Cabrillo QSO line.
+    For HF contests, this is typically in KHz (e.g. "14000") or MHz (e.g. "14.000").
+
+    :param freq_str: The raw frequency string from the QSO line.
+    :param rules: Rules instance with band definitions.
+    :return: band number (1-based) or None if not determinable.
+    """
+    if not freq_str or not rules:
+        return None
+
+    # Parse the frequency value - convert to MHz
+    try:
+        if '.' in freq_str:
+            # Already in MHz format (e.g. "14.000")
+            freq_mhz = float(freq_str)
+        else:
+            # Likely in KHz (e.g. "14000" = 14.000 MHz)
+            # or Hz (e.g. "14000000" = 14.000 MHz)
+            freq_val = int(freq_str)
+            if freq_val >= 1000000:
+                # Hz -> MHz
+                freq_mhz = freq_val / 1000000.0
+            elif freq_val >= 10000:
+                # KHz -> MHz
+                freq_mhz = freq_val / 1000.0
+            else:
+                freq_mhz = float(freq_val)
+    except (ValueError, TypeError):
+        return None
+
+    # Check against each contest band's nominal frequency
+    for band_nr in range(1, rules.contest_bands_nr + 1):
+        try:
+            band_freq = float(rules.contest_band(band_nr)['band'])
+        except (ValueError, KeyError, TypeError):
+            continue
+
+        # Use a tolerance of ±5% around the band's nominal frequency,
+        # which covers typical HF band edges (e.g., 3.5-29.7 MHz)
+        tolerance = band_freq * 0.05
+        if abs(freq_mhz - band_freq) <= tolerance:
+            return band_nr
+
+    return None
+
+
+def _parse_qso_datetime(qso):
+    """Parse a QSO's date and hour fields into a datetime object.
+
+    :param qso: LogQso instance
+    :return: datetime object or None on failure
+    """
+    try:
+        return datetime.strptime(
+            '20' + qso.qso_fields['date'] + ' ' + qso.qso_fields['hour'],
+            '%Y%m%d %H%M')
+    except (ValueError, KeyError, TypeError):
+        return None
+
+
+def _classify_qso_multiplier(qso, rules):
+    """Determine if a QSO's partner is a multiplier and return its key.
+
+    For the 10-minute rule exception, we only care whether the QSO's
+    partner represents a new multiplier. This function wraps the existing
+    _compute_multiplier_for_qso logic.
+
+    :param qso: LogQso instance
+    :param rules: Rules instance
+    :return: multiplier key tuple (type, value) or None if not a multiplier
+    """
+    if not rules or not qso:
+        return None
+    exchange_field = rules.contest_multiplier_exchange_field
+    special_exchange = rules.contest_multiplier_special_exchange
+    return _compute_multiplier_for_qso(qso, rules, exchange_field, special_exchange)
+
+
+def _apply_10_minute_rule(operator_instances, rules):
+    """Apply the 10-minute rule to multi-operator stations.
+
+    The rule (as defined in CQWW / Dracula contest rules):
+      - Multi-operator stations must stay on a band for at least 10 full minutes
+      - The clock starts at the time of the first QSO made on that band
+      - Banda can be changed after 10 full minutes have elapsed
+      - Exception: working a new multiplier allows an early band change
+      - Violation: QSOs made in violation get 0 points
+
+    :param operator_instances: dict of callsign -> Operator
+    :param rules: Rules instance
+    """
+    if not rules:
+        return
+
+    for op_callsign, op_inst in operator_instances.items():
+        # Only apply to multi-operator stations (category == 'multi')
+        is_multi = any(
+            log.category and log.category.upper() == 'MULTI'
+            for log in op_inst.logs
+        )
+        if not is_multi:
+            continue
+
+        # Collect all confirmed QSOs across all logs (sorted chronologically)
+        all_qsos = []
+        for log in op_inst.logs:
+            if log.ignore_this_log or not log.valid_header:
+                continue
+            for qso in log.qsos:
+                if not qso.valid or qso.cc_confirmed is not True:
+                    continue
+                dt = _parse_qso_datetime(qso)
+                if dt is None:
+                    continue
+                all_qsos.append((dt, qso, log))
+
+        if not all_qsos:
+            continue
+
+        # Sort chronologically by QSO time
+        all_qsos.sort(key=lambda x: x[0])
+
+        # Track band sessions and multipliers worked
+        current_band_nr = None
+        session_first_time = None
+        seen_multipliers = set()
+
+        for dt, qso, log in all_qsos:
+            # Extract frequency from raw QSO line (first field after 'QSO:')
+            tokens = qso.qso_line.strip().split()
+            if len(tokens) < 2:
+                continue
+            freq_str = tokens[1]
+
+            qso_band_nr = _get_band_from_frequency(freq_str, rules)
+            if qso_band_nr is None:
+                continue
+
+            # Determine if this QSO is a new multiplier (exception check)
+            mult_key = _classify_qso_multiplier(qso, rules)
+            is_new_mult = mult_key is not None and mult_key not in seen_multipliers
+
+            if current_band_nr is None:
+                # First QSO - start a new session on this band
+                current_band_nr = qso_band_nr
+                session_first_time = dt
+            elif qso_band_nr == current_band_nr:
+                # Same band - session continues, no action needed
+                pass
+            else:
+                # Band change detected
+                elapsed_minutes = (dt - session_first_time).total_seconds() / 60.0
+
+                if elapsed_minutes < 10 and not is_new_mult:
+                    # Violation: band changed before 10 minutes AND this is not
+                    # a new multiplier — set QSO points to 0
+                    qso.points = 0
+                else:
+                    # Allowed band change:
+                    #   - either 10+ minutes have passed on the current band, OR
+                    #   - this QSO is a new multiplier (exception)
+                    # Start a new session on the new band
+                    current_band_nr = qso_band_nr
+                    session_first_time = dt
+
+            # Track this multiplier for future new-multiplier checks
+            if mult_key:
+                seen_multipliers.add(mult_key)
 
 
 def _compute_multipliers(operator_instances, rules):

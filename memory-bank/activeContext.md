@@ -1,25 +1,27 @@
 # Active Context
 
 ## Current Work Focus
-Added DXCC entity information (country, continent, ITU zone, CQ zone) to cross-check output for all output formats.
+Added 10-minute rule enforcement for multi-operator stations in DRACULA contest cross-check.
 
 ## Recent Changes
-### logXchecker.py
-- Added `from formats.cabrillo import lookup_callsign` import for DXCC database lookups
-- In the cross-check loop, for each operator callsign, call `lookup_callsign()` and add `country`, `continent`, `itu`, `cq` keys to the operator's output dict
-
-### output/formatters.py
-- **print_human_friendly_output()**: Added printing of Country, Continent, ITU zone, CQ zone after each operator's Callsign line in cross-check mode
-- **print_csv_output()**: Added `Country, Continent, ITU, CQ` columns to the CSV header and data rows
-
-### test_formatters.py
-- Updated CSV test assertions to match the new column layout (Callsign, Country, Continent, ITU, CQ, ValidLog, Band, Category, ConfirmedQso, Points)
-
-### JSON & XML output
-- No changes needed — these serialize the output dict directly, so the new fields appear automatically
+### formats/cabrillo.py
+- **`run_crosscheck()`**: Added call to `_apply_10_minute_rule()` between the per-band cross-check loop and `_aggregate_qso_points()`
+- **`_get_band_from_frequency()`**: New helper that parses a frequency string (from the raw QSO line) and determines which contest band (1..N) it belongs to, using ±5% tolerance around the band's nominal frequency
+- **`_parse_qso_datetime()`**: New helper that converts a QSO's date+hour fields into a `datetime` object for chronological sorting
+- **`_classify_qso_multiplier()`**: New helper that wraps `_compute_multiplier_for_qso()` to determine the multiplier key for a QSO's partner station
+- **`_apply_10_minute_rule()`**: New function that implements the CQWW-style 10-minute rule:
+  - Only applies to operators with `category == 'multi'`
+  - Collects all confirmed QSOs chronologically across all logs
+  - Tracks band sessions (first QSO time per band)
+  - Band changes before 10 full minutes have elapsed get the QSO penalized to 0 points
+  - Exception: working a new multiplier (DXCC, YO county, or DRC) allows early band change
+  - Uses the existing `_compute_multiplier_for_qso()` infrastructure for new-multiplier detection
 
 ## Next Steps
 - (none currently)
 
 ## Active Decisions
-- DXCC info is stored at the **operator level** (not per-band) since country/continent/zone are properties of the callsign, not of a specific log or band
+- The 10-minute rule is applied unconditionally but only has effect for `category == 'multi'` operators
+- Frequency-to-band mapping uses ±5% tolerance around the nominal band frequency, covering standard HF band edges
+- Multiplier exception detection reuses the existing `_compute_multiplier_for_qso()` logic, ensuring consistent treatment with the scoring system
+- The `_aggregate_qso_points()` function naturally handles zero-point QSOs (it only counts `points > 0` as confirmed), so violating QSOs are properly excluded
