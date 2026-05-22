@@ -33,7 +33,7 @@ from output import print_human_friendly_output, print_log_human_friendly, print_
 from rules import Rules
 
 # Import DXCC lookup (callsign → country/continent/ITU/CQ zone info)
-from formats.cabrillo import lookup_callsign
+from common.dxcc import lookup_callsign
 
 # SORT_OUTPUT = False  # TODO : sort the results output
 
@@ -140,6 +140,91 @@ def _get_log_format_module(log_format: str) -> Any:
         )
 
 
+def _build_output_single_log(args, log, lfmodule):
+    """Build output dict for single log check mode."""
+    output: Dict[str, Any] = {}
+    output[INFO_LOG] = args.singlelogcheck
+    if not os.path.isfile(args.singlelogcheck):
+        print('Cannot open file : {}'.format(args.singlelogcheck))
+        sys.exit(1)
+    _log = log(args.singlelogcheck, rules=args.rules_obj)
+    output.update(_log.errors)
+    return output
+
+
+def _build_output_multi_log(args, log):
+    """Build output dict for multi log check mode."""
+    output: Dict[str, Any] = {}
+    output[INFO_MLC] = args.multilogcheck
+    if not os.path.isdir(args.multilogcheck):
+        print('Cannot open logs folder : {}'.format(args.multilogcheck))
+        sys.exit(1)
+    logs_output: List[Dict[str, Any]] = []
+    for filename in os.listdir(args.multilogcheck):
+        log_output: Dict[str, Any] = {}
+        _log = log(os.path.join(args.multilogcheck, filename), rules=args.rules_obj)
+        log_output[INFO_LOG] = filename
+        log_output.update(_log.errors)
+        logs_output.append(log_output)
+    output[INFO_LOGS] = logs_output
+    if args.checklogs:
+        if os.path.isdir(args.checklogs):
+            checklogs_list = []
+            for filename in os.listdir(args.checklogs):
+                log_output = {}
+                _log = log(os.path.join(args.checklogs, filename), rules=args.rules_obj, checklog=True)
+                log_output[INFO_LOG] = filename
+                log_output.update(_log.errors)
+                checklogs_list.append(log_output)
+            logs_output.extend(checklogs_list)
+            output[INFO_LOGS] = logs_output
+    return output
+
+
+def _build_output_crosscheck(args, rules, lfmodule):
+    """Build output dict for cross-check mode."""
+    output: Dict[str, Any] = {}
+    output[INFO_CC] = args.crosscheck
+    output[INFO_OPERATORS] = {}
+    op_instance: Dict[str, Any] = lfmodule.run_crosscheck(
+        lfmodule.Log, rules=rules, logs_folder=args.crosscheck, checklogs_folder=args.checklogs
+    )
+    for _call, _instance in op_instance.items():
+        op_output: Dict[str, Any] = {}
+        op_output[INFO_BANDS] = {}
+        dxcc_info = lookup_callsign(_call)
+        if dxcc_info:
+            op_output['country'] = dxcc_info.get('country')
+            op_output['continent'] = dxcc_info.get('continent')
+            op_output['itu'] = dxcc_info.get('itu')
+            op_output['cq'] = dxcc_info.get('cq')
+
+        for _log in _instance.logs:
+            op_output[INFO_BANDS][_log.band] = {
+                'path': _log.path,
+                'points': _log.qsos_points,
+                'qsos_confirmed': _log.qsos_confirmed,
+                'valid': _log.valid_header,
+                'category': _log.category,
+                'checklog': _log.use_as_checklog,
+                'multipliers': getattr(_log, 'multiplier_count', None),
+                'final_score': getattr(_log, 'final_score', None),
+            }
+            if args.verbose is True:
+                _cc_errors: List[str] = []
+                _cc_valid: List[str] = []
+                for qso in _log.qsos:
+                    if qso.cc_confirmed is False:
+                        _cc_errors.append('{} : {}'.format(qso.qso_line, qso.cc_error))
+                    else:
+                        _cc_valid.append('{} : {} : {}'.format(qso.qso_line, qso.points, 'Confirmed' if qso.cc_confirmed else 'Not confirmed'))
+                op_output[INFO_BANDS][_log.band]['qso_errors'] = _cc_errors
+                op_output[INFO_BANDS][_log.band]['qso_valid'] = _cc_valid
+
+        output[INFO_OPERATORS][_call] = op_output
+    return output
+
+
 def main() -> None:
     args: argparse.Namespace = ArgumentParser().parse(sys.argv[1:])
     if args.output.upper() == 'HUMAN-FRIENDLY':
@@ -149,9 +234,6 @@ def main() -> None:
     log_format: str = ''
 
     if args.rules:
-        # Detect the log format from the INI file first, then load the
-        # appropriate rules class (VHF or HF).
-        # We read the INI file quickly to get the [log] format field.
         try:
             with open(args.rules, 'r') as f:
                 ini_content: str = f.read()
@@ -159,7 +241,6 @@ def main() -> None:
             print('Cannot open rules file: {}'.format(args.rules))
             sys.exit(1)
 
-        # mandatory : is rules files exists -> get log format (edi, cabrillo) from the INI content
         import configparser
         interim = configparser.ConfigParser()
         interim.read_string(ini_content)
@@ -173,9 +254,10 @@ def main() -> None:
     elif args.format:
         log_format = args.format
     else:
-        # Should not happen due to mutually exclusive group in argparse
         print('No format or rules specified')
         sys.exit(1)
+
+    args.rules_obj = rules
 
     try:
         lfmodule = _get_log_format_module(log_format)
@@ -185,87 +267,15 @@ def main() -> None:
 
     log = lfmodule.Log
 
-    output: Dict[str, Any] = {}
-
-    # validate one log
     if args.singlelogcheck:
-        output[INFO_LOG] = args.singlelogcheck
-        if not os.path.isfile(args.singlelogcheck):
-            print('Cannot open file : {}'.format(args.singlelogcheck))
-            sys.exit(1)
-        _log = log(args.singlelogcheck, rules=rules)
-        output.update(_log.errors)
-
-    # validate multiple logs
+        output = _build_output_single_log(args, log, lfmodule)
     elif args.multilogcheck:
-        output[INFO_MLC] = args.multilogcheck
-        if not os.path.isdir(args.multilogcheck):
-            print('Cannot open logs folder : {}'.format(args.multilogcheck))
-            sys.exit(1)
-        logs_output: List[Dict[str, Any]] = []
-        for filename in os.listdir(args.multilogcheck):
-            log_output: Dict[str, Any] = {}
-            _log = log(os.path.join(args.multilogcheck, filename), rules=rules)
-            log_output[INFO_LOG] = filename
-            log_output.update(_log.errors)
-            logs_output.append(log_output)
-        output[INFO_LOGS] = logs_output
-        # add also checklogs
-        if args.checklogs:
-            if os.path.isdir(args.checklogs):
-                logs_output = []
-                for filename in os.listdir(args.checklogs):
-                    log_output = {}
-                    _log = log(os.path.join(args.checklogs, filename), rules=rules, checklog=True)
-                    log_output[INFO_LOG] = filename
-                    log_output.update(_log.errors)
-                    logs_output.append(log_output)
-                output[INFO_LOGS].extend(logs_output)
-
-    # crosscheck logs
+        output = _build_output_multi_log(args, log)
     elif args.crosscheck:
         if not rules:
             print("No rules were provided")
             sys.exit(1)
-        output[INFO_CC] = args.crosscheck
-        output[INFO_OPERATORS] = {}
-        op_instance: Dict[str, Any] = lfmodule.run_crosscheck(
-            log, rules=rules, logs_folder=args.crosscheck, checklogs_folder=args.checklogs
-        )
-        for _call, _instance in op_instance.items():
-            op_output: Dict[str, Any] = {}
-            op_output[INFO_BANDS] = {}
-            # Add DXCC entity info (country, continent, ITU zone, CQ zone) for this operator
-            dxcc_info = lookup_callsign(_call)
-            if dxcc_info:
-                op_output['country'] = dxcc_info.get('country')
-                op_output['continent'] = dxcc_info.get('continent')
-                op_output['itu'] = dxcc_info.get('itu')
-                op_output['cq'] = dxcc_info.get('cq')
-
-            for _log in _instance.logs:
-                op_output[INFO_BANDS][_log.band] = {
-                    'path': _log.path,
-                    'points': _log.qsos_points,
-                    'qsos_confirmed': _log.qsos_confirmed,
-                    'valid': _log.valid_header,
-                    'category': _log.category,
-                    'checklog': _log.use_as_checklog,
-                    'multipliers': getattr(_log, 'multiplier_count', None),
-                    'final_score': getattr(_log, 'final_score', None),
-                }
-                if args.verbose is True:
-                    _cc_errors: List[str] = []
-                    _cc_valid: List[str] = []
-                    for qso in _log.qsos:
-                        if qso.cc_confirmed is False:
-                            _cc_errors.append('{} : {}'.format(qso.qso_line, qso.cc_error))
-                        else:
-                            _cc_valid.append('{} : {} : {}'.format(qso.qso_line, qso.points, 'Confirmed' if qso.cc_confirmed else 'Not confirmed'))
-                    op_output[INFO_BANDS][_log.band]['qso_errors'] = _cc_errors
-                    op_output[INFO_BANDS][_log.band]['qso_valid'] = _cc_valid
-
-            output[INFO_OPERATORS][_call] = op_output
+        output = _build_output_crosscheck(args, rules, lfmodule)
 
     if args.output.upper() == 'HUMAN-FRIENDLY':
         print_human_friendly_output(output, verbose=args.verbose)

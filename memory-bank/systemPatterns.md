@@ -3,107 +3,109 @@
 ## Overall Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│                logXchecker.py               │
-│        (CLI entry point / orchestration)    │
-├─────────────────────────────────────────────┤
-│                                             │
-│   ┌──────────┐  ┌──────────┐  ┌──────────┐  │
-│   │  Rules   │  │  Formats │  │  Output  │  │
-│   │  rules.py│  │ *.py     │  │formatters│  │
-│   │  rules_* │  │          │  │  .py     │  │
-│   └──────────┘  └──────────┘  └──────────┘  │
-│                                             │
-└─────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                     logXchecker.py                          │
+│              (CLI entry point / orchestration)              │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────┐  ┌──────────────┐  ┌──────────┐  ┌──────────┐ │
+│  │  Rules   │  │   Formats    │  │  Output  │  │  Common  │ │
+│  │ rules.py │  │ formats/     │  │ output/  │  │ common/  │ │
+│  │ rules_hf │  │  edi.py      │  │formatters│  │  dxcc.py │ │
+│  │ rules_vhf│  │  cabrillo/   │  │  .py     │  │  serial- │ │
+│  │ scoring  │  │    log.py    │  │          │  │  ization │ │
+│  │  .py     │  │    qso.py    │  │          │  │ crossck  │ │
+│  │          │  │    operator  │  │          │  │ operator │ │
+│  │          │  │    scoring   │  │          │  └──────────┘ │
+│  │          │  │    crossck   │  │          │               │
+│  └──────────┘  │    constants │  └──────────┘               │
+│                └──────────────┘                              │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ## Key Design Patterns
 
 ### 1. Modular Format Architecture
-Each log format (EDI, Cabrillo) lives in its own Python module under `formats/` with a consistent interface:
-- `Log` class: validate headers, parse QSOs
-- `LogQso` class: single QSO validation
-- `crosscheck_logs_filter()`: orchestrates cross-check
-- `crosscheck_logs()`: per-band cross-check logic
-- `compare_qso()`: compare two QSOs for a match
-- `dict_to_json()` / `dict_to_xml()`: serialization helpers
+Each log format lives under `formats/` with a consistent interface:
 
-### 2. Rules Class Hierarchy
+**`formats/edi.py`** (single file):
+- `Log`, `LogQso`, `Operator` classes
+- `run_crosscheck()`, `crosscheck_band()`, `compare_qso()`
+- Maidenhead distance calculation (`qth_distance`, `conv_maidenhead_to_latlong`)
+
+**`formats/cabrillo/`** (package):
+| Submodule | Responsibility |
+|-----------|---------------|
+| `constants.py` | Mode aliases, QSO regex patterns, header fields |
+| `operator.py` | Operator class |
+| `log.py` | Log header validation, QSO parsing |
+| `qso.py` | LogQso validation, field assignment, period checks |
+| `scoring.py` | DRACULA + standard scoring, multipliers, 10-minute rule |
+| `crosscheck.py` | Cross-check orchestration, `compare_qso`, `_find_active_log` |
+
+Both formats import shared utilities from `common/`.
+
+### 2. Common Package (`common/`)
+| Module | Purpose |
+|--------|---------|
+| `common/dxcc.py` | DXCC database loading, `lookup_callsign`, `is_yo_callsign`, `are_same_dxcc`, DRACULA helpers, `YO_COUNTIES` |
+| `common/serialization.py` | `dict_to_json()`, `dict_to_xml()` |
+| `common/crosscheck.py` | `load_log_files`, `group_logs_by_operator`, `mark_older_duplicates`, `aggregate_qso_points`, `mark_older_logs` |
+| `common/operator.py` | Base `Operator` class |
+
+### 3. Rules Class Hierarchy
 ```
-Rules (base - rules.py)
-├── RulesVhf (rules_vhf.py) - integer modes for EDI
-└── RulesHf (rules_hf.py) - string modes for Cabrillo
+ScoringMixin (scoring.py) — all INI [scoring] section properties
+    │
+Rules (rules.py) — INI parsing, validation
+├── RulesVhf (rules_vhf.py) — integer modes for EDI
+└── RulesHf (rules_hf.py) — string modes for Cabrillo
 ```
-- Base class handles all INI parsing, validation, and shared properties
-- Sub-classes only override `contest_qso_modes` to change type
+- `Rules` inherits from `ScoringMixin`, keeping scoring properties separated
+- Sub-classes only override `contest_qso_modes`
 - Config-driven: all contest parameters come from INI files
 
-### 3. Lazy Module Loading
+### 4. Lazy Module Loading
 - `logXchecker.py` loads format modules on demand via `FORMAT_MODULE_MAP` (constants.py)
-- Rules class is resolved dynamically via `FORMAT_RULES_MAP` based on the log format in the INI file
+- Rules class resolved dynamically via `FORMAT_RULES_MAP` based on log format in INI
 - No hard imports of optional format modules
 
-### 4. Cross-Check Algorithm
+### 5. Cross-Check Algorithm
 1. **Load/Warm-up phase**: Parse all logs, group by operator callsign, mark older logs
-2. **Per-band loop**: For each band defined in rules:
-   - For each operator's QSO, find the partner operator
+2. **Per-band loop**: For each band in rules:
+   - Find each operator's active log on the band
    - Compare QSO pairs (date/time within 5 min, mode match, RST match, serial match)
-   - If match found, award points based on scoring rules
-3. **Post-processing**: Sum points per operator per band
+   - Award points via `apply_custom_scoring()` dispatcher
+3. **10-minute rule** (Cabrillo only): Penalize multi-op band violations
+4. **Post-processing**: Aggregate points, compute multipliers
 
-### 5. Scoring System for HF contests
+### 6. Scoring System for HF contests
+
+#### Scoring Dispatcher (`apply_custom_scoring`)
+```
+if custom_scoring == 'DRACULA' → _dracula_scoring()
+elif custom_scoring is None    → _standard_scoring()
+else                           → NotImplementedError
+```
 
 #### Standard (RRO-style) Scoring
-Points calculation logic in `crosscheck_logs()`:
 ```
 if partner == special_callsign → special_qso_points (e.g. 10)
-elif qso_points != 1 AND (mode, call1, call2) not seen before → qso_points (e.g. 5)
+elif qso_points != 1 AND (mode, call1, call2) not seen → qso_points (e.g. 5)
 else → distance * multiplier (default 1 point per QSO, legacy)
 ```
-- Deduplication via global `confirmed_pairs` set across all bands
-- YR20RRO special station gets separate per-band dedup via `_had_qso_with`
 
 #### DRACULA Custom Scoring
-When `[scoring] custom_scoring = DRACULA`, the cross-check engine uses a completely different scoring path:
-
 ```
-if partner is special DRACULA station → 10 pts (any station → special)
+if partner is DRC special → 10 pts
 elif caller is YO:
-    if partner is YO → 0 pts (YO-YO not allowed)
-    else → 5 pts (YO → non-YO)
-else (caller is non-YO):
-    if partner is special → 10 pts
-    elif partner is YO → 5 pts (non-YO → YO)
-    elif partner same prefix → 1 pt (same country/DXCC)
-    else → 2 pts (different DXCC)
+    if partner is YO → 0 pts
+    else → 5 pts
+else (non-YO):
+    if partner is YO → 5 pts
+    elif same DXCC → 1 pt
+    else → 2 pts
 ```
-
-DRACULA multiplier rules (per-band):
-- **Non-YO stations**: DXCC entities + YO counties + DRC (each unique per band)
-- **YO stations**: DXCC entities + DRC (each unique per band)
-- Controlled by `multiplier_per_band=true` in config
-
-#### Scoring Configuration (rules INI `[scoring]` section)
-| Field                            | Type    | Default         | Description                                              |
-|----------------------------------|---------|-----------------|----------------------------------------------------------|
-| `qso_points`                     | int     | 1               | Points for a regular confirmed QSO (legacy)              |
-| `special_qso_points`             | int     | 0               | Points for QSO with the special station                  |
-| `special_callsign`               | str     | None            | Callsign of the special/bonus station                    |
-| `multiplier_enabled`             | bool    | false           | Enable multiplier-based scoring (score = pts × mults)    |
-| `multiplier_exchange_field`      | str     | 'county_recv'   | QSO field name containing the exchange value             |
-| `multiplier_special_exchange`    | str     | None            | Exchange value indicating Category A station             |
-| `multiplier_per_band`            | bool    | false           | Per-band multipliers (DRACULA uses this)                 |
-| `custom_scoring`                 | str     | None            | Custom scoring engine name ('DRACULA', None = standard)  |
-| `non_yo_to_special_points`       | int     | 10              | DRACULA: any station → special station                   |
-| `non_yo_to_yo_points`            | int     | 5               | DRACULA: non-YO → YO station                             |
-| `yo_to_nonyo_points`             | int     | 5               | DRACULA: YO → non-YO station                             |
-| `non_yo_dxcc_points`             | int     | 2               | DRACULA: non-YO → different DXCC                         |
-| `non_yo_same_country_points`     | int     | 1               | DRACULA: non-YO → same country/DXCC                      |
-
-Scoring properties are defined in `Rules` base class (`rules.py`) with `@property` decorators that read from `self.config['scoring']` and return safe defaults on `KeyError`/`ValueError`.
-
-### 6. Version Selection
-The module auto-detects Cabrillo version (2.0 vs 3.0) from `START-OF-LOG:` header line, and parses QSO lines accordingly.
 
 ## Critical Implementation Paths
 
@@ -112,31 +114,31 @@ The module auto-detects Cabrillo version (2.0 vs 3.0) from `START-OF-LOG:` heade
 Log.__init__()
 ├── validate_header()
 │   ├── Read file content
-│   ├── HF only : Detect Cabrillo version
+│   ├── HF: Detect Cabrillo version from START-OF-LOG
 │   ├── Parse header fields (callsign, band, category, grid locator)
 │   └── Validate against rules if provided
 └── get_qsos()
     └── For each QSO line:
         └── LogQso.__init__()
-            ├── validate_qso_format() - regex match
-            ├── parse_qso_fields() - extract fields
-            ├── generic_qso_validator() - date/hour/RST/serial
-            └── rules_based_qso_validator() - mode/period
+            ├── validate_qso_format() — regex match
+            ├── parse_qso_fields() — extract fields
+            ├── generic_qso_validator() — date/hour/RST/serial
+            └── rules_based_qso_validator() — mode/period
 ```
 
 ### Cross-Check Flow
 ```
-crosscheck_logs_filter()
-├── Parse all logs, group by operator
-├── Mark older log files per band
-├── confirmed_pairs = set()
-├── For each band: crosscheck_logs(..., confirmed_pairs)
+run_crosscheck()
+├── load_log_files()          # common/crosscheck.py
+├── group_logs_by_operator()  # common/crosscheck.py
+├── mark_older_duplicates()   # common/crosscheck.py
+├── For each band: crosscheck_band()
 │   ├── For each operator's QSO:
-│   │   ├── Skip invalid or already confirmed
+│   │   ├── Skip invalid/confirmed
 │   │   ├── Find partner operator
-│   │   ├── Find matching QSO in partner's log via compare_qso()
-│   │   ├── Award points (distance/special/normal/default)
-│   │   └── Mark as confirmed
-│   └── Mark unmatched QSOs
-└── Sum points per operator per band
+│   │   ├── Find matching QSO via compare_qso()
+│   │   └── Award points via apply_custom_scoring()
+├── _apply_10_minute_rule()   # Cabrillo only
+├── aggregate_qso_points()    # common/crosscheck.py
+└── _compute_multipliers()    # if enabled
 ```
