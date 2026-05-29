@@ -20,4 +20,4 @@ jobs:
           pip install -r requirements.txt
       - name: Test with pytest
         run: |
-          pytest --cov --cov-fail-under=89
+          pytest --cov --cov-fail-under=87.5

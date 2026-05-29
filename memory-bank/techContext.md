@@ -15,34 +15,73 @@
 - **Package Manager**: pip
 - **Test Runner**: pytest + pytest-cov
 - **Packaging**: cx_Freeze (frozen .exe builds)
+- **Virtual Environment**: `venv/` (Python 3.14)
+
+## Project Structure
+```
+logXchecker/
+├── logXchecker.py           # CLI entry point + output builders
+├── rules.py                 # Rules class (INI parsing + validation)
+├── rules_hf.py              # RulesHf (string modes for Cabrillo)
+├── rules_vhf.py             # RulesVhf (integer modes for EDI)
+├── scoring.py               # ScoringMixin (all [scoring] section properties)
+├── constants.py             # Shared constants, FORMAT_MODULE_MAP
+├── version.py               # __project__, __version__
+├── edi.py                   # Backward-compat shim → formats.edi
+│
+├── common/
+│   ├── __init__.py
+│   ├── dxcc.py              # DXCC database, lookup_callsign, YO/DRACULA helpers
+│   ├── serialization.py     # dict_to_json, dict_to_xml
+│   ├── crosscheck.py        # Shared cross-check pipeline functions
+│   └── operator.py          # Base Operator class
+│
+├── formats/
+│   ├── __init__.py
+│   ├── edi.py               # EDI format: Log, LogQso, Operator, crosscheck
+│   └── cabrillo/
+│       ├── __init__.py      # Re-exports everything for backward compat
+│       ├── constants.py     # Mode aliases, QSO regex, header fields
+│       ├── operator.py      # Operator class
+│       ├── log.py           # Log class (header validation, QSO parsing)
+│       ├── qso.py           # LogQso class (QSO validation, period checks)
+│       ├── scoring.py       # Scoring engines, multipliers, 10-minute rule
+│       └── crosscheck.py    # Cross-check orchestration, compare_qso
+│
+├── output/
+│   ├── __init__.py
+│   └── formatters.py        # Human-friendly, CSV output formatters
+│
+└── memory-bank/             # Project documentation
+```
 
 ## Test Files
 | File                  | Purpose                                             |
 |-----------------------|-----------------------------------------------------|
 | `test_parser.py`      | Format parser tests (EDI)                           |
-| `test_rules.py`       | Rules validation tests                              |
-| `test_edi.py`         | EDI-specific tests (1637 lines, most comprehensive) |
-| `test_logXchecker.py` | Main application tests (placeholder, 15 lines)      |
-| `test_formatters.py`  | Output formatter tests (19 tests, added May 2026)   |
+| `test_rules.py`       | Rules validation tests (15 tests)                   |
+| `test_edi.py`         | EDI-specific tests (~25 tests)                      |
+| `test_cabrillo.py`    | Cabrillo-specific tests (46 tests)                  |
+| `test_logXchecker.py` | Main application tests (placeholder, 3 tests)       |
+| `test_formatters.py`  | Output formatter tests (19 tests)                   |
 
 ## Test Log Directories
 | Directory                        | Contents                             |
 |----------------------------------|--------------------------------------|
 | `test_logs/cabrillo/logs/`       | 88 Cabrillo logs for YR20RRO contest |
-| `test_logs/cabrillo/logs_clean/` | Processed YR20RRO logs               |
 | `test_logs/cabrillo/logs_raw/`   | Original YR20RRO logs                |
+| `test_logs/cabrillo/logs_dracula/` | DRACULA contest test logs          |
 | `test_logs/edi/`                 | EDI format test logs                 |
 | `test_logs/adif/`                | ADIF test files                      |
 
 ## Rules Config Files
-| File                         | Type        | Purpose                                                         |
-|------------------------------|-------------|-----------------------------------------------------------------|
-| `test_logs/rules_hf.config`           | HF/Cabrillo | Generic HF contest rules                                             |
-| `test_logs/rules_vhf.config`          | VHF/EDI     | VHF contest rules                                                    |
-| `test_logs/rules_rro.config`          | HF/Cabrillo | YR20RRO Diploma contest rules with `[scoring]` section               |
-|                                       |             | (qso_points=5, special_qso_points=10, special_callsign=YR20RRO)      |
-| `test_logs/rules_hf_dracula.config`   | HF/Cabrillo | DRACULA contest rules (Oct 2026) with custom scoring + per-band mults |
-| `test_logs/rules_vhf_napoca_2016.config` | VHF/EDI  | NAPOCA 2016 VHF contest rules                                        |
+| File                                   | Type        | Purpose                                     |
+|----------------------------------------|-------------|----------------------------------------------|
+| `test_logs/rules_hf.config`            | HF/Cabrillo | Generic HF contest rules                     |
+| `test_logs/rules_vhf.config`           | VHF/EDI     | VHF contest rules                            |
+| `test_logs/rules_rro.config`           | HF/Cabrillo | YR20RRO Diploma contest with `[scoring]`     |
+| `test_logs/rules_hf_dracula.config`    | HF/Cabrillo | DRACULA contest with custom scoring + per-band mults |
+| `test_logs/rules_vhf_napoca_2016.config` | VHF/EDI | NAPOCA 2016 VHF contest rules                |
 
 ## Dependencies (from requirements.txt)
 - colorama

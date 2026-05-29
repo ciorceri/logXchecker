@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import math
-import os
 import re
 from collections import namedtuple
-import json
 from datetime import datetime, timedelta
 
-from dicttoxml import dicttoxml
 from validate_email import validate_email
+
+from common.serialization import dict_to_json, dict_to_xml
+from common.crosscheck import load_log_files, group_logs_by_operator, mark_older_duplicates, aggregate_qso_points, mark_older_logs
 
 # Import shared constants for consistency (keeps own definitions for backward compatibility)
 from constants import INFO_MLC, INFO_CC, INFO_LOG, INFO_LOGS, INFO_BANDS, INFO_OPERATORS, ERR_IO, ERR_HEADER, ERR_QSO
@@ -729,101 +729,7 @@ class LogQso(object):
 
 
 
-def _load_log_files(log_class, rules, logs_folder, checklogs_folder):
-    """Load and validate all log files from the given folders.
 
-    Returns a list of Log instances, or None on error.
-    """
-    if not logs_folder:
-        print('Logs folder was not provided')
-        return None
-    if not os.path.isdir(logs_folder):
-        print('Cannot open logs folder : {}'.format(logs_folder))
-        return None
-
-    logs_instances = []
-    for filename in os.listdir(logs_folder):
-        logs_instances.append(log_class(os.path.join(logs_folder, filename), rules=rules))
-
-    if checklogs_folder:
-        if os.path.isdir(checklogs_folder):
-            for filename in os.listdir(checklogs_folder):
-                logs_instances.append(log_class(os.path.join(checklogs_folder, filename), rules=rules, checklog=True))
-        else:
-            print('Cannot open checklogs folder : {}'.format(checklogs_folder))
-            return None
-
-    return logs_instances
-
-
-def _group_logs_by_operator(logs_instances):
-    """Group Log instances by operator callsign into Operator objects."""
-    operator_instances = {}
-    for log in logs_instances:
-        if not log.valid_header:
-            log.ignore_this_log = True
-            continue
-        callsign = log.callsign.upper()
-        if not operator_instances.get(callsign, None):
-            operator_instances[callsign] = Operator(callsign)
-        operator_instances[callsign].add_log_instance(log)
-    return operator_instances
-
-
-def _mark_older_duplicates(operator_instances, rules):
-    """For multiple logs per operator on the same band, mark older ones as ignored."""
-    for band in range(1, rules.contest_bands_nr + 1):
-        for _, _ham in operator_instances.items():
-            _logs = _ham.logs_by_band_regexp(rules.contest_band(band)['regexp'])
-            mark_older_logs(_logs)
-
-
-def _aggregate_qso_points(operator_instances):
-    """Sum up points and confirmed QSO counts for each log."""
-    for op, op_inst in operator_instances.items():
-        for log in op_inst.logs:
-            points = 0
-            confirmed = 0
-            for qso in log.qsos:
-                if qso.points and qso.points > 0:
-                    points += qso.points
-                    confirmed += 1
-            log.qsos_points = points
-            log.qsos_confirmed = confirmed
-
-
-def run_crosscheck(log_class, rules=None, logs_folder=None, checklogs_folder=None):
-    """Orchestrate the full cross-check pipeline.
-
-    :param log_class: the Log class (e.g. edi.Log)
-    :param rules: Rules instance
-    :param logs_folder: path to folder containing competitor logs
-    :param checklogs_folder: optional path to folder containing check logs
-    :return: dict of operator callsign -> Operator instance
-    """
-    if not rules:
-        print('No rules were provided')
-        return {}
-
-    # 1. Load log files from both folders
-    logs_instances = _load_log_files(log_class, rules, logs_folder, checklogs_folder)
-    if logs_instances is None:
-        return {}
-
-    # 2. Group by operator callsign
-    operator_instances = _group_logs_by_operator(logs_instances)
-
-    # 3. Mark older duplicate logs per band
-    _mark_older_duplicates(operator_instances, rules)
-
-    # 4. Run per-band cross-check
-    for band in range(1, rules.contest_bands_nr + 1):
-        crosscheck_band(operator_instances, rules, band)
-
-    # 5. Aggregate QSO points per log
-    _aggregate_qso_points(operator_instances)
-
-    return operator_instances
 
 
 def crosscheck_band(operator_instances, rules, band_nr):
@@ -1052,21 +958,7 @@ def compare_qso(log1, qso1, log2, qso2):
     return qth_distance(log1.maidenhead_locator.upper(), log2.maidenhead_locator.upper())
 
 
-def mark_older_logs(log_list):
-    """
-    Will iterate the log list and based on log file timestamp will mark older ones
-    by setting the .ignore_this_log flag.
-    """
-    maxDate = 0
-    maxDateLogId = None
-    for log in log_list:
-        date = os.path.getmtime(log.path)
-        if date > maxDate:
-            maxDate = date
-            maxDateLogId = id(log)
-    for log in log_list:
-        if maxDateLogId != id(log):
-            log.ignore_this_log = True
+# mark_older_logs is imported from common.crosscheck above
 
 
 def delta_ord(letter):
@@ -1135,9 +1027,24 @@ def qth_distance(qth1, qth2):
         return int(round(arc*6373))
 
 
-def dict_to_json(dictionary):
-    return json.dumps(dictionary)
+# dict_to_json and dict_to_xml are imported from common.serialization above
 
 
-def dict_to_xml(dictionary):
-    return dicttoxml(dictionary)
+def run_crosscheck(log_class, rules=None, logs_folder=None, checklogs_folder=None):
+    """Orchestrate the full EDI cross-check pipeline."""
+    if not rules:
+        print('No rules were provided')
+        return {}
+
+    logs_instances = load_log_files(log_class, rules, logs_folder, checklogs_folder)
+    if logs_instances is None:
+        return {}
+
+    operator_instances = group_logs_by_operator(logs_instances, Operator)
+    mark_older_duplicates(operator_instances, rules)
+
+    for band in range(1, rules.contest_bands_nr + 1):
+        crosscheck_band(operator_instances, rules, band)
+
+    aggregate_qso_points(operator_instances)
+    return operator_instances
