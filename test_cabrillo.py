@@ -418,6 +418,83 @@ multiplier_exchange_field=nr_recv
 multiplier_special_exchange=DRC
 """
 
+# YO DX HF Contest rules content (from test_logs/rules_hf_yodx.config)
+YODX_RULES: str = \
+r"""[contest]
+name=YO DX HF Contest
+begindate=20240824
+enddate=20240825
+beginhour=1200
+endhour=1159
+bands=5
+periods=1
+categories=3
+modes=CW,SSB
+custom_scoring=YODX
+
+[log]
+format=cabrillo
+
+[band1]
+band=3.5
+regexp=3\.?|80m
+multiplier=1
+
+[band2]
+band=7
+regexp=7\.?|40m
+multiplier=1
+
+[band3]
+band=14
+regexp=14\.?|20m
+multiplier=1
+
+[band4]
+band=21
+regexp=21\.?|15m
+multiplier=1
+
+[band5]
+band=28
+regexp=28\.?|10m
+multiplier=1
+
+[period1]
+begindate=20240824
+enddate=20240825
+beginhour=1200
+endhour=1159
+bands=band1,band2,band3,band4,band5
+
+[category1]
+name=Single
+regexp=SINGLE|SINGLE-OP|SO
+bands=band1,band2,band3,band4,band5
+
+[category2]
+name=Multi
+regexp=MULTI|MULTI-OP|MO
+bands=band1,band2,band3,band4,band5
+
+[category3]
+name=Checklog
+regexp=CHECK|CHECKLOG
+bands=band1,band2,band3,band4,band5
+
+[scoring]
+non_yo_to_yo_points=8
+non_yo_same_continent_points=2
+non_yo_dxcc_points=4
+non_yo_same_country_points=1
+yo_to_nonyo_points=8
+yo_to_nonyo_same_continent_points=4
+yo_to_yo_points=0
+multiplier_enabled=true
+multiplier_per_band=true
+multiplier_exchange_field=nr_recv
+"""
+
 
 class TestCabrilloLog(TestCase):
     def test_init(self) -> None:
@@ -1568,3 +1645,161 @@ QSO:  7150 PH 2026-10-31 1540 YO5TP           59  CJ  YO2ARM          59  AR
         self.assertRaises(NotImplementedError,
                           cabrillo.apply_custom_scoring,
                           'YO5AAA', 'DL1ABC', mock_rules3, qso2, set(), 1, 1, 10, [], 1)
+
+    # ── YO DX HF Contest tests ────────────────────────────────────────────
+
+    def test_is_yodx_contest(self) -> None:
+        """Test is_yodx_contest detection."""
+        # YODX rules
+        mock_rules_yodx = mock.Mock()
+        mock_rules_yodx.contest_custom_scoring = 'YODX'
+        self.assertTrue(cabrillo.is_yodx_contest(mock_rules_yodx))
+
+        # No custom scoring
+        mock_rules_none = mock.Mock()
+        mock_rules_none.contest_custom_scoring = None
+        self.assertFalse(cabrillo.is_yodx_contest(mock_rules_none))
+
+        # No rules
+        self.assertFalse(cabrillo.is_yodx_contest(None))
+
+        # DRACULA rules should NOT match YODX
+        mock_rules_dracula = mock.Mock()
+        mock_rules_dracula.contest_custom_scoring = 'DRACULA'
+        self.assertFalse(cabrillo.is_yodx_contest(mock_rules_dracula))
+
+    def test_yodx_scoring(self) -> None:
+        """Test YO DX HF Contest scoring logic per official rules.
+
+        Rules reference:
+        6.1 NON-YO stations:
+          - QSO with YO: 8 pts
+          - QSO outside own continent: 4 pts
+          - QSO same continent: 2 pts
+          - QSO same DXCC country: 1 pt
+        6.2 YO stations:
+          - YO-DX: 8 pts
+          - YO-EU: 4 pts
+          - YO-YO: 0 pts
+        """
+        mock_rules = mock.Mock()
+        mock_rules.contest_non_yo_to_yo_points = 8
+        mock_rules.contest_non_yo_dxcc_points = 4
+        mock_rules.contest_non_yo_same_continent_points = 2
+        mock_rules.contest_non_yo_same_country_points = 1
+        mock_rules.contest_yo_to_nonyo_points = 8
+        mock_rules.contest_yo_to_nonyo_same_continent_points = 4
+        mock_rules.contest_yo_to_yo_points = 0
+        mock_rules.contest_non_yo_to_yo_same_continent_points = 4
+
+        # YO to YO = 0 points
+        qso1 = cabrillo.LogQso(
+            'QSO: 14000 CW 2024-08-24 1200 YO5AAA          599 CJ  YO5BTZ          599 001', 1)
+        qso1.cc_confirmed, qso1.cc_error = cabrillo._yodx_scoring('YO5AAA', 'YO5BTZ', mock_rules, qso1)
+        self.assertTrue(qso1.cc_confirmed)
+        self.assertEqual(qso1.points, 0, "YO-YO should be 0 points")
+
+        # YO to non-YO (EU/DL) = 4 points (YO-EU)
+        qso2 = cabrillo.LogQso(
+            'QSO: 14000 CW 2024-08-24 1200 YO5AAA          599 CJ  DL1ABC          599 005', 1)
+        qso2.cc_confirmed, qso2.cc_error = cabrillo._yodx_scoring('YO5AAA', 'DL1ABC', mock_rules, qso2)
+        self.assertTrue(qso2.cc_confirmed)
+        self.assertEqual(qso2.points, 4, "YO-EU should be 4 points")
+
+        # YO to non-YO (NA/K4X) = 8 points (YO-DX)
+        qso3 = cabrillo.LogQso(
+            'QSO: 14000 CW 2024-08-24 1200 YO5AAA          599 CJ  K4X             599 005', 1)
+        qso3.cc_confirmed, qso3.cc_error = cabrillo._yodx_scoring('YO5AAA', 'K4X', mock_rules, qso3)
+        self.assertTrue(qso3.cc_confirmed)
+        self.assertEqual(qso3.points, 8, "YO-DX should be 8 points")
+
+        # Non-YO (EU) to YO = 8 points (always, regardless of continent)
+        qso4 = cabrillo.LogQso(
+            'QSO: 14000 CW 2024-08-24 1200 DL1AAA          599 005 YO5PJB         599 CJ', 1)
+        qso4.cc_confirmed, qso4.cc_error = cabrillo._yodx_scoring('DL1AAA', 'YO5PJB', mock_rules, qso4)
+        self.assertTrue(qso4.cc_confirmed)
+        self.assertEqual(qso4.points, 8, "Non-YO to YO should be 8 points")
+
+        # Non-YO (NA) to YO = 8 points (also always)
+        qso5 = cabrillo.LogQso(
+            'QSO: 14000 CW 2024-08-24 1200 K4X             599 005 YO5PJB         599 CJ', 1)
+        qso5.cc_confirmed, qso5.cc_error = cabrillo._yodx_scoring('K4X', 'YO5PJB', mock_rules, qso5)
+        self.assertTrue(qso5.cc_confirmed)
+        self.assertEqual(qso5.points, 8, "Non-YO to YO should be 8 points regardless of continent")
+
+        # Non-YO to non-YO, same DXCC (DL to DA) = 1 point
+        qso6 = cabrillo.LogQso(
+            'QSO: 14000 CW 2024-08-24 1200 DL1AAA          599 005 DA1ABC         599 010', 1)
+        qso6.cc_confirmed, qso6.cc_error = cabrillo._yodx_scoring('DL1AAA', 'DA1ABC', mock_rules, qso6)
+        self.assertTrue(qso6.cc_confirmed)
+        self.assertEqual(qso6.points, 1, "Same DXCC should be 1 point")
+
+        # Non-YO to non-YO, different DXCC, same continent (DL to F) = 2 points
+        qso7 = cabrillo.LogQso(
+            'QSO: 14000 CW 2024-08-24 1200 DL1AAA          599 005 F5XXX          599 016', 1)
+        qso7.cc_confirmed, qso7.cc_error = cabrillo._yodx_scoring('DL1AAA', 'F5XXX', mock_rules, qso7)
+        self.assertTrue(qso7.cc_confirmed)
+        self.assertEqual(qso7.points, 2, "Same continent should be 2 points")
+
+        # Non-YO to non-YO, different continent (DL to K) = 4 points
+        qso8 = cabrillo.LogQso(
+            'QSO: 14000 CW 2024-08-24 1200 DL1AAA          599 005 K4X            599 020', 1)
+        qso8.cc_confirmed, qso8.cc_error = cabrillo._yodx_scoring('DL1AAA', 'K4X', mock_rules, qso8)
+        self.assertTrue(qso8.cc_confirmed)
+        self.assertEqual(qso8.points, 4, "Different continent should be 4 points")
+
+    def test_yodx_scoring_apply_custom_scoring_dispatch(self) -> None:
+        """Test that apply_custom_scoring dispatches to _yodx_scoring for YODX."""
+        # Use actual rules file to verify end-to-end
+        with patch('os.path.isfile', return_value=True), \
+             patch('builtins.open', mock.mock_open(read_data=YODX_RULES)):
+            _rules = rules_hf.RulesHf('some_rule_file.rules')
+
+        self.assertEqual(_rules.contest_custom_scoring, 'YODX')
+
+        qso = cabrillo.LogQso(
+            'QSO: 14000 CW 2024-08-24 1200 YO5AAA          599 CJ  DL1ABC          599 005', 1)
+        confirmed, errors = cabrillo.apply_custom_scoring(
+            'YO5AAA', 'DL1ABC', _rules, qso, set(), 1, 1, 10, [], 1)
+
+        self.assertTrue(confirmed)
+        # YO to non-YO(EU) = 4 points (yo_to_nonyo_same_continent_points)
+        self.assertEqual(qso.points, 4)
+
+    def test_yodx_multiplier(self) -> None:
+        """Test YO DX HF Contest multiplier logic."""
+        with patch('os.path.isfile', return_value=True), \
+             patch('builtins.open', mock.mock_open(read_data=YODX_RULES)):
+            _rules = rules_hf.RulesHf('some_rule_file.rules')
+
+        # YO partner with county code → YO_COUNTY multiplier
+        qso1 = mock.Mock()
+        qso1.qso_fields = {'call': 'YO5BTZ', 'nr_recv': 'CJ'}
+        mult1 = cabrillo._compute_multiplier_for_qso(qso1, _rules, 'nr_recv', None)
+        self.assertIsNotNone(mult1)
+        self.assertEqual(mult1[0], 'YO_COUNTY')
+        self.assertEqual(mult1[1], 'CJ')
+
+        # Non-YO partner (DL/Germany, EU) → DXCC multiplier
+        qso2 = mock.Mock()
+        qso2.qso_fields = {'call': 'DL1CW', 'nr_recv': '001'}
+        mult2 = cabrillo._compute_multiplier_for_qso(qso2, _rules, 'nr_recv', None)
+        self.assertIsNotNone(mult2)
+        self.assertEqual(mult2[0], 'DXCC')
+        self.assertEqual(mult2[1], 'DL')
+
+        # Non-YO partner (K4X/USA, NA) → DXCC multiplier
+        qso3 = mock.Mock()
+        qso3.qso_fields = {'call': 'K4X', 'nr_recv': '123'}
+        mult3 = cabrillo._compute_multiplier_for_qso(qso3, _rules, 'nr_recv', None)
+        self.assertIsNotNone(mult3)
+        self.assertEqual(mult3[0], 'DXCC')
+        self.assertEqual(mult3[1], 'K')
+
+        # Non-YO partner (F5XXX/France, EU) → DXCC multiplier
+        qso4 = mock.Mock()
+        qso4.qso_fields = {'call': 'F5XXX', 'nr_recv': '456'}
+        mult4 = cabrillo._compute_multiplier_for_qso(qso4, _rules, 'nr_recv', None)
+        self.assertIsNotNone(mult4)
+        self.assertEqual(mult4[0], 'DXCC')
+        self.assertEqual(mult4[1], 'F')

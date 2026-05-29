@@ -33,6 +33,7 @@ from common.dxcc import (
     is_dracula_contest,
     is_dracula_special,
     is_yo_county,
+    is_yodx_contest,
 )
 
 # Constants and helpers
@@ -60,6 +61,7 @@ from common.crosscheck import mark_older_logs
 from .scoring import (
     apply_custom_scoring,
     _dracula_scoring,
+    _yodx_scoring,
     _standard_scoring,
     _compute_multipliers,
     _compute_multiplier_for_qso,

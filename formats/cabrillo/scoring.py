@@ -21,8 +21,10 @@ from common.dxcc import (
     lookup_callsign,
     is_yo_callsign,
     are_same_dxcc,
+    get_callsign_continent,
     is_dracula_contest,
     is_dracula_special,
+    is_yodx_contest,
 )
 
 
@@ -169,11 +171,33 @@ def _compute_multipliers(operator_instances, rules):
                 log.final_score = log.qsos_points * log.multiplier_count if log.qsos_points else 0
 
 
+def _is_yo_county_val(val):
+    """Check if a value is a Romanian county abbreviation."""
+    from common.dxcc import is_yo_county as _is_yo_county
+    return _is_yo_county(val)
+
+
 def _compute_multiplier_for_qso(qso, rules, exchange_field, special_exchange):
+    is_yodx = is_yodx_contest(rules)
     is_dracula = is_dracula_contest(rules)
     partner_call = qso.qso_fields.get('call', '').upper()
 
-    if is_dracula:
+    if is_yodx:
+        # YO DX HF Contest multiplier:
+        # - When working a YO station → use received county code as multiplier
+        # - When working a non-YO station → use DXCC entity as multiplier
+        if not partner_call:
+            return None
+        if is_yo_callsign(partner_call):
+            exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
+            if exchange_val and _is_yo_county_val(exchange_val):
+                return ('YO_COUNTY', exchange_val)
+            return None
+        else:
+            dxcc_info = lookup_callsign(partner_call)
+            dxcc_key = dxcc_info['main_prefix'] if dxcc_info else partner_call[:2]
+            return ('DXCC', dxcc_key)
+    elif is_dracula:
         if not partner_call:
             return None
         if is_dracula_special(partner_call, rules):
@@ -214,6 +238,8 @@ def apply_custom_scoring(callsign1, callsign2, rules, qso1, confirmed_pairs,
     custom_type = rules.contest_custom_scoring if rules else None
     if custom_type == 'DRACULA':
         return _dracula_scoring(callsign1, callsign2, rules, qso1)
+    elif custom_type == 'YODX':
+        return _yodx_scoring(callsign1, callsign2, rules, qso1)
     elif custom_type is None:
         return _standard_scoring(callsign1, callsign2, rules, qso1, confirmed_pairs,
                                  band_nr, qso_points_normal, qso_points_special,
@@ -238,6 +264,49 @@ def _dracula_scoring(callsign1, callsign2, rules, qso1):
                 qso1.points = rules.contest_non_yo_same_country_points
             else:
                 qso1.points = rules.contest_non_yo_dxcc_points
+    return True, []
+
+
+def _yodx_scoring(callsign1, callsign2, rules, qso1):
+    """YO DX HF Contest scoring with continent-based differentiation.
+
+    Scoring logic (callsign1 is the 'caller' being scored):
+      - YO works YO     → 0 pts
+      - YO works non-YO:
+          * same continent (EU) → yo_to_nonyo_same_continent_points
+          * different continent  → yo_to_nonyo_points
+      - non-YO works YO:
+          * same continent       → non_yo_to_yo_same_continent_points
+          * different continent  → non_yo_to_yo_points
+      - non-YO works non-YO:
+          * same DXCC            → non_yo_same_country_points
+          * different DXCC       → non_yo_dxcc_points
+    """
+    if is_yo_callsign(callsign1):
+        # YO station calls
+        if is_yo_callsign(callsign2):
+            qso1.points = 0
+        else:
+            continent2 = get_callsign_continent(callsign2)
+            if continent2 == 'EU':
+                qso1.points = rules.contest_yo_to_nonyo_same_continent_points
+            else:
+                qso1.points = rules.contest_yo_to_nonyo_points
+    else:
+        # Non-YO station calls
+        if is_yo_callsign(callsign2):
+            # QSO with YO station: always 8 points regardless of continent
+            qso1.points = rules.contest_non_yo_to_yo_points
+        else:
+            if are_same_dxcc(callsign1, callsign2):
+                qso1.points = rules.contest_non_yo_same_country_points
+            else:
+                continent1 = get_callsign_continent(callsign1)
+                continent2 = get_callsign_continent(callsign2)
+                if continent1 and continent2 and continent1 == continent2:
+                    qso1.points = rules.contest_non_yo_same_continent_points
+                else:
+                    qso1.points = rules.contest_non_yo_dxcc_points
     return True, []
 
 

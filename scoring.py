@@ -107,6 +107,13 @@ class ScoringMixin:
             return 1
 
     @property
+    def contest_non_yo_same_continent_points(self) -> int:
+        try:
+            return int(self.config['scoring']['non_yo_same_continent_points'])
+        except (KeyError, ValueError):
+            return 2
+
+    @property
     def contest_yo_to_special_points(self) -> int:
         try:
             return int(self.config['scoring']['yo_to_special_points'])
@@ -119,6 +126,20 @@ class ScoringMixin:
             return int(self.config['scoring']['yo_to_nonyo_points'])
         except (KeyError, ValueError):
             return 5
+
+    @property
+    def contest_yo_to_nonyo_same_continent_points(self) -> int:
+        try:
+            return int(self.config['scoring']['yo_to_nonyo_same_continent_points'])
+        except (KeyError, ValueError):
+            return self.contest_yo_to_nonyo_points
+
+    @property
+    def contest_non_yo_to_yo_same_continent_points(self) -> int:
+        try:
+            return int(self.config['scoring']['non_yo_to_yo_same_continent_points'])
+        except (KeyError, ValueError):
+            return self.contest_non_yo_to_yo_points
 
     @property
     def contest_dracula_county_list(self) -> Dict[str, List[str]]:

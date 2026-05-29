@@ -235,6 +235,11 @@ def is_dracula_contest(rules):
     return rules is not None and rules.contest_custom_scoring == 'DRACULA'
 
 
+def is_yodx_contest(rules):
+    """Check if the contest has YO DX HF custom scoring."""
+    return rules is not None and rules.contest_custom_scoring == 'YODX'
+
+
 def is_dracula_special(callsign, rules):
     """Check if a callsign is in the DRACULA special station list."""
     if not rules or not callsign:
