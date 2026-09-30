@@ -255,5 +255,21 @@ def is_yo_county(exchange):
     return exchange.upper().strip() in ALL_YO_COUNTIES
 
 
+# Transylvania-region county whitelist (DRACULA-001, specs/10-dracula-transylvania-2026.md).
+# This is a flat subset cutting ACROSS YO_COUNTIES district boundaries, not a
+# district-level split: YO2 splits into Transylvania 'HD' vs. rest 'AR, CS, TM';
+# YO5 splits into Transylvania 'AB, BN, CJ, SJ' vs. rest 'BH, SM, MM'; YO6 is
+# entirely Transylvania; YO3, YO4, YO7, YO8, YO9 have no Transylvania counties
+# at all. Deliberately not derived from YO_COUNTIES district membership.
+TRANSYLVANIA_COUNTIES = {'HD', 'AB', 'BN', 'CJ', 'SJ', 'BV', 'CV', 'HR', 'MS', 'SB'}
+
+
+def is_transylvania_county(exchange):
+    """Check if an exchange value is a Transylvania-region county abbreviation."""
+    if not exchange:
+        return False
+    return exchange.upper().strip() in TRANSYLVANIA_COUNTIES
+
+
 # Load the DXCC database at module import time
 DXCC_BY_PREFIX = _load_dxcc_database()

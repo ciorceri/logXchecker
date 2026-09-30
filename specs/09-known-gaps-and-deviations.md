@@ -129,22 +129,28 @@ Treat `memory-bank/` and `README.md` as a helpful starting point for
 custom-scoring values exist) against the current source before trusting them —
 this is why these specs cite file:line rather than repeating that prose.
 
-## GAP-010: `dracula_county_list` INI property is unused, and DRACULA validates no county list at all
-`ScoringMixin.contest_dracula_county_list` (RULES-007) parses a multiline
-`[scoring] dracula_county_list` INI field into `{district: [counties]}`, but a
-search of `formats/cabrillo/scoring.py` (the only place DRACULA scoring logic
-lives) shows no reference to this property at all — confirmed dead code.
-**Correction to an earlier draft of this gap**: DRACULA county-based multipliers
-do **not** fall back to the hardcoded `common.dxcc.YO_COUNTIES`/`is_yo_county`
-table either. The DRACULA multiplier branch (`formats/cabrillo/scoring.py:205-209`)
-accepts *any* non-empty exchange value as a `YO_COUNTY` multiplier key, with no
-call to `is_yo_county` — that validation exists only in the sibling `YODX`
-branch (`scoring.py:193`). So DRACULA county multipliers are currently backed
-by neither the INI list nor the hardcoded table — any non-empty exchange value
-from a YO partner counts. Confirm with the maintainer whether
-`contest_dracula_county_list` was meant to be read by DRACULA scoring (in which
-case `scoring.py:205-209` needs an actual validation call added) or is dead
-config surface that should be removed from `ScoringMixin`.
+## GAP-010 (FIXED — see `specs/10-dracula-transylvania-2026.md` DRACULA-004): DRACULA's `YO_COUNTY` multiplier is now validated against `is_yo_county`; `dracula_county_list` remains unused
+**Update**: the multiplier-validation half of this gap is now fixed.
+`_compute_multiplier_for_qso`'s DRACULA branch (`formats/cabrillo/scoring.py`)
+now calls `is_yo_county` on the exchange value before returning a
+`('YO_COUNTY', exchange_value)` tuple — exactly like the sibling `YODX`
+branch already did — instead of accepting any non-empty string unvalidated.
+This also made the function caller-aware: a YO caller now gets no county
+multiplier at all for a YO-YO contact (DXCC entities + DRC only, per the
+official rules), matching the docx's section 8. See `specs/06-scoring-spec.md`
+SCORE-006 and `test_gaps_scoring.py`'s `TestGap010DraculaCountyMultiplierNowValidated`
+(the old characterization test asserting the buggy unvalidated behavior was
+updated to assert the fix, per that gap test file's own stated convention).
+
+**Still true, not in scope for this fix**: `ScoringMixin.contest_dracula_county_list`
+(RULES-007) parses a multiline `[scoring] dracula_county_list` INI field into
+`{district: [counties]}`, but no code anywhere reads this property —
+confirmed dead code. DRACULA county validation is backed by the hardcoded
+`common.dxcc.YO_COUNTIES`/`is_yo_county` table (via the fix above), not by
+this INI field. Confirm with the maintainer whether `contest_dracula_county_list`
+should be wired up as an alternative/override to the hardcoded table, or
+removed from `ScoringMixin` as dead config surface — this part of the
+original gap is unchanged.
 
 ## GAP-011: `common/operator.py` is unused duplication, and is itself broken if called
 `common/operator.py` defines a base `Operator` class specifically so both format
@@ -249,6 +255,27 @@ group (e.g. `(?P<duplicate_qso>.*)$`) or otherwise make the match require
 consuming the whole line — needs a new positive-case test in `test_edi.py`
 (none currently exercises this field) alongside the fix, since the field is
 entirely untested today.
+
+## GAP-019 (found while implementing DRACULA-006, see `specs/10-dracula-transylvania-2026.md`): `_find_matching_qso` isn't mode-aware, so same-period multi-mode contacts may not fully round-trip confirm
+DRACULA-006 fixed `crosscheck_band`'s `_had_qso_with` dedup guard to key on
+mode as well as callsign+period, so a same-band, different-mode second
+contact with the same partner is no longer short-circuited as
+`'Qso already confirmed'` before comparison even runs. However,
+`_find_matching_qso` (`formats/cabrillo/crosscheck.py`, XC-004) still returns
+only the **first** callsign+period match in the partner's log, with no mode
+filter and no "already consumed" tracking — the same limitation already
+described for GAP-005's point 3 (candidate-retry strategy), just now
+concretely reachable via a different-mode path that the GAP-013-style dedup
+fix newly unblocks. **Practical effect**: an operator who legitimately worked
+the same partner twice in the same period on two different modes may still
+see one side spuriously fail with `'Mode mismatch'` (or another
+`compare_qso` error) instead of fully confirming, if `_find_matching_qso`
+happens to pick the wrong-mode candidate first. This was not in DRACULA-006's
+fix scope (the spec's target was specifically the dedup guard) and was left
+untouched deliberately — fixing `_find_matching_qso` to filter/retry by mode
+(mirroring EDI's candidate-retry generator, GAP-005 point 3) is a natural
+follow-up, tracked here rather than done silently as scope creep on the
+DRACULA rules-alignment work.
 
 ## GAP-017: XML output prints Python `bytes` repr
 `common.serialization.dict_to_xml` returns whatever `dicttoxml.dicttoxml()`

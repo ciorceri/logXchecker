@@ -140,15 +140,17 @@ class TestGap008SilentFallbackToBaseRulesClass(TestCase):
         self.assertIs(logXchecker._get_rules_class('adif'), rules.Rules)
 
 
-class TestGap010DraculaCountyMultiplierUnvalidated(TestCase):
-    """GAP-010: DRACULA's county-based multiplier branch in
-    `_compute_multiplier_for_qso` accepts ANY non-empty exchange value from a
-    YO partner as a ('YO_COUNTY', value) multiplier key - it never calls
-    `is_yo_county` (unlike the sibling YODX branch) and never reads
-    `ScoringMixin.contest_dracula_county_list`."""
+class TestGap010DraculaCountyMultiplierNowValidated(TestCase):
+    """GAP-010 is now FIXED (see specs/10-dracula-transylvania-2026.md
+    DRACULA-004 and specs/09-known-gaps-and-deviations.md's updated GAP-010
+    entry): DRACULA's county-based multiplier branch in
+    `_compute_multiplier_for_qso` now calls `is_yo_county` before returning a
+    ('YO_COUNTY', value) tuple, exactly like the sibling YODX branch already
+    did. `ScoringMixin.contest_dracula_county_list` remains unread/dead code
+    - that part of the original gap was not in scope for this fix."""
 
     @mock.patch('os.path.isfile')
-    def test_garbage_exchange_value_still_counts_as_yo_county_multiplier(
+    def test_garbage_exchange_value_no_longer_counts_as_yo_county_multiplier(
             self, mock_isfile: mock.MagicMock) -> None:
         mock_isfile.return_value = True
         mo = mock.mock_open(read_data=DRACULA_RULES)
@@ -158,22 +160,32 @@ class TestGap010DraculaCountyMultiplierUnvalidated(TestCase):
         self.assertEqual(_rules.contest_custom_scoring, 'DRACULA')
 
         # 'ZZZZZZ' is not a real Romanian county code (see common/dxcc.py's
-        # ALL_YO_COUNTIES table), and it is not being validated against
-        # ScoringMixin.contest_dracula_county_list either (that property is
-        # dead code - never read by scoring.py).
+        # ALL_YO_COUNTIES table). Previously this was accepted unvalidated
+        # (GAP-010); now it is rejected (returns None) just like the YODX
+        # branch already did for a non-county exchange value.
         qso = cabrillo.LogQso(
             'QSO: 14000 CW 2026-10-31 1200 YO5AAA          599 CJ  YO5BTZ          599 ZZZZZZ', 1)
         self.assertEqual(qso.qso_fields['call'], 'YO5BTZ')
         self.assertEqual(qso.qso_fields['nr_recv'], 'ZZZZZZ')
 
+        # caller_callsign='DL1AAA' (non-YO) -- a YO caller would get no
+        # county multiplier at all per DRACULA-004, regardless of validity.
         mult_key = cabrillo._compute_multiplier_for_qso(
             qso, _rules, _rules.contest_multiplier_exchange_field,
-            _rules.contest_multiplier_special_exchange)
+            _rules.contest_multiplier_special_exchange, 'DL1AAA')
 
-        self.assertEqual(mult_key, ('YO_COUNTY', 'ZZZZZZ'),
-                         "GAP-010: DRACULA's YO_COUNTY multiplier branch accepts any non-empty "
-                         "exchange value from a YO partner, with no validation against a real "
-                         "county-code table")
+        self.assertIsNone(mult_key,
+                         "GAP-010 (fixed): DRACULA's YO_COUNTY multiplier branch now validates "
+                         "the exchange value against is_yo_county and rejects a garbage value")
+
+        # Sanity/contrast: a real Romanian county code from the same YO
+        # partner still counts as a YO_COUNTY multiplier for a non-YO caller.
+        qso_valid = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 DL1AAA          599 005 YO5BTZ          599 CJ', 1)
+        mult_key_valid = cabrillo._compute_multiplier_for_qso(
+            qso_valid, _rules, _rules.contest_multiplier_exchange_field,
+            _rules.contest_multiplier_special_exchange, 'DL1AAA')
+        self.assertEqual(mult_key_valid, ('YO_COUNTY', 'CJ'))
 
 
 class TestGap013SymmetricDedupKeyScoresOnlyOneSide(TestCase):
@@ -302,6 +314,9 @@ class TestGap014TenMinuteRuleKeysOffCategoryDisplayName(TestCase):
             ignore_this_log=False,
             valid_header=True,
             qsos=[qso1, qso2],
+            # DRACULA-004: _apply_10_minute_rule's multiplier classification
+            # is now caller-aware and reads log.callsign for that purpose.
+            callsign='YO5PJB',
         )
         op_inst = SimpleNamespace(logs=[log])
         operator_instances = {'YO5PJB': op_inst}

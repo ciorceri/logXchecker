@@ -17,6 +17,7 @@ limitations under the License.
 import io
 import os
 import re
+from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Tuple
 
 from unittest import TestCase, mock
@@ -28,6 +29,10 @@ from test_rules import VALID_RULES, VALID_RULES_BASIC
 
 import formats.cabrillo as cabrillo
 from formats.cabrillo import ERR_IO, ERR_HEADER, ERR_QSO
+# _apply_witness_confirmation (DRACULA-005) is not re-exported from
+# formats.cabrillo's package __init__, so it's imported directly from its
+# defining module.
+from formats.cabrillo.scoring import _apply_witness_confirmation
 
 
 # ── Test data ──────────────────────────────────────────────────────────
@@ -417,6 +422,12 @@ multiplier_per_band=true
 multiplier_exchange_field=nr_recv
 multiplier_special_exchange=DRC
 """
+
+# Same as DRACULA_RULES but with DRACULA-005's witness-confirmation feature
+# enabled (threshold 2) -- the real test_logs/rules_hf_dracula.config
+# deliberately leaves this unset/disabled (see test_witness_confirmation_*
+# tests below for the disabled/no-op case using plain DRACULA_RULES).
+DRACULA_RULES_WITNESS_2: str = DRACULA_RULES + "witness_confirmation_min_logs=2\n"
 
 # YO DX HF Contest rules content (from test_logs/rules_hf_yodx.config)
 YODX_RULES: str = \
@@ -1454,11 +1465,16 @@ QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 002 YO5AAA          599 001
         ]
         mock_rules.contest_yo_to_special_points = 10
         mock_rules.contest_yo_to_nonyo_points = 5
-        mock_rules.contest_yo_to_yo_points = 0
+        # DRACULA-002: yo_to_yo_points is 1 per the official rules (was
+        # hardcoded 0 before contest_yo_to_yo_points existed at all).
+        mock_rules.contest_yo_to_yo_points = 1
         mock_rules.contest_non_yo_to_special_points = 10
         mock_rules.contest_non_yo_to_yo_points = 5
         mock_rules.contest_non_yo_dxcc_points = 2
         mock_rules.contest_non_yo_same_country_points = 1
+        # DRACULA-003: new Transylvania-region tier, both directions.
+        mock_rules.contest_non_yo_to_transylvania_points = 8
+        mock_rules.contest_yo_to_transylvania_points = 8
         mock_rules.contest_multiplier_enabled = 'true'
         mock_rules.contest_multiplier_per_band = 'true'
         mock_rules.contest_multiplier_exchange_field = 'nr_recv'
@@ -1478,9 +1494,10 @@ QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 002 YO5AAA          599 001
         self.assertTrue(qso2.cc_confirmed)
         self.assertEqual(qso2.points, 5)
 
-        # Non-YO to YO = 5 points
+        # Non-YO to YO, non-Transylvania county (BH = Bihor, YO5 district
+        # but not in TRANSYLVANIA_COUNTIES) = 5 points
         qso3 = cabrillo.LogQso(
-            'QSO: 14000 CW 2026-10-31 1200 DL1AAA          599 005 YO5PJB          599 CJ', 1)
+            'QSO: 14000 CW 2026-10-31 1200 DL1AAA          599 005 YO5PJB          599 BH', 1)
         qso3.cc_confirmed, qso3.cc_error = cabrillo._dracula_scoring('DL1AAA', 'YO5PJB', mock_rules, qso3)
         self.assertTrue(qso3.cc_confirmed)
         self.assertEqual(qso3.points, 5)
@@ -1498,6 +1515,73 @@ QSO: 14000 CW 2026-10-31 1200 YO5BBB          599 002 YO5AAA          599 001
         qso5.cc_confirmed, qso5.cc_error = cabrillo._dracula_scoring('DL1AAA', 'DL1BBB', mock_rules, qso5)
         self.assertTrue(qso5.cc_confirmed)
         self.assertEqual(qso5.points, 1)
+
+        # DRACULA-003: Non-YO to YO, Transylvania county (CJ = Cluj) = 8 points
+        qso6 = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 DL1AAA          599 005 YO5PJB          599 CJ', 1)
+        qso6.cc_confirmed, qso6.cc_error = cabrillo._dracula_scoring('DL1AAA', 'YO5PJB', mock_rules, qso6)
+        self.assertTrue(qso6.cc_confirmed)
+        self.assertEqual(qso6.points, 8, "Non-YO to Transylvania-county YO station should be 8 points")
+
+        # DRACULA-003: YO to YO, Transylvania county (CJ = Cluj) = 8 points
+        qso7 = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 YO5AAA          599 CJ  YO5PJB          599 CJ', 1)
+        qso7.cc_confirmed, qso7.cc_error = cabrillo._dracula_scoring('YO5AAA', 'YO5PJB', mock_rules, qso7)
+        self.assertTrue(qso7.cc_confirmed)
+        self.assertEqual(qso7.points, 8, "YO to Transylvania-county YO station should be 8 points")
+
+        # DRACULA-002: YO to YO, non-Transylvania county (BH = Bihor) = 1 point
+        qso8 = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 YO5AAA          599 CJ  YO5PJB          599 BH', 1)
+        qso8.cc_confirmed, qso8.cc_error = cabrillo._dracula_scoring('YO5AAA', 'YO5PJB', mock_rules, qso8)
+        self.assertTrue(qso8.cc_confirmed)
+        self.assertEqual(qso8.points, 1, "YO-YO (non-Transylvania) should be 1 point per DRACULA-002, not 0")
+
+    @mock.patch('os.path.isfile')
+    def test_dracula_multiplier_caller_aware(self, mock_isfile: mock.MagicMock) -> None:
+        """DRACULA-004: `_compute_multiplier_for_qso`'s YO_COUNTY branch is
+        caller-aware. A YO caller working a YO partner gets no county
+        multiplier at all (DXCC entities + DRC only, per the official
+        rules) -- the sibling case (non-YO caller) still gets a YO_COUNTY
+        multiplier, but only for an exchange value that validates against
+        is_yo_county (GAP-010)."""
+        mock_isfile.return_value = True
+        mo = mock.mock_open(read_data=DRACULA_RULES)
+        with patch('builtins.open', mo, create=True):
+            _rules = rules_hf.RulesHf('some_rule_file.rules')
+
+        exchange_field = _rules.contest_multiplier_exchange_field
+        special_exchange = _rules.contest_multiplier_special_exchange
+
+        # YO caller -> YO partner, even with a real county code: no
+        # multiplier at all (DRACULA-004).
+        qso_yo_caller = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 YO5AAA          599 CJ  YO5BTZ          599 CJ', 1)
+        mult_yo_caller = cabrillo._compute_multiplier_for_qso(
+            qso_yo_caller, _rules, exchange_field, special_exchange, 'YO5AAA')
+        self.assertIsNone(mult_yo_caller,
+                          "A YO caller working a YO partner should get no county "
+                          "multiplier at all, regardless of the county's validity")
+
+        # Non-YO (foreign) caller -> YO partner with a real county code:
+        # YO_COUNTY multiplier, unchanged.
+        qso_nonyo_valid = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 DL1AAA          599 005 YO5BTZ          599 CJ', 1)
+        mult_nonyo_valid = cabrillo._compute_multiplier_for_qso(
+            qso_nonyo_valid, _rules, exchange_field, special_exchange, 'DL1AAA')
+        self.assertEqual(mult_nonyo_valid, ('YO_COUNTY', 'CJ'),
+                         "A non-YO caller working a YO partner with a real county "
+                         "code should still get a YO_COUNTY multiplier")
+
+        # Non-YO (foreign) caller -> YO partner with a garbage/invalid county
+        # code: no multiplier (GAP-010 fix), not the old unvalidated behavior.
+        qso_nonyo_garbage = cabrillo.LogQso(
+            'QSO: 14000 CW 2026-10-31 1200 DL1AAA          599 005 YO5BTZ          599 ZZZZZZ', 1)
+        mult_nonyo_garbage = cabrillo._compute_multiplier_for_qso(
+            qso_nonyo_garbage, _rules, exchange_field, special_exchange, 'DL1AAA')
+        self.assertIsNone(mult_nonyo_garbage,
+                          "GAP-010: a garbage exchange value should not count as a "
+                          "YO_COUNTY multiplier even for a non-YO caller")
 
     def test_extract_county_from_exchange(self) -> None:
         test_cases: List[Tuple[Optional[str], str]] = [
@@ -1613,6 +1697,93 @@ QSO:  7150 PH 2026-10-31 1540 YO5TP           59  CJ  YO2ARM          59  AR
         self.assertIsNotNone(qso_to_yo5tp, "Should find QSO to YO5TP")
         self.assertTrue(qso_to_yo5tp.cc_confirmed,
                         "QSO to YO5TP should be confirmed")
+
+    @mock.patch('os.path.isfile')
+    def test_crosscheck_band_different_mode_not_rejected_as_duplicate(
+            self, mock_isfile: mock.MagicMock) -> None:
+        """DRACULA-006: `_had_qso_with`'s dedup key now includes mode, so a
+        second, same-band contact with the same partner on a *different*
+        mode is not short-circuited as 'Qso already confirmed' the way the
+        old callsign+period-only key would have rejected it.
+
+        This does not chase full round-trip confirmation for the second
+        QSO -- `_find_matching_qso` still isn't mode-aware (GAP-019,
+        out of scope here), so the second QSO is expected to fail at the
+        real `compare_qso` comparison stage (a `ValueError`, e.g. a mode or
+        time mismatch) rather than being confirmed. The point proven here is
+        narrower and specific to DRACULA-006: the dedup guard itself no
+        longer short-circuits it with the generic 'Qso already confirmed'
+        string before comparison even runs.
+        """
+        mock_isfile.return_value = True
+        mo_rules = mock.mock_open(read_data=DRACULA_RULES)
+        with patch('builtins.open', mo_rules, create=True):
+            _rules = rules_hf.RulesHf('some_rule_file.rules')
+
+        # YO2ARM worked YO3APJ twice on the same band (40m/band2), same
+        # period, same timestamp, but on two different modes (CW then PH).
+        log1_content: str = \
+"""START-OF-LOG: 3.0
+CONTEST: DRACULA
+CALLSIGN: YO2ARM
+CATEGORY-OPERATOR: B1
+CATEGORY-BAND: 40M
+CATEGORY-MODE: MIXED
+CREATED-BY: logXchecker test generator
+
+QSO:  7150 CW 2026-10-31 1532 YO2ARM          59  AR  YO3APJ          59  BU
+QSO:  7150 PH 2026-10-31 1532 YO2ARM          59  AR  YO3APJ          59  BU
+"""
+        # YO3APJ's reciprocal log has both modes too.
+        log2_content: str = \
+"""START-OF-LOG: 3.0
+CONTEST: DRACULA
+CALLSIGN: YO3APJ
+CATEGORY-OPERATOR: B1
+CATEGORY-BAND: 40M
+CATEGORY-MODE: MIXED
+CREATED-BY: logXchecker test generator
+
+QSO:  7150 CW 2026-10-31 1532 YO3APJ          59  BU  YO2ARM          59  AR
+QSO:  7150 PH 2026-10-31 1532 YO3APJ          59  BU  YO2ARM          59  AR
+"""
+        op1 = cabrillo.Operator('YO2ARM')
+        mo = mock.mock_open(read_data=log1_content)
+        with patch('builtins.open', mo, create=True):
+            op1.add_log_by_path('some_log_file.log', rules=_rules)
+
+        op2 = cabrillo.Operator('YO3APJ')
+        mo = mock.mock_open(read_data=log2_content)
+        with patch('builtins.open', mo, create=True):
+            op2.add_log_by_path('some_log_file.log', rules=_rules)
+
+        op_inst: Dict[str, cabrillo.Operator] = {'YO2ARM': op1, 'YO3APJ': op2}
+
+        confirmed_pairs: set = set()
+        cabrillo.crosscheck_band(op_inst, _rules, 2, confirmed_pairs)
+
+        yo2arm_log = op1.logs[0]
+        qso_cw = next(q for q in yo2arm_log.qsos if q.qso_fields['mode'] == 'CW')
+        qso_ph = next(q for q in yo2arm_log.qsos if q.qso_fields['mode'] == 'SSB')
+
+        # First (CW) QSO confirms normally and claims the dedup key
+        # '...-period{P}-CW'.
+        self.assertTrue(qso_cw.cc_confirmed, "First (CW) QSO should be confirmed")
+
+        # Second (PH/SSB) QSO must NOT be rejected by the dedup guard with
+        # the generic 'Qso already confirmed' string -- proving the dedup
+        # key now includes mode. It is expected to fail later, at the real
+        # `compare_qso` stage (surfaced as a ValueError instance in
+        # cc_error, unlike the guard's plain-string errors), due to
+        # GAP-019's separate, out-of-scope limitation.
+        self.assertIsNot(qso_ph.cc_confirmed, None)
+        self.assertNotEqual(qso_ph.cc_error, 'Qso already confirmed',
+                            "DRACULA-006: a different-mode second QSO on the same band "
+                            "must not be short-circuited by the mode-unaware dedup guard")
+        self.assertIsInstance(qso_ph.cc_error, ValueError,
+                              "The PH QSO should have reached the real compare_qso stage "
+                              "(which raises ValueError) rather than being short-circuited "
+                              "by the dedup guard (which sets a plain string cc_error)")
 
     def test_apply_custom_scoring(self) -> None:
         """Test the custom scoring dispatcher."""
@@ -1803,3 +1974,200 @@ QSO:  7150 PH 2026-10-31 1540 YO5TP           59  CJ  YO2ARM          59  AR
         self.assertIsNotNone(mult4)
         self.assertEqual(mult4[0], 'DXCC')
         self.assertEqual(mult4[1], 'F')
+
+
+class TestCabrilloWitnessConfirmation(TestCase):
+    """DRACULA-005 (specs/10-dracula-transylvania-2026.md): tests for
+    `_apply_witness_confirmation` (formats/cabrillo/scoring.py), a generic,
+    opt-in post-processing step that confirms and scores QSOs against a
+    partner callsign that never submitted its own log, once at least
+    `rules.contest_witness_confirmation_min_logs` distinct operators
+    (contest-wide, checklogs included) independently logged a contact with
+    that same phantom callsign.
+
+    These tests build minimal `Operator`/`Log`-shaped objects directly
+    (`SimpleNamespace`, mirroring test_gaps_scoring.py's GAP-014 tests)
+    rather than parsing full Cabrillo files, since `_apply_witness_
+    confirmation` only reads `log.ignore_this_log`/`log.valid_header`/
+    `log.qsos` and each QSO's `valid`/`cc_confirmed`/`qso_fields`/
+    `qso_line` attributes -- real `cabrillo.LogQso` instances (for
+    realistic `qso_fields`/`qso_line` parsing) wrapped in bare `Log`-shaped
+    namespaces is enough to exercise the function directly.
+    """
+
+    @staticmethod
+    def _build_rules(rules_content: str) -> rules_hf.RulesHf:
+        with mock.patch('os.path.isfile', return_value=True):
+            mo = mock.mock_open(read_data=rules_content)
+            with patch('builtins.open', mo, create=True):
+                return rules_hf.RulesHf('some_rule_file.rules')
+
+    @staticmethod
+    def _make_log(qso_line: str, band: str = '20M') -> SimpleNamespace:
+        qso = cabrillo.LogQso(qso_line, 1)
+        assert qso.valid, "Test QSO line must parse as valid: {}".format(qso_line)
+        return SimpleNamespace(
+            ignore_this_log=False,
+            valid_header=True,
+            band=band,
+            qsos=[qso],
+        )
+
+    def test_witness_confirmation_threshold_met_confirms_and_scores(self) -> None:
+        """(a) A phantom callsign witnessed by exactly
+        `witness_confirmation_min_logs` distinct operators gets all its
+        pending QSOs confirmed and scored."""
+        _rules = self._build_rules(DRACULA_RULES_WITNESS_2)
+        self.assertEqual(_rules.contest_witness_confirmation_min_logs, 2)
+
+        # DL1AAA and DL3CCC each independently logged a contact with
+        # DL2ZZZ, a callsign that never submitted its own log.
+        log_a = self._make_log(
+            'QSO: 14000 CW 2026-10-31 1200 DL1AAA          599 001 DL2ZZZ          599 002')
+        log_b = self._make_log(
+            'QSO: 14000 CW 2026-10-31 1210 DL3CCC          599 003 DL2ZZZ          599 004')
+        for log in (log_a, log_b):
+            log.qsos[0].cc_confirmed = False
+            log.qsos[0].cc_error = 'No log from DL2ZZZ'
+
+        operator_instances = {
+            'DL1AAA': SimpleNamespace(logs=[log_a]),
+            'DL3CCC': SimpleNamespace(logs=[log_b]),
+        }
+
+        _apply_witness_confirmation(operator_instances, _rules)
+
+        for log, caller in ((log_a, 'DL1AAA'), (log_b, 'DL3CCC')):
+            qso = log.qsos[0]
+            self.assertTrue(qso.cc_confirmed,
+                            "{}'s QSO to the 2-witness phantom should be confirmed".format(caller))
+            self.assertEqual(qso.cc_error, [])
+            # DL1AAA/DL3CCC and DL2ZZZ are all non-YO, same DXCC (Germany) ->
+            # contest_non_yo_same_country_points (DRACULA_RULES: 1).
+            self.assertEqual(qso.points, _rules.contest_non_yo_same_country_points)
+
+    def test_witness_confirmation_below_threshold_leaves_qso_untouched(self) -> None:
+        """(b) One witness short of the threshold leaves the QSO
+        unconfirmed with its original error untouched."""
+        _rules = self._build_rules(DRACULA_RULES_WITNESS_2)
+
+        log_a = self._make_log(
+            'QSO: 14000 CW 2026-10-31 1200 DL1AAA          599 001 DL5YYY          599 002')
+        log_a.qsos[0].cc_confirmed = False
+        log_a.qsos[0].cc_error = 'No log from DL5YYY'
+
+        operator_instances = {'DL1AAA': SimpleNamespace(logs=[log_a])}
+
+        _apply_witness_confirmation(operator_instances, _rules)
+
+        qso = log_a.qsos[0]
+        self.assertFalse(qso.cc_confirmed,
+                         "A single witness (below the threshold of 2) must not confirm the QSO")
+        self.assertEqual(qso.cc_error, 'No log from DL5YYY',
+                         "The original cc_error must be left completely untouched")
+        self.assertIsNone(qso.points)
+
+    def test_witness_confirmation_checklog_counts_as_witness(self) -> None:
+        """(c) A checklog counts toward the witness tally. The checklog's
+        own QSO is never itself 'pending' (it never runs through the
+        normal per-band crosscheck, so cc_confirmed stays None, matching
+        real checklog behavior -- see XC-004/GAP-005), but it still counts
+        as one of the two distinct witnesses needed to confirm the other
+        (non-checklog) operator's pending QSO against the same phantom."""
+        _rules = self._build_rules(DRACULA_RULES_WITNESS_2)
+
+        # DL1AAA: a normal competitor, pending QSO to phantom DL8CKL.
+        log_normal = self._make_log(
+            'QSO: 14000 CW 2026-10-31 1200 DL1AAA          599 001 DL8CKL          599 002')
+        log_normal.qsos[0].cc_confirmed = False
+        log_normal.qsos[0].cc_error = 'No log from DL8CKL'
+
+        # DL9CHK: a checklog that also logged a contact with DL8CKL. Its own
+        # QSO was never run through the normal per-band loop (checklogs are
+        # excluded on both sides in Cabrillo, XC-004), so cc_confirmed stays
+        # at its default None -- not part of "pending", only of the tally.
+        log_checklog = self._make_log(
+            'QSO: 14000 CW 2026-10-31 1205 DL9CHK          599 003 DL8CKL          599 004')
+        log_checklog.use_as_checklog = True
+        self.assertIsNone(log_checklog.qsos[0].cc_confirmed)
+
+        operator_instances = {
+            'DL1AAA': SimpleNamespace(logs=[log_normal]),
+            'DL9CHK': SimpleNamespace(logs=[log_checklog]),
+        }
+
+        _apply_witness_confirmation(operator_instances, _rules)
+
+        self.assertTrue(log_normal.qsos[0].cc_confirmed,
+                        "The checklog's witnessing should count toward the threshold, "
+                        "confirming the normal operator's pending QSO")
+        self.assertEqual(log_normal.qsos[0].points, _rules.contest_non_yo_same_country_points)
+
+        # The checklog's own QSO is untouched by this pass (never pending).
+        self.assertIsNone(log_checklog.qsos[0].cc_confirmed)
+
+    def test_witness_confirmation_is_contest_wide_not_per_band(self) -> None:
+        """(d) Scope is contest-wide, not per-band: a phantom callsign
+        witnessed on two different bands by two different operators (one
+        witness each) still reaches the threshold and gets confirmed,
+        since witnesses are counted as distinct operators, not distinct
+        band-logs."""
+        _rules = self._build_rules(DRACULA_RULES_WITNESS_2)
+
+        # DL2AAA on 20m (band3, 14MHz), DL5BBB on 15m (band4, 21MHz) -- two
+        # different bands, one witness each, same phantom DL7WDE.
+        log_20m = self._make_log(
+            'QSO: 14000 CW 2026-10-31 1200 DL2AAA          599 001 DL7WDE          599 002',
+            band='20M')
+        log_15m = self._make_log(
+            'QSO: 21000 CW 2026-10-31 1300 DL5BBB          599 003 DL7WDE          599 004',
+            band='15M')
+        for log in (log_20m, log_15m):
+            log.qsos[0].cc_confirmed = False
+            log.qsos[0].cc_error = 'No log from DL7WDE'
+
+        operator_instances = {
+            'DL2AAA': SimpleNamespace(logs=[log_20m]),
+            'DL5BBB': SimpleNamespace(logs=[log_15m]),
+        }
+
+        _apply_witness_confirmation(operator_instances, _rules)
+
+        self.assertTrue(log_20m.qsos[0].cc_confirmed,
+                        "DL2AAA's 20m QSO should be confirmed by the contest-wide tally")
+        self.assertTrue(log_15m.qsos[0].cc_confirmed,
+                        "DL5BBB's 15m QSO should be confirmed by the contest-wide tally")
+        self.assertEqual(log_20m.qsos[0].points, _rules.contest_non_yo_same_country_points)
+        self.assertEqual(log_15m.qsos[0].points, _rules.contest_non_yo_same_country_points)
+
+    def test_witness_confirmation_disabled_by_default_is_noop(self) -> None:
+        """(e) The feature is a true no-op when
+        `witness_confirmation_min_logs` is unset/0 -- matches the current
+        real test_logs/rules_hf_dracula.config, which deliberately leaves
+        it disabled. Uses the same 2-witness scenario that would confirm
+        the QSOs if the feature were enabled, as a contrast."""
+        _rules = self._build_rules(DRACULA_RULES)
+        self.assertEqual(_rules.contest_witness_confirmation_min_logs, 0)
+
+        log_a = self._make_log(
+            'QSO: 14000 CW 2026-10-31 1200 DL1AAA          599 001 DL2ZZZ          599 002')
+        log_b = self._make_log(
+            'QSO: 14000 CW 2026-10-31 1210 DL3CCC          599 003 DL2ZZZ          599 004')
+        for log in (log_a, log_b):
+            log.qsos[0].cc_confirmed = False
+            log.qsos[0].cc_error = 'No log from DL2ZZZ'
+
+        operator_instances = {
+            'DL1AAA': SimpleNamespace(logs=[log_a]),
+            'DL3CCC': SimpleNamespace(logs=[log_b]),
+        }
+
+        _apply_witness_confirmation(operator_instances, _rules)
+
+        for log in (log_a, log_b):
+            qso = log.qsos[0]
+            self.assertFalse(qso.cc_confirmed,
+                             "Disabled (threshold 0) witness confirmation must not "
+                             "touch any QSO, even with enough witnesses to otherwise qualify")
+            self.assertEqual(qso.cc_error, 'No log from DL2ZZZ')
+            self.assertIsNone(qso.points)

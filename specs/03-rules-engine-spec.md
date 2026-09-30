@@ -56,6 +56,10 @@ All are `try/except (KeyError, ValueError): return <default>` (`scoring.py`), so
 | `contest_yo_to_nonyo_same_continent_points` | `yo_to_nonyo_same_continent_points` | **= `contest_yo_to_nonyo_points`** (not a fixed literal) |
 | `contest_non_yo_to_yo_same_continent_points` | `non_yo_to_yo_same_continent_points` | **= `contest_non_yo_to_yo_points`** |
 | `contest_dracula_county_list` | `dracula_county_list` (multiline `DISTRICT: county,county` per line) | `{}` |
+| `contest_yo_to_yo_points` | `yo_to_yo_points` | `1` (see `specs/10-dracula-transylvania-2026.md` DRACULA-002 — this property did not previously exist; DRACULA scoring hardcoded `0` directly instead of reading it, making any `yo_to_yo_points=` value in a rules file purely decorative until this fix) |
+| `contest_non_yo_to_transylvania_points` | `non_yo_to_transylvania_points` | `8` (new, see `specs/10-dracula-transylvania-2026.md` DRACULA-003) |
+| `contest_yo_to_transylvania_points` | `yo_to_transylvania_points` | `8` (new, see `specs/10-dracula-transylvania-2026.md` DRACULA-003) |
+| `contest_witness_confirmation_min_logs` | `witness_confirmation_min_logs` | `0` (new, `0`/absent = disabled; see `specs/10-dracula-transylvania-2026.md` DRACULA-005) |
 
 Note: `contest_qso_points` default of `1` doubles as a **scoring-path selector** in `_standard_scoring` (see SCORE-003) — this is the fragile check flagged in GAP-006; don't rely on "is `qso_points` set" vs "is it `1`" being semantically distinguishable from outside this code.
 

@@ -17,7 +17,7 @@ Both formats' `run_crosscheck()` follow the same skeleton, calling into these sh
 For each operator `callsign1`/`ham1`: find their **active, non-checklog** log on this band via `_find_active_log(ham1, rules, band_nr, exclude_checklog=True)` (`formats/edi.py:813-833` — "active" = not `ignore_this_log`, `valid_header is True`, and, when `exclude_checklog=True`, also not `use_as_checklog`). Skip the operator entirely if none found. For each QSO in that log, in file order:
 1. Invalid QSO → mark not-confirmed with its first parse error as the reason; skip.
 2. Already confirmed (from a prior pass — shouldn't normally recur within one band pass, but the check exists) → skip.
-3. Duplicate-within-period guard: if this callsign+period combination was already confirmed earlier in this same band loop (tracked in `_had_qso_with`), mark `'Qso already confirmed'` and skip — **this makes a second, otherwise-valid QSO with the same partner in the same period always fail**, even if it's a legitimately separate contact.
+3. Duplicate-within-period guard: if this callsign+period combination was already confirmed earlier in this same band loop (tracked in `_had_qso_with`), mark `'Qso already confirmed'` and skip — **this makes a second, otherwise-valid QSO with the same partner in the same period always fail**, even if it's a legitimately separate contact. **⚠ Cabrillo-only pending change**: per `specs/10-dracula-transylvania-2026.md` DRACULA-006, the Cabrillo version of this guard (XC-004) is being changed to key on mode as well as callsign+period, since a same-band different-mode contact is not actually a duplicate. EDI's guard (described here) is explicitly out of scope for that change and stays as-is.
 4. Partner (`callsign2`) must have an `Operator` entry at all → else `'No log from {callsign2}'`.
 5. Partner must have *any* log matching this band's regexp → else `'No log for this band from {callsign2}'`. **Correction**: `_has_band_logs` calls `logs_by_band_regexp` (`formats/edi.py:841`), which *does* require `valid_header is True` on each log it returns (`formats/edi.py:55-56`) — and `group_logs_by_operator` never even puts an invalid-header log into an `Operator` in the first place (`common/crosscheck.py:49-51`). So this step's practical distinction from step 6 is not "valid vs. any" but "has a log on this band at all" vs. "that log isn't the one shadowed by `mark_older_logs`" — see next point.
 6. Partner must have an **active** (non-`ignore_this_log`) log for this band (`exclude_checklog=False` — i.e. a checklog-only submission from the partner is acceptable here) → else `'No valid log from {callsign2}'`. Because `mark_older_duplicates`/`mark_older_logs` always leaves exactly one log per operator per band un-ignored (XC-001 step 3), this error is effectively unreachable in practice once step 5 has already passed — there's always an active log if there's any valid-header log at all on that band.
@@ -27,6 +27,36 @@ For each operator `callsign1`/`ham1`: find their **active, non-checklog** log on
 **Note the asymmetry**: `exclude_checklog=True` for the *searching* operator's own log (a checklog-only submitter can never be the one whose QSOs get cross-checked/scored) but `exclude_checklog=False` for the *partner* (a checklog-only submission can still confirm someone else's QSO). This is intentional-looking (checklogs exist to help confirm others without competing) but is **not mirrored in Cabrillo** — see XC-004 and GAP-005.
 
 ## XC-004: Cabrillo per-band cross-check (`crosscheck_band`, `formats/cabrillo/crosscheck.py:55-112`)
+Two changes landed here per `specs/10-dracula-transylvania-2026.md`:
+1. **DRACULA-006 (global Cabrillo fix, all contests, not DRACULA-specific)**:
+   the `_had_qso_with` dedup key now includes mode —
+   `'{callsign2}-period{period_nr}-{mode}'` — instead of just
+   `'{callsign2}-period{period_nr}'`. A duplicate is same station + same band
+   + same mode; a second, same-band contact on a *different* mode is a
+   legitimate separate QSO and must not be rejected as `'Qso already
+   confirmed'`. EDI's equivalent guard (XC-003 step 3) is explicitly out of
+   scope and is unchanged.
+2. **DRACULA-005 (new, generic opt-in feature)**: a new post-processing step,
+   `_apply_witness_confirmation` (`formats/cabrillo/scoring.py`), runs in
+   `run_crosscheck` after this function and the 10-minute rule but before
+   `aggregate_qso_points`/`_compute_multipliers` (XC-002). It confirms and
+   scores QSOs against a partner callsign with zero submitted logs at all,
+   once at least `rules.contest_witness_confirmation_min_logs` distinct
+   witnessing operators (contest-wide, not per-band; checklogs included,
+   since a checklog's own QSOs never run through this function's normal
+   per-band loop at all — see the note below) independently logged a contact
+   with that same phantom callsign. Disabled by default
+   (`witness_confirmation_min_logs=0`); only applies to QSOs whose failure
+   here was specifically the `'No log from {callsign2}'` case (`callsign2`
+   has zero `Operator` entries at all), not the `'No valid log for this
+   band from {callsign2}'` case (a structurally different, out-of-scope
+   case — that operator *did* submit a log, just not one active for this
+   band) or any `compare_qso` mismatch (a real conflicting log exists there).
+   Each witness-confirmed QSO is re-run through the same `apply_custom_scoring`
+   dispatch a normally-confirmed QSO would use, with `distance=1` (no
+   locator data exists for a phantom partner) and a `confirmed_pairs` set
+   scoped to this pass only (separate from the per-band one).
+
 Broadly similar to XC-003 but **not structurally identical** — there is no separate `_has_band_logs` step (Cabrillo's `_find_active_log` folds "has a log on this band" and "is it active" into one call), and the "no valid log" error message differs from EDI's (`'No valid log for this band from {callsign2}'`, `formats/cabrillo/crosscheck.py:92`, vs. EDI's two-message split in XC-003 steps 5-6). Differences from EDI's algorithm:
 - `_find_active_log` (`formats/cabrillo/crosscheck.py:115-130`) has **no `exclude_checklog` parameter** — checklogs are excluded unconditionally on *both* sides (searcher and partner). A checklog-only submitter's log can never confirm anyone else's QSO in Cabrillo, unlike EDI. See GAP-005.
 - `_find_active_log` also has an **`ALL`-band fallback**: if the operator has no log matching the specific band's regexp, but has a log whose `band.upper() == 'ALL'` (a single log covering every band, common in some Cabrillo submissions), that log is used instead — EDI's `_find_active_log` has no equivalent fallback. **This fallback does not filter QSOs by actual frequency at all** (`formats/cabrillo/crosscheck.py:62-66,116-124`): an `ALL`-band log is used as-is on *every* band-number pass of the outer `for band in range(1, rules.contest_bands_nr + 1)` loop, and every QSO inside it is checked against that band's partner logs regardless of the QSO's own frequency — a QSO actually made on 14 MHz can be compared against partner logs during the "80m" pass just as much as the "20m" pass, and gets scored/multiplier-tagged with whatever `band_nr` that pass happens to be on. See GAP-016.

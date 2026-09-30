@@ -15,6 +15,7 @@ limitations under the License.
 
 Cabrillo scoring: custom/standard scoring, multipliers, 10-minute rule.
 """
+import re
 from datetime import datetime
 
 from common.dxcc import (
@@ -25,6 +26,7 @@ from common.dxcc import (
     is_dracula_contest,
     is_dracula_special,
     is_yodx_contest,
+    is_transylvania_county,
 )
 
 
@@ -68,12 +70,12 @@ def _parse_qso_datetime(qso):
         return None
 
 
-def _classify_qso_multiplier(qso, rules):
+def _classify_qso_multiplier(qso, rules, caller_callsign=None):
     if not rules or not qso:
         return None
     exchange_field = rules.contest_multiplier_exchange_field
     special_exchange = rules.contest_multiplier_special_exchange
-    return _compute_multiplier_for_qso(qso, rules, exchange_field, special_exchange)
+    return _compute_multiplier_for_qso(qso, rules, exchange_field, special_exchange, caller_callsign)
 
 
 def _apply_10_minute_rule(operator_instances, rules):
@@ -119,7 +121,7 @@ def _apply_10_minute_rule(operator_instances, rules):
             if qso_band_nr is None:
                 continue
 
-            mult_key = _classify_qso_multiplier(qso, rules)
+            mult_key = _classify_qso_multiplier(qso, rules, log.callsign)
             is_new_mult = mult_key is not None and mult_key not in seen_multipliers
 
             if current_band_nr is None:
@@ -152,7 +154,7 @@ def _compute_multipliers(operator_instances, rules):
                 for qso in log.qsos:
                     if not qso.cc_confirmed or not (qso.points and qso.points > 0):
                         continue
-                    mult_entry = _compute_multiplier_for_qso(qso, rules, exchange_field, special_exchange)
+                    mult_entry = _compute_multiplier_for_qso(qso, rules, exchange_field, special_exchange, log.callsign)
                     if mult_entry:
                         band_unique_mult.add(mult_entry)
                 log.multiplier_count = len(band_unique_mult)
@@ -163,7 +165,7 @@ def _compute_multipliers(operator_instances, rules):
                 for qso in log.qsos:
                     if not qso.cc_confirmed or not (qso.points and qso.points > 0):
                         continue
-                    mult_entry = _compute_multiplier_for_qso(qso, rules, exchange_field, special_exchange)
+                    mult_entry = _compute_multiplier_for_qso(qso, rules, exchange_field, special_exchange, log.callsign)
                     if mult_entry:
                         unique_multipliers.add(mult_entry)
             for log in op_inst.logs:
@@ -177,7 +179,7 @@ def _is_yo_county_val(val):
     return _is_yo_county(val)
 
 
-def _compute_multiplier_for_qso(qso, rules, exchange_field, special_exchange):
+def _compute_multiplier_for_qso(qso, rules, exchange_field, special_exchange, caller_callsign=None):
     is_yodx = is_yodx_contest(rules)
     is_dracula = is_dracula_contest(rules)
     partner_call = qso.qso_fields.get('call', '').upper()
@@ -203,8 +205,21 @@ def _compute_multiplier_for_qso(qso, rules, exchange_field, special_exchange):
         if is_dracula_special(partner_call, rules):
             return ('DRC', partner_call)
         elif is_yo_callsign(partner_call):
+            # DRACULA-004: per the official rules, a YO caller's multipliers
+            # are DXCC entities + DRC only -- no county multiplier -- so a
+            # YO-caller-to-YO-partner (non-special) contact contributes no
+            # multiplier at all. Only a non-YO (foreign) caller gets a
+            # YO_COUNTY multiplier for working a YO partner.
+            if is_yo_callsign(caller_callsign):
+                return None
             exchange_val = qso.qso_fields.get(exchange_field, '').strip().upper()
-            if exchange_val:
+            # GAP-010 fix: validate against the real YO county table instead
+            # of accepting any non-empty exchange value as a county
+            # multiplier. This validation applies regardless of the
+            # Transylvania scoring tier (DRACULA-003) -- is_yo_county checks
+            # the full YO_COUNTIES set; is_transylvania_county is a separate,
+            # narrower check used only for scoring-tier selection, not here.
+            if exchange_val and _is_yo_county_val(exchange_val):
                 return ('YO_COUNTY', exchange_val)
             return None
         else:
@@ -249,16 +264,34 @@ def apply_custom_scoring(callsign1, callsign2, rules, qso1, confirmed_pairs,
 
 
 def _dracula_scoring(callsign1, callsign2, rules, qso1):
+    """DRACULA-Transilvania scoring (specs/10-dracula-transylvania-2026.md
+    DRACULA-002/003). callsign1 is the caller being scored, callsign2 is the
+    confirmed partner. A Transylvania-region tier (8 pts, both directions)
+    sits between the special-station tier (10) and the generic YO/foreign
+    tier (5/2/1) -- detected via the same multiplier exchange field
+    (rules.contest_multiplier_exchange_field, default nr_recv) that
+    _compute_multiplier_for_qso already reads, not a separately configured
+    field.
+    """
+    exchange_field = rules.contest_multiplier_exchange_field
+    partner_exchange = qso1.qso_fields.get(exchange_field, '').strip().upper()
+
     if is_dracula_special(callsign2, rules):
         qso1.points = rules.contest_non_yo_to_special_points
     elif is_yo_callsign(callsign1):
         if is_yo_callsign(callsign2):
-            qso1.points = 0
+            if is_transylvania_county(partner_exchange):
+                qso1.points = rules.contest_yo_to_transylvania_points
+            else:
+                qso1.points = rules.contest_yo_to_yo_points
         else:
             qso1.points = rules.contest_yo_to_nonyo_points
     else:
         if is_yo_callsign(callsign2):
-            qso1.points = rules.contest_non_yo_to_yo_points
+            if is_transylvania_county(partner_exchange):
+                qso1.points = rules.contest_non_yo_to_transylvania_points
+            else:
+                qso1.points = rules.contest_non_yo_to_yo_points
         else:
             if are_same_dxcc(callsign1, callsign2):
                 qso1.points = rules.contest_non_yo_same_country_points
@@ -325,3 +358,137 @@ def _standard_scoring(callsign1, callsign2, rules, qso1, confirmed_pairs,
     else:
         qso1.points = distance * int(rules.contest_band(band_nr)['multiplier'])
     return True, []
+
+
+def _derive_band_nr_for_witness_qso(qso, log, rules):
+    """Derive a band_nr for a QSO being (re-)scored outside the normal
+    per-band crosscheck loop.
+
+    There is no existing precedent for deriving band_nr from a bare
+    Log/QSO pair outside that loop (DRACULA-005's witness-confirmation pass
+    runs once, contest-wide, after all bands have already been
+    cross-checked) -- this implementation's choice, documented here per the
+    spec's request:
+      1. Try the same frequency-parsing heuristic the 10-minute rule already
+         uses (_get_band_from_frequency) against the QSO's own frequency
+         token -- the most accurate source when available.
+      2. Fall back to matching the owning log's own CATEGORY-BAND value
+         against each configured [bandN] regexp -- handles e.g. an
+         'ALL'-band log whose own QSO frequency might not cleanly match a
+         single configured band center.
+      3. Finally default to band 1, so a band_nr is always available for
+         apply_custom_scoring's legacy standard-scoring branch. In practice
+         this default is very unlikely to matter: band_nr is not read at all
+         by the DRACULA/YODX custom-scoring functions this feature is
+         primarily intended for, only by the legacy distance*multiplier
+         fallback within _standard_scoring when no [scoring] qso_points is
+         configured.
+    """
+    tokens = qso.qso_line.strip().split()
+    if len(tokens) >= 2:
+        band_nr = _get_band_from_frequency(tokens[1], rules)
+        if band_nr is not None:
+            return band_nr
+
+    if log.band:
+        for band_nr in range(1, rules.contest_bands_nr + 1):
+            try:
+                if re.match(rules.contest_band(band_nr)['regexp'], log.band, re.IGNORECASE):
+                    return band_nr
+            except (KeyError, TypeError, re.error):
+                continue
+
+    return 1
+
+
+def _apply_witness_confirmation(operator_instances, rules):
+    """DRACULA-005 (specs/10-dracula-transylvania-2026.md): confirm and score
+    QSOs against a partner callsign that never submitted its own log, once
+    at least `rules.contest_witness_confirmation_min_logs` *distinct*
+    operators (contest-wide, not per-band; checklogs included) independently
+    logged a contact with that same phantom callsign.
+
+    Generic, opt-in (default threshold 0 = disabled) -- not hardcoded to
+    DRACULA. Must run after the normal per-band crosscheck loop and the
+    10-minute rule, but before aggregate_qso_points/_compute_multipliers,
+    since it can newly confirm and score QSOs that must then be included in
+    both.
+    """
+    if not rules or rules.contest_witness_confirmation_min_logs <= 0:
+        return
+    threshold = rules.contest_witness_confirmation_min_logs
+
+    # Pass 1: collect QSOs actually pending witness confirmation -- valid,
+    # non-ignored, and whose cross-check failure is specifically "partner has
+    # zero submitted logs at all". Re-derived directly (rather than
+    # string-matching cc_error == 'No log from {callsign2}') per the spec's
+    # own note that this is more resilient to message-wording changes.
+    pending = []  # list of (qso, log, caller_callsign, phantom_callsign)
+    phantoms_of_interest = set()
+    for caller_callsign, op_inst in operator_instances.items():
+        for log in op_inst.logs:
+            if log.ignore_this_log or not log.valid_header:
+                continue
+            for qso in log.qsos:
+                if not qso.valid or qso.cc_confirmed is not False:
+                    continue
+                phantom = qso.qso_fields.get('call', '').upper()
+                if not phantom or phantom in operator_instances:
+                    continue
+                pending.append((qso, log, caller_callsign, phantom))
+                phantoms_of_interest.add(phantom)
+
+    if not phantoms_of_interest:
+        return
+
+    # Pass 2: contest-wide witness tally per phantom callsign. Every valid
+    # QSO in any non-ignored, header-valid log (checklogs included) whose
+    # partner is that phantom callsign counts its OWN log's operator as one
+    # witness -- independent of that QSO's cc_confirmed status. This
+    # independence from cc_confirmed is what makes "checklogs count as
+    # witnesses" actually work: a checklog's own QSOs never run through the
+    # normal per-band crosscheck at all (_find_active_log excludes checklogs
+    # unconditionally on both sides, see XC-004/GAP-005), so cc_confirmed is
+    # never set to False for them -- scanning for the phantom callsign
+    # directly, rather than filtering on cc_confirmed, is required to count
+    # them. Distinct *operators* are tallied (a set), not distinct log
+    # files, so one operator claiming the same phantom across several of
+    # their own band logs counts once.
+    witnesses = {phantom: set() for phantom in phantoms_of_interest}
+    for caller_callsign, op_inst in operator_instances.items():
+        for log in op_inst.logs:
+            if log.ignore_this_log or not log.valid_header:
+                continue
+            for qso in log.qsos:
+                if not qso.valid:
+                    continue
+                phantom = qso.qso_fields.get('call', '').upper()
+                if phantom in witnesses:
+                    witnesses[phantom].add(caller_callsign)
+
+    special_callsign_list = rules.contest_special_callsign
+    qso_points_normal = rules.contest_qso_points
+    qso_points_special = rules.contest_special_qso_points
+    # Scoped to this witness-confirmation pass only -- separate from the
+    # per-band confirmed_pairs set, since these QSOs were never part of any
+    # band's normal confirmation pass.
+    confirmed_pairs_witness = set()
+
+    for qso, log, caller_callsign, phantom in pending:
+        if len(witnesses[phantom]) < threshold:
+            # Threshold not met: leave exactly as-is (cc_confirmed=False,
+            # original cc_error) -- this pass must not change anything about
+            # these QSOs.
+            continue
+
+        # Threshold met: trust the witnessing caller's own submitted
+        # RST/exchange for their own scoring -- there is no partner log to
+        # cross-verify against, and inter-witness exchange consensus is
+        # explicitly not required. distance=1 matches Cabrillo's existing
+        # qth_distance stub (CAB-010) -- no locator data exists for a
+        # phantom partner anyway.
+        band_nr = _derive_band_nr_for_witness_qso(qso, log, rules)
+        qso.cc_confirmed, qso.cc_error = apply_custom_scoring(
+            caller_callsign, phantom, rules, qso, confirmed_pairs_witness,
+            band_nr, qso_points_normal, qso_points_special,
+            special_callsign_list, distance=1)

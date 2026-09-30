@@ -32,6 +32,7 @@ verified against the source, not just trusted.
 | `07-crosscheck-spec.md` | Cross-check pipeline shared by both formats, EDI vs Cabrillo divergence |
 | `08-dxcc-and-common-spec.md` | DXCC database, callsign lookup, `common/` shared code |
 | `09-known-gaps-and-deviations.md` | Confirmed bugs, dead code, undocumented behavior, doc/code drift |
+| `10-dracula-transylvania-2026.md` | DRACULA-Transilvania contest rules alignment: reconciles the authoritative rules document against the implementation, with confirmed design decisions for each gap |
 
 ## Requirement ID convention
 

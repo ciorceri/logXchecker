@@ -142,6 +142,53 @@ class ScoringMixin:
             return self.contest_non_yo_to_yo_points
 
     @property
+    def contest_yo_to_yo_points(self) -> int:
+        """Points for a YO-caller-to-YO-partner (non-Transylvania) DRACULA
+        contact. See specs/10-dracula-transylvania-2026.md DRACULA-002 —
+        before this property existed, `_dracula_scoring` hardcoded this
+        case to 0 directly, making any `yo_to_yo_points=` value in a rules
+        file purely decorative. The official rules set it to 1."""
+        try:
+            return int(self.config['scoring']['yo_to_yo_points'])
+        except (KeyError, ValueError):
+            return 1
+
+    @property
+    def contest_non_yo_to_transylvania_points(self) -> int:
+        """Points for a non-YO (foreign) caller contacting a Transylvania-
+        region YO station. See specs/10-dracula-transylvania-2026.md
+        DRACULA-003. Kept as a separate field from
+        `contest_yo_to_transylvania_points` (rather than one shared value)
+        to match every other direction-pair in this mixin, even though both
+        currently default to the same value."""
+        try:
+            return int(self.config['scoring']['non_yo_to_transylvania_points'])
+        except (KeyError, ValueError):
+            return 8
+
+    @property
+    def contest_yo_to_transylvania_points(self) -> int:
+        """Points for a YO caller contacting a Transylvania-region YO
+        station. See specs/10-dracula-transylvania-2026.md DRACULA-003."""
+        try:
+            return int(self.config['scoring']['yo_to_transylvania_points'])
+        except (KeyError, ValueError):
+            return 8
+
+    @property
+    def contest_witness_confirmation_min_logs(self) -> int:
+        """Minimum number of distinct witnessing operators (contest-wide,
+        checklogs included) that must independently log a contact with a
+        callsign that never submitted its own log, before that callsign's
+        contacts are confirmed/scored anyway. 0 (default) = disabled. See
+        specs/10-dracula-transylvania-2026.md DRACULA-005. Generic, opt-in
+        feature — not hardcoded to DRACULA."""
+        try:
+            return int(self.config['scoring']['witness_confirmation_min_logs'])
+        except (KeyError, ValueError):
+            return 0
+
+    @property
     def contest_dracula_county_list(self) -> Dict[str, List[str]]:
         try:
             raw = self.config['scoring'].get('dracula_county_list', '')

@@ -150,7 +150,10 @@ callregexp=.*
             - non_yo_same_country_points : points for non-YO station contacting same-country station
             - yo_to_special_points : points for YO station contacting a special station
             - yo_to_nonyo_points : points for YO station contacting a non-YO station
-            - yo_to_yo_points : points for YO-YO QSO (usually 0 for HF contests)
+            - yo_to_yo_points : points for a YO-YO QSO (non-Transylvania) — 1 point for Dracula (see DRACULA-002)
+            - non_yo_to_transylvania_points : points for a non-YO (foreign) station contacting a Transylvania-region YO station (Dracula-specific tier, default 8)
+            - yo_to_transylvania_points : points for a YO station contacting a Transylvania-region YO station (Dracula-specific tier, default 8)
+            - witness_confirmation_min_logs : (optional, default 0/disabled) minimum number of distinct operators (contest-wide, checklogs included) that must independently log a contact with a callsign which never submitted its own log, before that callsign's contacts are confirmed/scored anyway. Generic opt-in feature, not Dracula-specific.
             - multiplier_enabled : true/false — enables multiplier-based scoring
             - multiplier_per_band : true/false — compute multipliers independently per band
             - multiplier_exchange_field : which QSO exchange field carries the multiplier value (e.g. nr_recv)
@@ -248,12 +251,21 @@ non_yo_dxcc_points=2
 non_yo_same_country_points=1
 yo_to_special_points=10
 yo_to_nonyo_points=5
-yo_to_yo_points=0
+yo_to_yo_points=1
+non_yo_to_transylvania_points=8
+yo_to_transylvania_points=8
 multiplier_enabled=true
 multiplier_per_band=true
 multiplier_exchange_field=nr_recv
 multiplier_special_exchange=DRC
 ```
+Note: `witness_confirmation_min_logs` is intentionally left unset in this
+canonical example (defaults to `0`/disabled) — it's a generic, opt-in
+mechanism and enabling it by default in the reference config would make it
+easy to silently assume every contest has this rule when most don't; set
+`witness_confirmation_min_logs=5` explicitly if/when Dracula's organizers
+confirm they want the "5 valid logs" witness rule from the rules document
+enforced by the checker.
 
 #### Simple HF rules format (YODX contest example):
 ```

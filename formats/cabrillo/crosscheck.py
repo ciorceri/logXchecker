@@ -21,7 +21,7 @@ from datetime import datetime, timedelta
 from common.crosscheck import load_log_files, group_logs_by_operator, mark_older_duplicates, aggregate_qso_points
 
 from .operator import Operator
-from .scoring import apply_custom_scoring, _apply_10_minute_rule, _compute_multipliers
+from .scoring import apply_custom_scoring, _apply_10_minute_rule, _compute_multipliers, _apply_witness_confirmation
 
 
 def run_crosscheck(log_class, rules=None, logs_folder=None, checklogs_folder=None):
@@ -44,6 +44,11 @@ def run_crosscheck(log_class, rules=None, logs_folder=None, checklogs_folder=Non
         crosscheck_band(operator_instances, rules, band, confirmed_pairs)
 
     _apply_10_minute_rule(operator_instances, rules)
+    # DRACULA-005: opt-in, generic (disabled unless rules set
+    # witness_confirmation_min_logs > 0) -- must run after the per-band loop
+    # and the 10-minute rule, but before aggregation/multipliers, since it
+    # can newly confirm and score QSOs that must then be included in both.
+    _apply_witness_confirmation(operator_instances, rules)
     aggregate_qso_points(operator_instances)
 
     if rules.contest_multiplier_enabled:
@@ -75,7 +80,12 @@ def crosscheck_band(operator_instances, rules, band_nr, confirmed_pairs):
             callsign2 = qso1.qso_fields['call'].upper()
 
             _, inside_period_nr1 = qso1.qso_inside_period()
-            if '{}-period{}'.format(callsign2, inside_period_nr1) in _had_qso_with:
+            # DRACULA-006: a duplicate is same station + same band + same
+            # mode (docx section 12.h) -- mode must be part of the dedup
+            # key, or a legitimate second contact on a different mode gets
+            # wrongly rejected as already confirmed. Global Cabrillo fix,
+            # not DRACULA-specific; EDI's equivalent guard is out of scope.
+            if '{}-period{}-{}'.format(callsign2, inside_period_nr1, qso1.qso_fields['mode']) in _had_qso_with:
                 qso1.cc_confirmed = False
                 qso1.cc_error = 'Qso already confirmed'
                 continue
@@ -104,7 +114,7 @@ def crosscheck_band(operator_instances, rules, band_nr, confirmed_pairs):
             if distance is None:
                 continue
 
-            _had_qso_with.append('{}-period{}'.format(callsign2, partner_period_nr))
+            _had_qso_with.append('{}-period{}-{}'.format(callsign2, partner_period_nr, qso2.qso_fields['mode']))
 
             qso1.cc_confirmed, qso1.cc_error = apply_custom_scoring(
                 callsign1, callsign2, rules, qso1, confirmed_pairs,

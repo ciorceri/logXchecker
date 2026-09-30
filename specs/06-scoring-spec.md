@@ -35,18 +35,36 @@ else:
 ## SCORE-003: ⚠ Fragile scoring-path selector
 The `qso_points_normal != 1` check is how the code distinguishes "a `[scoring]` section configured real points" from "no scoring configured, use legacy distance*multiplier" — but `contest_qso_points` (`ScoringMixin`) *defaults to* `1` when `[scoring]` is entirely absent, and a contest author could legitimately set `qso_points=1` explicitly, which would be silently treated as "no scoring configured" and fall into the legacy branch. See GAP-006 — flag any touch to this logic rather than patching around it.
 
-## SCORE-004: DRACULA scoring (`_dracula_scoring`, `scoring.py:251-267`)
+## SCORE-004: DRACULA scoring (`_dracula_scoring`, `formats/cabrillo/scoring.py`)
+Rewritten per `specs/10-dracula-transylvania-2026.md` DRACULA-002/003 to add
+the previously-missing Transylvania-region scoring tier (8 points, both
+directions) and to make YO-YO scoring read a real config property
+(`contest_yo_to_yo_points`, default `1`) instead of hardcoding `0`.
 ```
+partner_exchange = qso1.qso_fields.get(rules.contest_multiplier_exchange_field, '').strip().upper()
+                    # same field _compute_multiplier_for_qso reads (SCORE-006) — no separate config
+
 if callsign2 is a DRACULA special station (is_dracula_special): points = non_yo_to_special_points   # despite the name, applies regardless of caller's YO status
 elif callsign1 is YO:
-    if callsign2 is YO: points = 0
-    else:                points = yo_to_nonyo_points
+    if callsign2 is YO:
+        if is_transylvania_county(partner_exchange): points = yo_to_transylvania_points   # NEW, default 8
+        else:                                          points = yo_to_yo_points             # default 1 (was hardcoded 0)
+    else:
+        points = yo_to_nonyo_points
 else:  # callsign1 is non-YO
-    if callsign2 is YO:      points = non_yo_to_yo_points
+    if callsign2 is YO:
+        if is_transylvania_county(partner_exchange): points = non_yo_to_transylvania_points  # NEW, default 8
+        else:                                          points = non_yo_to_yo_points
     elif same DXCC entity:   points = non_yo_same_country_points
     else:                    points = non_yo_dxcc_points
 ```
 Note the special-station branch uses `contest_non_yo_to_special_points` for the point value even when the *caller* is YO — there is no separate `yo_to_special_points` branch reached in this function despite `ScoringMixin` defining `contest_yo_to_special_points` (RULES-007); that property is defined but effectively dead for DRACULA scoring as currently written.
+
+`is_transylvania_county` (`common/dxcc.py`, DRACULA-001) checks a flat
+10-county whitelist (`TRANSYLVANIA_COUNTIES`) that cuts across `YO_COUNTIES`
+district boundaries — it is a separate, narrower check from `is_yo_county`
+(used for multiplier validation, SCORE-006) and is only ever consulted here
+for scoring-tier selection, never for multiplier validity.
 
 ## SCORE-005: YODX scoring (`_yodx_scoring`, `scoring.py:270-310`)
 Continent-aware (uses `get_callsign_continent`, `'EU'` is the only continent treated specially):
@@ -68,11 +86,29 @@ else:  # callsign1 is non-YO
 - The function's own docstring (`scoring.py:278-280`) describes a continent split for the *non-YO-works-YO* case too, but the actual code for that case (`scoring.py:297-299`) always returns the flat `non_yo_to_yo_points` regardless of continent — the docstring and the implementation disagree; trust the code quoted here, not the docstring, until one of them is fixed.
 - `contest_non_yo_to_yo_same_continent_points` (`ScoringMixin`, `scoring.py:138-142`, RULES-007) is defined but **never read** by `_yodx_scoring` or anywhere else — dead code, in the same way `contest_yo_to_special_points` is dead for DRACULA (SCORE-004).
 
-## SCORE-006: Multiplier classification (`_compute_multiplier_for_qso`, `scoring.py:180-223`)
-Returns a `(category, key)` tuple identifying a unique multiplier, or `None` if the QSO doesn't count toward a multiplier. Dispatch mirrors `contest_custom_scoring`:
-- **YODX**: partner is YO → `('YO_COUNTY', exchange_value)` if the configured exchange field holds a recognized Romanian county code (`is_yo_county`), else `None`; partner is non-YO → `('DXCC', main_prefix_or_first_two_chars)`.
-- **DRACULA**: partner is a DRC special station → `('DRC', partner_callsign)`; partner is YO → `('YO_COUNTY', exchange_value)` (any non-empty exchange value, **not** validated against `is_yo_county` here, unlike YODX); partner is non-YO → `('DXCC', main_prefix_or_first_two_chars)`.
+## SCORE-006: Multiplier classification (`_compute_multiplier_for_qso`, `formats/cabrillo/scoring.py`)
+Per `specs/10-dracula-transylvania-2026.md` DRACULA-004, this function now
+takes an additional `caller_callsign=None` parameter (threaded in from both
+call sites — `_compute_multipliers`'s per-log loop and `_apply_10_minute_rule`/
+`_classify_qso_multiplier`'s per-QSO loop, both of which pass `log.callsign`)
+and the DRACULA branch is now caller-aware, plus validates the exchange value
+against `is_yo_county` (closing GAP-010 — see `specs/09-known-gaps-and-deviations.md`'s
+updated GAP-010 entry). Returns a `(category, key)` tuple identifying a
+unique multiplier, or `None` if the QSO doesn't count toward a multiplier.
+Dispatch mirrors `contest_custom_scoring`:
+- **YODX**: partner is YO → `('YO_COUNTY', exchange_value)` if the configured exchange field holds a recognized Romanian county code (`is_yo_county`), else `None`; partner is non-YO → `('DXCC', main_prefix_or_first_two_chars)`. Not caller-aware (unchanged by DRACULA-004 — that fix is DRACULA-specific).
+- **DRACULA**: partner is a DRC special station → `('DRC', partner_callsign)`; partner is YO →
+  - if `caller_callsign` is also YO: `None` — a YO caller's multipliers are DXCC entities + DRC only, no county multiplier, per the official rules (DRACULA-004);
+  - else (non-YO/foreign caller): `('YO_COUNTY', exchange_value)` **only if** the exchange value passes `is_yo_county` (GAP-010 fix — previously any non-empty value was accepted unvalidated), else `None`;
+
+  partner is non-YO → `('DXCC', main_prefix_or_first_two_chars)`.
 - **Standard** (no custom scoring): extracts a county code via `_extract_county_from_exchange` — **last token** if the exchange field has 2 whitespace-separated tokens, else the whole (single) token (`scoring.py:226-232`). If that equals `contest_multiplier_special_exchange` → `('CAT_A', partner_callsign)`; else `('COUNTY', county_value)`; empty exchange → `None`.
+
+Note: `is_yo_county` (validates against the full `YO_COUNTIES` set) is a
+different, broader check than `is_transylvania_county` (SCORE-004's
+Transylvania-tier scoring check, `common/dxcc.py`, DRACULA-001) — the two are
+never interchangeable; multiplier validity and scoring-tier selection are
+deliberately separate checks.
 
 DXCC fallback: if `lookup_callsign(partner_call)` finds nothing, the multiplier key falls back to the callsign's first two characters (`partner_call[:2]`) rather than `None` — a made-up "DXCC" bucket can appear in results for unrecognized callsigns instead of being excluded.
 
